@@ -1,0 +1,40 @@
+-- src/main/resources/db/migration/V1__crear_esquema_inicial_usuarios.sql
+CREATE TABLE ROLES (
+    id BIGSERIAL PRIMARY KEY,
+    nombre VARCHAR(50) UNIQUE NOT NULL
+);
+
+CREATE TABLE USUARIOS (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    enabled BOOLEAN DEFAULT TRUE,
+    secret_2fa VARCHAR(255),
+    is_2fa_enabled BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE USUARIO_ROLES (
+    id_usuario BIGINT REFERENCES USUARIOS(id), 
+    id_rol BIGINT REFERENCES ROLES(id),
+    PRIMARY KEY (id_usuario, id_rol)
+);
+
+CREATE TABLE CLIENTE (
+    id BIGSERIAL PRIMARY KEY,
+    id_usuario BIGINT UNIQUE NOT NULL REFERENCES USUARIOS(id),
+    nombre VARCHAR(255) NOT NULL,
+    telefono VARCHAR(50),
+    documento VARCHAR(50)
+);
+
+CREATE TABLE PROVEEDOR (
+    id BIGSERIAL PRIMARY KEY,
+    id_usuario BIGINT UNIQUE NOT NULL REFERENCES USUARIOS(id),
+    razon_social VARCHAR(255) NOT NULL,
+    nit_rut VARCHAR(50),
+    telefono VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO ROLES (nombre) VALUES ('CLIENTE'), ('PROVEEDOR');
