@@ -3,7 +3,7 @@ package com.service_reservation.EAP03.modulos.identidad.infrastructure.outbound.
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "ROLES")
+@Table(name = "ROL")
 public class RolJpaEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
