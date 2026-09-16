@@ -2,6 +2,7 @@
 package com.service_reservation.EAP03.config;
 
 import com.service_reservation.EAP03.modulos.identidad.application.exception.ReglaNegocioException;
+import com.service_reservation.EAP03.modulos.identidad.domain.exception.CredencialesInvalidasException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -13,6 +14,15 @@ import java.util.UUID;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(CredencialesInvalidasException.class)
+    public ResponseEntity<Map<String, Object>> handleCredencialesInvalidas(CredencialesInvalidasException ex) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("errorCode", "CREDENCIALES_INVALIDAS");
+        error.put("message", ex.getMessage());
+        error.put("traceId", UUID.randomUUID().toString());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
 
     @ExceptionHandler(ReglaNegocioException.class)
     public ResponseEntity<Map<String, Object>> handleReglaNegocio(ReglaNegocioException ex) {
