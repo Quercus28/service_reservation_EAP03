@@ -6,6 +6,8 @@ import com.service_reservation.EAP03.modulos.identidad.infrastructure.outbound.p
 import com.service_reservation.EAP03.modulos.identidad.infrastructure.outbound.persistence.repository.*;
 import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -38,7 +40,8 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
         return usuarioJpaRepo.findByEmail(email)
                 .map(entity -> {
                     Set<String> roles = entity.getRoles().stream()
-                            .map(RolJpaEntity::getNombre)
+                            .filter(Objects::nonNull)
+                            .map(rol -> rol.getNombre())
                             .collect(Collectors.toSet());
                     return new Usuario(
                             entity.getId(),
