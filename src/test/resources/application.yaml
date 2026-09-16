@@ -8,7 +8,7 @@ spring:
     password:
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: create-drop
     open-in-view: false
     defer-datasource-initialization: true
   sql:
