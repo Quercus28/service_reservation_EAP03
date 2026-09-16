@@ -1,7 +1,12 @@
 package com.service_reservation.EAP03.modulos.servicios_catalogo.infrastructure.adapter.out.persistence;
 
+import com.service_reservation.EAP03.modulos.servicios_catalogo.domain.model.ResultadoPaginado;
 import com.service_reservation.EAP03.modulos.servicios_catalogo.domain.model.Servicio;
 import com.service_reservation.EAP03.modulos.servicios_catalogo.domain.repository.ServicioRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -44,6 +49,30 @@ public class ServicioPersistenceAdapter implements ServicioRepository {
         return springDataServicioRepository.findByIdProveedor(idProveedor).stream()
                 .map(servicioMapper::toDomain)
                 .toList();
+    }
+
+    @Override
+    public ResultadoPaginado<Servicio> buscarPaginado(Integer idProveedor, String nombre, int pagina, int tamano) {
+        Pageable pageable = PageRequest.of(pagina, tamano, Sort.by(Sort.Direction.DESC, "createdAt"));
+        String nombreFiltro = (nombre != null && !nombre.trim().isEmpty()) ? nombre.trim() : null;
+
+        Page<ServicioJpaEntity> paginaEntidades = springDataServicioRepository.buscarConFiltros(
+                idProveedor,
+                nombreFiltro,
+                pageable
+        );
+
+        List<Servicio> servicios = paginaEntidades.getContent().stream()
+                .map(servicioMapper::toDomain)
+                .toList();
+
+        return new ResultadoPaginado<>(
+                servicios,
+                paginaEntidades.getNumber(),
+                paginaEntidades.getSize(),
+                paginaEntidades.getTotalElements(),
+                paginaEntidades.getTotalPages()
+        );
     }
 
     @Override

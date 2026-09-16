@@ -1,5 +1,6 @@
 package com.service_reservation.EAP03.modulos.servicios_catalogo.domain.repository;
 
+import com.service_reservation.EAP03.modulos.servicios_catalogo.domain.model.ResultadoPaginado;
 import com.service_reservation.EAP03.modulos.servicios_catalogo.domain.model.Servicio;
 
 import java.util.List;
@@ -12,6 +13,8 @@ public interface ServicioRepository {
     Optional<Servicio> buscarPorId(Integer id);
 
     List<Servicio> buscarPorProveedor(Integer idProveedor);
+
+    ResultadoPaginado<Servicio> buscarPaginado(Integer idProveedor, String nombre, int pagina, int tamano);
 
     boolean existePorId(Integer id);
 

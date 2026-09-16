@@ -1,6 +1,7 @@
 package com.service_reservation.EAP03.modulos.servicios_catalogo.infrastructure.adapter.in.web;
 
 import com.service_reservation.EAP03.modulos.servicios_catalogo.domain.exception.DomainException;
+import com.service_reservation.EAP03.modulos.servicios_catalogo.domain.exception.ServicioNoEncontradoException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -14,6 +15,16 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class ServicioExceptionHandler {
+
+    @ExceptionHandler(ServicioNoEncontradoException.class)
+    public ResponseEntity<Map<String, Object>> manejarServicioNoEncontrado(ServicioNoEncontradoException ex) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("timestamp", OffsetDateTime.now());
+        error.put("status", HttpStatus.NOT_FOUND.value());
+        error.put("error", "Recurso no encontrado");
+        error.put("mensaje", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
 
     @ExceptionHandler(DomainException.class)
     public ResponseEntity<Map<String, Object>> manejarDomainException(DomainException ex) {
