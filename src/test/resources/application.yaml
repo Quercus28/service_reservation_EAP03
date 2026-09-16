@@ -2,7 +2,7 @@ spring:
   application:
     name: EAP03
   datasource:
-    url: jdbc:h2:mem:eap03-test;MODE=PostgreSQL
+    url: jdbc:h2:mem:eap03-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
     driver-class-name: org.h2.Driver
     username: sa
     password:
