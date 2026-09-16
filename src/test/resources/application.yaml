@@ -2,7 +2,7 @@ spring:
   application:
     name: EAP03
   datasource:
-    url: jdbc:h2:mem:eap03-test;MODE=PostgreSQL
+    url: jdbc:h2:mem:eap03-test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: sa
     password:
@@ -10,5 +10,13 @@ spring:
     hibernate:
       ddl-auto: create-drop
     open-in-view: false
+    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: always
   flyway:
     enabled: false
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
