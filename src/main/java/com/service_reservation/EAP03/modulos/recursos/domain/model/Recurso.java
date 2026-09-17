@@ -52,8 +52,9 @@ public class Recurso {
         this.stock = stock;
     }
 
-    public boolean puedeCubrir(int cantidadSolicitada) {
-        return cantidadSolicitada > 0 && cantidadSolicitada <= this.stock;
+    public int unidadesDisponibles(int comprometido) {
+        int libres = this.stock - comprometido;
+        return Math.max(libres, 0);
     }
 
     public boolean estaActivo() {
