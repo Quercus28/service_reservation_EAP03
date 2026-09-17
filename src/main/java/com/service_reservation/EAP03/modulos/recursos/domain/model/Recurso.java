@@ -12,9 +12,11 @@ public class Recurso {
     private BigDecimal precioUnitario;
     private int stock;
     private final LocalDateTime createdAt;
+    private LocalDateTime eliminadoEn;
 
     private Recurso(Integer id, Integer idProveedor, String nombre,
-                     BigDecimal precioUnitario, int stock, LocalDateTime createdAt) {
+                     BigDecimal precioUnitario, int stock, LocalDateTime createdAt,
+                     LocalDateTime eliminadoEn) {
         validarNombre(nombre);
         validarPrecio(precioUnitario);
         validarStock(stock);
@@ -24,17 +26,19 @@ public class Recurso {
         this.precioUnitario = precioUnitario;
         this.stock = stock;
         this.createdAt = createdAt;
+        this.eliminadoEn = eliminadoEn;
     }
 
-    // Para crear un recurso NUEVO (todavía sin id, lo asigna la base de datos)
+    // Para crear un recurso NUEVO (todavía sin id, activo por definición)
     public static Recurso nuevo(Integer idProveedor, String nombre, BigDecimal precioUnitario, int stock) {
-        return new Recurso(null, idProveedor, nombre, precioUnitario, stock, LocalDateTime.now());
+        return new Recurso(null, idProveedor, nombre, precioUnitario, stock, LocalDateTime.now(), null);
     }
 
     // Para reconstruir un recurso que YA existe en la base de datos
     public static Recurso reconstruir(Integer id, Integer idProveedor, String nombre,
-                                       BigDecimal precioUnitario, int stock, LocalDateTime createdAt) {
-        return new Recurso(id, idProveedor, nombre, precioUnitario, stock, createdAt);
+                                       BigDecimal precioUnitario, int stock, LocalDateTime createdAt,
+                                       LocalDateTime eliminadoEn) {
+        return new Recurso(id, idProveedor, nombre, precioUnitario, stock, createdAt, eliminadoEn);
     }
 
     public void actualizarDatos(String nombre, BigDecimal precioUnitario, int stock) {
@@ -48,6 +52,17 @@ public class Recurso {
 
     public boolean puedeCubrir(int cantidadSolicitada) {
         return cantidadSolicitada > 0 && cantidadSolicitada <= this.stock;
+    }
+
+    public boolean estaActivo() {
+        return this.eliminadoEn == null;
+    }
+
+    public void desactivar() {
+        if (!estaActivo()) {
+            throw new IllegalStateException("El recurso ya está desactivado");
+        }
+        this.eliminadoEn = LocalDateTime.now();
     }
 
     private static void validarNombre(String nombre) {
@@ -74,4 +89,5 @@ public class Recurso {
     public BigDecimal getPrecioUnitario() { return precioUnitario; }
     public int getStock() { return stock; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getEliminadoEn() { return eliminadoEn; }
 }
