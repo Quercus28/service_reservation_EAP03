@@ -6,7 +6,6 @@ import com.service_reservation.EAP03.modulos.identidad.infrastructure.outbound.p
 import com.service_reservation.EAP03.modulos.identidad.infrastructure.outbound.persistence.repository.*;
 import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
-import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -41,7 +40,7 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
                 .map(entity -> {
                     Set<String> roles = entity.getRoles().stream()
                             .filter(Objects::nonNull)
-                            .map(rol -> rol.getNombre())
+                            .map(rol -> normalizarNombreRol(rol.getNombre()))
                             .collect(Collectors.toSet());
                     return new Usuario(
                             entity.getId(),
@@ -61,13 +60,28 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
         usuarioEntity.setEnabled(true);
         usuarioEntity.setCreatedAt(LocalDateTime.now());
 
-        RolJpaEntity rolEntity = rolJpaRepo.findByNombre(nombreRol)
-            .orElseThrow(() -> new RuntimeException("Rol no encontrado en BD"));
-        
-        usuarioEntity.addRol(rolEntity); 
-        
+        final String rolBuscado = normalizarNombreRol(nombreRol);
+
+        RolJpaEntity rolEntity = rolJpaRepo.findByNombre(rolBuscado)
+            .orElseThrow(() -> new RuntimeException("Rol no encontrado en BD: " + rolBuscado));
+
+        usuarioEntity.addRol(rolEntity);
+
         UsuarioJpaEntity guardado = usuarioJpaRepo.save(usuarioEntity);
         return new Usuario(guardado.getId(), guardado.getEmail(), guardado.getPasswordHash());
+    }
+
+    private String normalizarNombreRol(String nombreRol) {
+        if (nombreRol == null) {
+            return null;
+        }
+
+        String rol = nombreRol.trim();
+        if (rol.startsWith("ROLE_")) {
+            return rol;
+        }
+
+        return "ROLE_" + rol;
     }
 
     @Override
