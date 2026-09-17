@@ -1,5 +1,7 @@
 package com.service_reservation.EAP03.modulos.recursos.domain.model;
 
+import com.service_reservation.EAP03.modulos.recursos.domain.exception.DatosInvalidosException;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -60,26 +62,26 @@ public class Recurso {
 
     public void desactivar() {
         if (!estaActivo()) {
-            throw new IllegalStateException("El recurso ya está desactivado");
+            throw new DatosInvalidosException("El recurso ya está desactivado");
         }
         this.eliminadoEn = LocalDateTime.now();
     }
 
     private static void validarNombre(String nombre) {
         if (nombre == null || nombre.isBlank()) {
-            throw new IllegalArgumentException("El nombre del recurso es obligatorio");
+            throw new DatosInvalidosException("El nombre del recurso es obligatorio");
         }
     }
 
     private static void validarPrecio(BigDecimal precioUnitario) {
         if (precioUnitario == null || precioUnitario.signum() < 0) {
-            throw new IllegalArgumentException("El precio unitario no puede ser negativo");
+            throw new DatosInvalidosException("El precio unitario no puede ser negativo");
         }
     }
 
     private static void validarStock(int stock) {
         if (stock < 0) {
-            throw new IllegalArgumentException("El stock no puede ser negativo");
+            throw new DatosInvalidosException("El stock no puede ser negativo");
         }
     }
 

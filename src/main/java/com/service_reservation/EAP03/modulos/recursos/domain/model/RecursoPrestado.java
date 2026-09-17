@@ -1,5 +1,7 @@
 package com.service_reservation.EAP03.modulos.recursos.domain.model;
 
+import com.service_reservation.EAP03.modulos.recursos.domain.exception.DatosInvalidosException;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -49,22 +51,22 @@ public class RecursoPrestado {
 
     private static void validarCantidad(int cantidad) {
         if (cantidad <= 0) {
-            throw new IllegalArgumentException("La cantidad debe ser mayor que cero");
+            throw new DatosInvalidosException("La cantidad debe ser mayor que cero");
         }
     }
 
     private static void validarFechas(LocalDateTime fechaInicio, LocalDateTime fechaFin) {
         if (fechaInicio == null || fechaFin == null) {
-            throw new IllegalArgumentException("fechaInicio y fechaFin son obligatorias");
+            throw new DatosInvalidosException("fechaInicio y fechaFin son obligatorias");
         }
         if (!fechaFin.isAfter(fechaInicio)) {
-            throw new IllegalArgumentException("fechaFin debe ser posterior a fechaInicio");
+            throw new DatosInvalidosException("fechaFin debe ser posterior a fechaInicio");
         }
     }
 
     private static void validarPrecio(BigDecimal precioTotal) {
         if (precioTotal == null || precioTotal.signum() < 0) {
-            throw new IllegalArgumentException("El precio total no puede ser negativo");
+            throw new DatosInvalidosException("El precio total no puede ser negativo");
         }
     }
 
