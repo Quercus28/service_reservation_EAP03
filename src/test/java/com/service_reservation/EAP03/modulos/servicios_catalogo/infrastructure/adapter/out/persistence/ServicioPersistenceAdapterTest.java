@@ -41,4 +41,29 @@ class ServicioPersistenceAdapterTest {
         assertEquals(1, serviciosProveedor.size());
         assertEquals(servicioGuardado.getId(), serviciosProveedor.get(0).getId());
     }
+
+    @Test
+    @DisplayName("Debe consultar servicios paginados con filtros nulos sin lanzar errores de tipo")
+    void debeBuscarPaginadoConFiltrosNulos() {
+        persistenceAdapter.guardar(Servicio.crearNuevo(1, "Plomería General", 45));
+        persistenceAdapter.guardar(Servicio.crearNuevo(2, "Carpintería Fina", 120));
+
+        var resultado = persistenceAdapter.buscarPaginado(null, null, 0, 10);
+
+        assertNotNull(resultado);
+        assertTrue(resultado.totalElementos() >= 2);
+    }
+
+    @Test
+    @DisplayName("Debe filtrar servicios por nombre y proveedor")
+    void debeBuscarPaginadoConFiltrosEspecificos() {
+        persistenceAdapter.guardar(Servicio.crearNuevo(1, "Mantenimiento AC", 90));
+        persistenceAdapter.guardar(Servicio.crearNuevo(2, "Mantenimiento PC", 60));
+
+        var soloProveedor1 = persistenceAdapter.buscarPaginado(1, null, 0, 10);
+        assertTrue(soloProveedor1.elementos().stream().allMatch(s -> s.getIdProveedor().equals(1)));
+
+        var soloPorNombre = persistenceAdapter.buscarPaginado(null, "mantenimiento", 0, 10);
+        assertTrue(soloPorNombre.elementos().stream().allMatch(s -> s.getNombre().toLowerCase().contains("mantenimiento")));
+    }
 }

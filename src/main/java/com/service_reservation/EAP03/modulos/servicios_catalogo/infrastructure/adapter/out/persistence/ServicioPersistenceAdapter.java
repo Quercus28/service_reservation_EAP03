@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -56,11 +57,8 @@ public class ServicioPersistenceAdapter implements ServicioRepository {
         Pageable pageable = PageRequest.of(pagina, tamano, Sort.by(Sort.Direction.DESC, "createdAt"));
         String nombreFiltro = (nombre != null && !nombre.trim().isEmpty()) ? nombre.trim() : null;
 
-        Page<ServicioJpaEntity> paginaEntidades = springDataServicioRepository.buscarConFiltros(
-                idProveedor,
-                nombreFiltro,
-                pageable
-        );
+        Specification<ServicioJpaEntity> spec = ServicioSpecification.conFiltros(idProveedor, nombreFiltro);
+        Page<ServicioJpaEntity> paginaEntidades = springDataServicioRepository.findAll(spec, pageable);
 
         List<Servicio> servicios = paginaEntidades.getContent().stream()
                 .map(servicioMapper::toDomain)
