@@ -20,10 +20,15 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable()) 
             .authorizeHttpRequests(auth -> auth
+<<<<<<< HEAD
                 .requestMatchers("/api/v1/auth/registro").permitAll()
                 .requestMatchers("/api/v1/servicios/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .anyRequest().permitAll()
+=======
+                .requestMatchers("/api/v1/auth/**").permitAll() 
+                .anyRequest().authenticated() 
+>>>>>>> f6db65e0980ba998af26c147e12200fabe6ef4db
             );
             
         return http.build();
