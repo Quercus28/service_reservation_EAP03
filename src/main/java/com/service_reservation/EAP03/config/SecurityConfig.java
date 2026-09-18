@@ -18,9 +18,12 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable()) 
+            .csrf(csrf -> csrf.disable())
+            .httpBasic(httpBasic -> {})
+            .formLogin(form -> form.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/auth/registro").permitAll() 
+                .requestMatchers("/api/v1/auth/registro").permitAll()
+                .requestMatchers("/api/v1/agendas/**").hasRole("PROVEEDOR")
                 .anyRequest().authenticated() 
             );
             

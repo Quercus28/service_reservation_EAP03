@@ -38,6 +38,7 @@ public class UsuarioJpaEntity {
     private Set<RolJpaEntity> roles = new HashSet<>();
 
     public void addRol(RolJpaEntity rol) { this.roles.add(rol); }
+    public Set<RolJpaEntity> getRoles() { return roles; }
     
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
