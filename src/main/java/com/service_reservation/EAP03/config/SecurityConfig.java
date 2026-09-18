@@ -24,6 +24,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/servicios/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .anyRequest().permitAll()
+                .requestMatchers("/api/v1/auth/**").permitAll() 
+                .anyRequest().authenticated() 
             );
             
         return http.build();

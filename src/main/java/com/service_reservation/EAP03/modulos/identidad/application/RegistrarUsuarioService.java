@@ -6,6 +6,8 @@ import com.service_reservation.EAP03.modulos.identidad.domain.model.UsuarioNuevo
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.in.RegistrarUsuarioUseCase;
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.out.PasswordEncoderPort;
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.out.UsuarioRepositoryPort;
+
+import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,19 +29,20 @@ public class RegistrarUsuarioService implements RegistrarUsuarioUseCase {
             throw new ReglaNegocioException("El correo ya está en uso");
         }
 
+        String rolNormalizado = RolNombreUtil.normalizarRol(comando.rol());
         String passwordHash = passwordEncoder.codificar(comando.password());
         Usuario nuevoUsuario = new Usuario(comando.email(), passwordHash);
 
-        Usuario usuarioGuardado = usuarioRepository.guardarUsuarioConRol(nuevoUsuario, comando.rol());
+        Usuario usuarioGuardado = usuarioRepository.guardarUsuarioConRol(nuevoUsuario, rolNormalizado);
 
-        if ("CLIENTE".equals(comando.rol())) {
+        if (Set.of("ROLE_CLIENTE", "CLIENTE").contains(rolNormalizado)) {
             guardarPerfilCliente(
                 usuarioGuardado.getId(),
                 comando.nombreIdentificacion(),
                 comando.telefono(),
                 comando.documentoIdentidad()
             );
-        } else if ("PROVEEDOR".equals(comando.rol())) {
+        } else if (Set.of("ROLE_PROVEEDOR", "PROVEEDOR").contains(rolNormalizado)) {
             guardarPerfilProveedor(
                 usuarioGuardado.getId(),
                 comando.nombreIdentificacion(),
