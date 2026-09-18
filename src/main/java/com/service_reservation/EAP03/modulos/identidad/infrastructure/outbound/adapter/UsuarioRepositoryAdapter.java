@@ -95,6 +95,15 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
     }
 
     @Override
+    public Optional<Integer> buscarIdProveedorPorUsuario(Long idUsuario) {
+        if (idUsuario == null) {
+            return Optional.empty();
+        }
+        return proveedorJpaRepo.findByIdUsuario(idUsuario)
+                .map(proveedor -> proveedor.getId().intValue());
+    }
+
+    @Override
     public void guardarPerfilProveedor(Long idUsuario, String razonSocial, String telefono, String nitRut) {
         ProveedorJpaEntity proveedor = new ProveedorJpaEntity();
         proveedor.setIdUsuario(idUsuario);
