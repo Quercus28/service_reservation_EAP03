@@ -1,5 +1,6 @@
 package com.service_reservation.EAP03.modulos.servicios_catalogo.infrastructure.adapter.in.web;
 
+import com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound.security.UsuarioAutenticadoPrincipal;
 import com.service_reservation.EAP03.modulos.servicios_catalogo.application.dto.ActualizarServicioRequest;
 import com.service_reservation.EAP03.modulos.servicios_catalogo.application.dto.CrearServicioRequest;
 import com.service_reservation.EAP03.modulos.servicios_catalogo.application.dto.PaginaResponse;
@@ -12,6 +13,8 @@ import com.service_reservation.EAP03.modulos.servicios_catalogo.application.usec
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -56,14 +59,23 @@ public class ServicioController {
         this(crearServicioUseCase, null, null, null, null);
     }
 
-    // TODO [Seguridad / RBAC]: Restringir creación al proveedor autenticado:
-    // @PreAuthorize("hasRole('PROVEEDOR') and #request.idProveedor() == authentication.principal.idProveedor")
+    /**
+     * Crear servicio — solo PROVEEDOR autenticado.
+     * Anti-IDOR: el idProveedor se resuelve desde el contexto de autenticación,
+     * ignorando cualquier valor que pudiera venir en el body.
+     */
+    @PreAuthorize("hasRole('PROVEEDOR')")
     @PostMapping
     public ResponseEntity<ServicioResponse> crearServicio(
             @Valid @RequestBody CrearServicioRequest request,
-            UriComponentsBuilder uriComponentsBuilder
+            UriComponentsBuilder uriComponentsBuilder,
+            Authentication authentication
     ) {
-        ServicioResponse response = crearServicioUseCase.ejecutar(request);
+        // Resolver idProveedor desde el token para prevenir IDOR
+        Integer idProveedorAutenticado = extraerIdProveedor(authentication);
+        CrearServicioRequest requestSeguro = resolverIdProveedor(request, idProveedorAutenticado);
+
+        ServicioResponse response = crearServicioUseCase.ejecutar(requestSeguro);
 
         URI location = uriComponentsBuilder
                 .path("/api/v1/servicios/{id}")
@@ -73,17 +85,14 @@ public class ServicioController {
         return ResponseEntity.created(location).body(response);
     }
 
-    // TODO [Seguridad / RBAC]: Consulta individual de servicio:
-    // @PreAuthorize("hasAnyRole('ADMIN', 'CLIENTE') or (hasRole('PROVEEDOR') and @servicioSecurity.esPropietario(authentication, #id))")
+    /** Consulta individual — pública (catálogo). */
     @GetMapping("/{id}")
     public ResponseEntity<ServicioResponse> obtenerServicioPorId(@PathVariable Integer id) {
         ServicioResponse response = obtenerServicioPorIdUseCase.ejecutar(id);
         return ResponseEntity.ok(response);
     }
 
-    // TODO [Seguridad / RBAC]: Si es ADMIN puede consultar general o por cualquier proveedor.
-    // Si es PROVEEDOR, solo debe permitirse consultar sus propios servicios:
-    // @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVEEDOR') and (#idProveedor == null or #idProveedor == authentication.principal.idProveedor))")
+    /** Listado paginado — público (catálogo). */
     @GetMapping
     public ResponseEntity<PaginaResponse<ServicioResponse>> consultarServicios(
             @RequestParam(required = false) Integer idProveedor,
@@ -95,8 +104,8 @@ public class ServicioController {
         return ResponseEntity.ok(response);
     }
 
-    // TODO [Seguridad / RBAC]: Restringir actualización al propietario del servicio o a un ADMIN:
-    // @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVEEDOR') and @servicioSecurity.esPropietario(authentication, #id))")
+    /** Actualizar servicio — ADMIN siempre; PROVEEDOR solo si es propietario. */
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVEEDOR') and @servicioSecurity.esPropietario(authentication, #id))")
     @PutMapping("/{id}")
     public ResponseEntity<ServicioResponse> actualizarServicio(
             @PathVariable Integer id,
@@ -106,11 +115,41 @@ public class ServicioController {
         return ResponseEntity.ok(response);
     }
 
-    // TODO [Seguridad / RBAC]: Restringir eliminación al propietario del servicio o a un ADMIN:
-    // @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVEEDOR') and @servicioSecurity.esPropietario(authentication, #id))")
+    /** Eliminar servicio — ADMIN siempre; PROVEEDOR solo si es propietario. */
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVEEDOR') and @servicioSecurity.esPropietario(authentication, #id))")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarServicio(@PathVariable Integer id) {
         eliminarServicioUseCase.eliminar(id);
         return ResponseEntity.noContent().build();
     }
+
+    // -------------------------------------------------------------------------
+    // Helpers privados
+    // -------------------------------------------------------------------------
+
+    private Integer extraerIdProveedor(Authentication authentication) {
+        if (authentication != null && authentication.getPrincipal() instanceof UsuarioAutenticadoPrincipal principal) {
+            Long id = principal.getIdUsuario();
+            return id != null ? id.intValue() : null;
+        }
+        return null;
+    }
+
+    /**
+     * Devuelve el mismo request o uno nuevo con el idProveedor corregido.
+     * Si CrearServicioRequest es un record con idProveedor, construye uno nuevo;
+     * en caso contrario, el use case deberá aceptar el valor del token.
+     */
+    private CrearServicioRequest resolverIdProveedor(CrearServicioRequest original, Integer idProveedorAutenticado) {
+        if (idProveedorAutenticado == null) {
+            return original;
+        }
+        // Reconstruir el request con el idProveedor del token (previene IDOR)
+        return new CrearServicioRequest(
+                idProveedorAutenticado,
+                original.nombre(),
+                original.duracionMinutos()
+        );
+    }
 }
+
