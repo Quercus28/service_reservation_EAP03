@@ -18,4 +18,7 @@ public interface RecursoSpringDataRepository extends JpaRepository<RecursoJpaEnt
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT r FROM RecursoJpaEntity r WHERE r.id = :id")
     Optional<RecursoJpaEntity> buscarPorIdConBloqueo(@Param("id") Integer id);
+
+    @Query("SELECT COUNT(r) > 0 FROM RecursoJpaEntity r WHERE r.idProveedor = :idProveedor AND LOWER(r.nombre) = LOWER(:nombre) AND r.eliminadoEn IS NULL AND (:idExcluir IS NULL OR r.id <> :idExcluir)")
+    boolean existeNombreActivo(@Param("idProveedor") Integer idProveedor, @Param("nombre") String nombre, @Param("idExcluir") Integer idExcluir);
 }

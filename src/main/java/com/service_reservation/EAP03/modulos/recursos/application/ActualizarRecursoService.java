@@ -1,6 +1,7 @@
 package com.service_reservation.EAP03.modulos.recursos.application;
 
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.DatosInvalidosException;
+import com.service_reservation.EAP03.modulos.recursos.domain.exception.RecursoDuplicadoException;
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.RecursoNoEncontradoException;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.ActualizarRecursoComando;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.Recurso;
@@ -26,6 +27,10 @@ public class ActualizarRecursoService implements ActualizarRecursoUseCase {
 
         if (!recurso.estaActivo()) {
             throw new DatosInvalidosException("No se puede actualizar un recurso desactivado");
+        }
+
+        if (recursoRepositoryPort.existeNombreActivo(recurso.getIdProveedor(), comando.nombre(), comando.id())) {
+            throw new RecursoDuplicadoException(comando.nombre());
         }
 
         recurso.actualizarDatos(comando.nombre(), comando.precioUnitario(), comando.stock());

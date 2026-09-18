@@ -1,5 +1,6 @@
 package com.service_reservation.EAP03.modulos.recursos.application;
 
+import com.service_reservation.EAP03.modulos.recursos.domain.exception.RecursoDuplicadoException;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.CrearRecursoComando;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.Recurso;
 import com.service_reservation.EAP03.modulos.recursos.domain.ports.in.CrearRecursoUseCase;
@@ -19,6 +20,10 @@ public class CrearRecursoService implements CrearRecursoUseCase {
     @Override
     @Transactional
     public Recurso ejecutar(CrearRecursoComando comando) {
+        if (recursoRepositoryPort.existeNombreActivo(comando.idProveedor(), comando.nombre(), null)) {
+            throw new RecursoDuplicadoException(comando.nombre());
+        }
+
         Recurso recurso = Recurso.nuevo(
                 comando.idProveedor(),
                 comando.nombre(),

@@ -56,4 +56,9 @@ public class RecursoRepositoryAdapter implements RecursoRepositoryPort {
     public boolean existePorId(Integer id) {
         return repositorio.existsById(id);
     }
+
+    @Override
+    public boolean existeNombreActivo(Integer idProveedor, String nombre, Integer idExcluir) {
+        return repositorio.existeNombreActivo(idProveedor, nombre, idExcluir);
+    }
 }
