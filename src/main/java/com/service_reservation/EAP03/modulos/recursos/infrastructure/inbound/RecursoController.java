@@ -1,10 +1,14 @@
 package com.service_reservation.EAP03.modulos.recursos.infrastructure.inbound;
 
+import com.service_reservation.EAP03.modulos.recursos.domain.exception.DatosInvalidosException;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.*;
 import com.service_reservation.EAP03.modulos.recursos.domain.ports.in.*;
+import com.service_reservation.EAP03.modulos.recursos.infrastructure.config.RecursoSecurity;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -21,6 +25,7 @@ public class RecursoController {
     private final DesactivarRecursoUseCase desactivarRecursoUseCase;
     private final ConsultarDisponibilidadUseCase consultarDisponibilidadUseCase;
     private final RegistrarPrestamoRecursoUseCase registrarPrestamoRecursoUseCase;
+    private final RecursoSecurity recursoSecurity;
 
     public RecursoController(CrearRecursoUseCase crearRecursoUseCase,
                              ActualizarRecursoUseCase actualizarRecursoUseCase,
@@ -28,7 +33,8 @@ public class RecursoController {
                              ObtenerRecursoPorIdUseCase obtenerRecursoPorIdUseCase,
                              DesactivarRecursoUseCase desactivarRecursoUseCase,
                              ConsultarDisponibilidadUseCase consultarDisponibilidadUseCase,
-                             RegistrarPrestamoRecursoUseCase registrarPrestamoRecursoUseCase) {
+                             RegistrarPrestamoRecursoUseCase registrarPrestamoRecursoUseCase,
+                             RecursoSecurity recursoSecurity) {
         this.crearRecursoUseCase = crearRecursoUseCase;
         this.actualizarRecursoUseCase = actualizarRecursoUseCase;
         this.consultarRecursosUseCase = consultarRecursosUseCase;
@@ -36,13 +42,19 @@ public class RecursoController {
         this.desactivarRecursoUseCase = desactivarRecursoUseCase;
         this.consultarDisponibilidadUseCase = consultarDisponibilidadUseCase;
         this.registrarPrestamoRecursoUseCase = registrarPrestamoRecursoUseCase;
+        this.recursoSecurity = recursoSecurity;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public RecursoResponseDTO crear(@Valid @RequestBody CrearRecursoRequestDTO request) {
+    @PreAuthorize("hasRole('PROVEEDOR')")
+    public RecursoResponseDTO crear(@Valid @RequestBody CrearRecursoRequestDTO request,
+                                    Authentication authentication) {
+        Integer idProveedor = recursoSecurity.idProveedorDe(authentication)
+                .orElseThrow(() -> new DatosInvalidosException("El usuario autenticado no tiene un perfil de proveedor asociado"));
+
         Recurso recurso = crearRecursoUseCase.ejecutar(new CrearRecursoComando(
-                request.idProveedor(),
+                idProveedor,
                 request.nombre(),
                 request.precioUnitario(),
                 request.stock()
@@ -51,10 +63,14 @@ public class RecursoController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('PROVEEDOR')")
     public PaginaResponseDTO<RecursoResponseDTO> listar(
-            @RequestParam Integer idProveedor,
             @RequestParam(defaultValue = "0") int pagina,
-            @RequestParam(defaultValue = "20") int tamano) {
+            @RequestParam(defaultValue = "20") int tamano,
+            Authentication authentication) {
+
+        Integer idProveedor = recursoSecurity.idProveedorDe(authentication)
+                .orElseThrow(() -> new DatosInvalidosException("El usuario autenticado no tiene un perfil de proveedor asociado"));
 
         ResultadoPaginado<Recurso> resultado = consultarRecursosUseCase.ejecutar(idProveedor, pagina, tamano);
 
@@ -72,11 +88,13 @@ public class RecursoController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVEEDOR') and @recursoSecurity.esPropietario(authentication, #id))")
     public RecursoResponseDTO obtener(@PathVariable Integer id) {
         return RecursoResponseDTO.desde(obtenerRecursoPorIdUseCase.ejecutar(id));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVEEDOR') and @recursoSecurity.esPropietario(authentication, #id))")
     public RecursoResponseDTO actualizar(@PathVariable Integer id,
                                          @Valid @RequestBody ActualizarRecursoRequestDTO request) {
         Recurso recurso = actualizarRecursoUseCase.ejecutar(new ActualizarRecursoComando(
@@ -90,11 +108,13 @@ public class RecursoController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVEEDOR') and @recursoSecurity.esPropietario(authentication, #id))")
     public void desactivar(@PathVariable Integer id) {
         desactivarRecursoUseCase.ejecutar(id);
     }
 
     @GetMapping("/{id}/disponibilidad")
+    @PreAuthorize("isAuthenticated()")
     public DisponibilidadResponseDTO consultarDisponibilidad(
             @PathVariable Integer id,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime desde,
@@ -106,6 +126,7 @@ public class RecursoController {
 
     @PostMapping("/{id}/prestamos")
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAnyRole('PROVEEDOR', 'ADMIN')")
     public RecursoPrestadoResponseDTO registrarPrestamo(
             @PathVariable Integer id,
             @Valid @RequestBody RegistrarPrestamoRequestDTO request) {

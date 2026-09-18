@@ -10,9 +10,6 @@ import java.math.BigDecimal;
 
 public record CrearRecursoRequestDTO(
 
-        @NotNull(message = "El id del proveedor es obligatorio")
-        Integer idProveedor,
-
         @NotBlank(message = "El nombre del recurso es obligatorio")
         @Size(max = 150, message = "El nombre no puede superar los 150 caracteres")
         String nombre,
