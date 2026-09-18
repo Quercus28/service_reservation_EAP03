@@ -1,0 +1,62 @@
+# docker-compose.yml
+# Simula entorno de produccion local con PostgreSQL en puerto 5433
+#
+# Uso:
+#   docker compose up --build        <- primera vez o tras cambios de codigo
+#   docker compose up                <- reuso de imagen existente
+#   docker compose down -v           <- detener y borrar volumen de BD
+#
+# La app estara disponible en http://localhost:8080
+
+services:
+
+  # ── PostgreSQL ─────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: eap03_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: eap03
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"          # host:5433 -> contenedor:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d eap03"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ── Spring Boot App ────────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: eap03_app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      # Conexion a BD — el host es el nombre del servicio dentro de la red Docker
+      DB_HOST: postgres
+      DB_PORT: 5432          # dentro de Docker siempre 5432; el 5433 es solo para el host
+      DB_NAME: eap03
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+
+      # JWT — cambia el secreto en produccion real
+      JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      JWT_EXPIRATION: 3600
+
+      # JVM options
+      JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75"
+
+volumes:
+  postgres_data:
+    driver: local

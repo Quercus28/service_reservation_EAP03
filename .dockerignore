@@ -1,0 +1,29 @@
+# Excluir artefactos de build locales (el Stage 1 los regenera dentro del contenedor)
+build/
+.gradle/
+bin/
+
+# Artefactos de IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Docs
+README.md
+CONTRIBUTING.md
+
+# OS
+.DS_Store
+Thumbs.db
