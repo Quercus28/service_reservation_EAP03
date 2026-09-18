@@ -12,7 +12,16 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
+    locations: classpath:db,classpath:db/migration
+    outOfOrder: true
+    cleanDisabled: true
+    repair-on-migrate: true
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
 
 jwt:
   secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
   expiration-in-seconds: ${JWT_EXPIRATION:3600}
+
