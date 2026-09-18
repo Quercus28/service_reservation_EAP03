@@ -1,0 +1,11 @@
+UPDATE ROL
+SET nombre = 'ROLE_CLIENTE'
+WHERE nombre = 'CLIENTE';
+
+UPDATE ROL
+SET nombre = 'ROLE_PROVEEDOR'
+WHERE nombre = 'PROVEEDOR';
+
+UPDATE ROL
+SET nombre = 'ROLE_ADMIN'
+WHERE nombre = 'ADMIN';
