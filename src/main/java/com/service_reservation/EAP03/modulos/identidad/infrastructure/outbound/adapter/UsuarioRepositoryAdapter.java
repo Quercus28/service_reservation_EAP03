@@ -6,6 +6,10 @@ import com.service_reservation.EAP03.modulos.identidad.infrastructure.outbound.p
 import com.service_reservation.EAP03.modulos.identidad.infrastructure.outbound.persistence.repository.*;
 import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
@@ -31,6 +35,24 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
     }
 
     @Override
+    public Optional<Usuario> buscarPorEmail(String email) {
+        return usuarioJpaRepo.findByEmail(email)
+                .map(entity -> {
+                    Set<String> roles = entity.getRoles().stream()
+                            .filter(Objects::nonNull)
+                            .map(rol -> normalizarNombreRol(rol.getNombre()))
+                            .collect(Collectors.toSet());
+                    return new Usuario(
+                            entity.getId(),
+                            entity.getEmail(),
+                            entity.getPasswordHash(),
+                            entity.isEnabled(),
+                            roles
+                    );
+                });
+    }
+
+    @Override
     public Usuario guardarUsuarioConRol(Usuario usuario, String nombreRol) {
         UsuarioJpaEntity usuarioEntity = new UsuarioJpaEntity();
         usuarioEntity.setEmail(usuario.getEmail());
@@ -38,13 +60,28 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
         usuarioEntity.setEnabled(true);
         usuarioEntity.setCreatedAt(LocalDateTime.now());
 
-        RolJpaEntity rolEntity = rolJpaRepo.findByNombre(nombreRol)
-            .orElseThrow(() -> new RuntimeException("Rol no encontrado en BD"));
-        
-        usuarioEntity.addRol(rolEntity); 
-        
+        final String rolBuscado = normalizarNombreRol(nombreRol);
+
+        RolJpaEntity rolEntity = rolJpaRepo.findByNombre(rolBuscado)
+            .orElseThrow(() -> new RuntimeException("Rol no encontrado en BD: " + rolBuscado));
+
+        usuarioEntity.addRol(rolEntity);
+
         UsuarioJpaEntity guardado = usuarioJpaRepo.save(usuarioEntity);
         return new Usuario(guardado.getId(), guardado.getEmail(), guardado.getPasswordHash());
+    }
+
+    private String normalizarNombreRol(String nombreRol) {
+        if (nombreRol == null) {
+            return null;
+        }
+
+        String rol = nombreRol.trim();
+        if (rol.startsWith("ROLE_")) {
+            return rol;
+        }
+
+        return "ROLE_" + rol;
     }
 
     @Override
@@ -55,6 +92,15 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
         cliente.setTelefono(telefono);
         cliente.setDocumento(documento);
         clienteJpaRepo.save(cliente);
+    }
+
+    @Override
+    public Optional<Integer> buscarIdProveedorPorUsuario(Long idUsuario) {
+        if (idUsuario == null) {
+            return Optional.empty();
+        }
+        return proveedorJpaRepo.findByIdUsuario(idUsuario)
+                .map(proveedor -> proveedor.getId().intValue());
     }
 
     @Override

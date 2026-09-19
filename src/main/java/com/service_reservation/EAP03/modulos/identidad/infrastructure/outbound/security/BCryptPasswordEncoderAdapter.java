@@ -17,4 +17,9 @@ public class BCryptPasswordEncoderAdapter implements PasswordEncoderPort {
     public String codificar(String passwordPlana) {
         return springPasswordEncoder.encode(passwordPlana);
     }
+
+    @Override
+    public boolean coincide(String passwordPlana, String passwordCodificada) {
+        return springPasswordEncoder.matches(passwordPlana, passwordCodificada);
+    }
 }

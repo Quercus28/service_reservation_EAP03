@@ -20,7 +20,7 @@ public record RegistroUsuarioRequestDTO(
     String confirmarPassword,
     
     @NotBlank(message = "Debe seleccionar un rol")
-    @Pattern(regexp = "^(CLIENTE|PROVEEDOR)$", message = "Rol no válido")
+    @Pattern(regexp = "^(ROLE_)?(CLIENTE|PROVEEDOR)$", message = "Rol no válido")
     String rol,
 
     @NotBlank(message = "El nombre o razón social es obligatorio")
