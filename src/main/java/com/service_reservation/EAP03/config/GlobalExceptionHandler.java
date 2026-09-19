@@ -1,6 +1,7 @@
 // src/main/java/config/GlobalExceptionHandler.java
 package com.service_reservation.EAP03.config;
 
+import com.service_reservation.EAP03.modulos.agendas_horarios.domain.exception.HorarioSolapadoException;
 import com.service_reservation.EAP03.modulos.identidad.application.exception.ReglaNegocioException;
 import com.service_reservation.EAP03.modulos.agendas_horarios.application.PersistenciaAgendasHorariosNoDisponibleException;
 import com.service_reservation.EAP03.modulos.identidad.domain.exception.CredencialesInvalidasException;
@@ -48,32 +49,53 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
+    @ExceptionHandler(HorarioSolapadoException.class)
+    public ResponseEntity<Map<String, Object>> handleHorarioSolapado(
+            HorarioSolapadoException ex) {
+
         Map<String, Object> error = new HashMap<>();
         error.put("errorCode", "REGLA_NEGOCIO");
         error.put("message", ex.getMessage());
         error.put("traceId", UUID.randomUUID().toString());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(error);
     }
 
     @ExceptionHandler(PersistenciaAgendasHorariosNoDisponibleException.class)
-    public ResponseEntity<Map<String, Object>> handlePersistenciaNoDisponible(PersistenciaAgendasHorariosNoDisponibleException ex) {
+    public ResponseEntity<Map<String, Object>> handlePersistenciaNoDisponible(
+            PersistenciaAgendasHorariosNoDisponibleException ex) {
+
         Map<String, Object> error = new HashMap<>();
         error.put("errorCode", "PERSISTENCIA_NO_DISPONIBLE");
         error.put("message", ex.getMessage());
         error.put("traceId", UUID.randomUUID().toString());
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
+
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(error);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
-        log.warn("Intento de acceso no autorizado: metodo={}, ruta={}", request.getMethod(), request.getRequestURI());
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(
+            AccessDeniedException ex,
+            HttpServletRequest request) {
+
+        log.warn(
+                "Intento de acceso no autorizado: metodo={}, ruta={}",
+                request.getMethod(),
+                request.getRequestURI()
+        );
+
         Map<String, Object> error = new HashMap<>();
         error.put("errorCode", "ACCESO_NO_AUTORIZADO");
         error.put("message", "No tiene privilegios para realizar esta operación");
         error.put("traceId", UUID.randomUUID().toString());
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(error);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

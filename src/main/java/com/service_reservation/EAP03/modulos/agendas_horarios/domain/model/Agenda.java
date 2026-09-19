@@ -1,5 +1,7 @@
 package com.service_reservation.EAP03.modulos.agendas_horarios.domain.model;
 
+import com.service_reservation.EAP03.modulos.agendas_horarios.domain.exception.HorarioSolapadoException;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -26,7 +28,9 @@ public class Agenda {
     public void agregarHorario(Horario horario) {
         Objects.requireNonNull(horario, "El horario es obligatorio");
         if (horarios.stream().anyMatch(horario::seSuperponeCon)) {
-            throw new IllegalArgumentException("El horario se superpone con un horario previamente registrado en la agenda");
+            throw new HorarioSolapadoException(
+                    "El horario se superpone con un horario previamente registrado en la agenda"
+            );
         }
         horarios.add(horario);
     }
@@ -39,7 +43,9 @@ public class Agenda {
             throw new IllegalArgumentException("El horario indicado no existe en la agenda");
         }
         if (horarios.stream().filter(h -> h != anterior).anyMatch(nuevo::seSuperponeCon)) {
-            throw new IllegalArgumentException("El horario se superpone con un horario previamente registrado en la agenda");
+            throw new HorarioSolapadoException(
+                    "El horario se superpone con un horario previamente registrado en la agenda"
+            );
         }
         horarios.set(indice, nuevo);
     }
