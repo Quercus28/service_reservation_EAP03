@@ -7,7 +7,6 @@ import java.util.Optional;
 
 public interface UsuarioSpringDataRepository extends JpaRepository<UsuarioJpaEntity, Long> {
     boolean existsByEmail(String email);
-
     @EntityGraph(attributePaths = "roles")
     Optional<UsuarioJpaEntity> findByEmail(String email);
 }
