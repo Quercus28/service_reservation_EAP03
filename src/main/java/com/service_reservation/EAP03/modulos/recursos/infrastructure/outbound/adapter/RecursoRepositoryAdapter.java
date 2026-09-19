@@ -41,7 +41,7 @@ public class RecursoRepositoryAdapter implements RecursoRepositoryPort {
     }
 
     @Override
-    public ResultadoPaginado<Recurso> buscarActivosPorProveedor(Integer idProveedor, int pagina, int tamano) {
+    public ResultadoPaginado<Recurso> buscarActivosPorProveedor(Long idProveedor, int pagina, int tamano) {
         Page<RecursoJpaEntity> pagi = repositorio.findByIdProveedorAndEliminadoEnIsNull(
                 idProveedor, PageRequest.of(pagina, tamano));
 
@@ -58,7 +58,7 @@ public class RecursoRepositoryAdapter implements RecursoRepositoryPort {
     }
 
     @Override
-    public boolean existeNombreActivo(Integer idProveedor, String nombre, Integer idExcluir) {
+    public boolean existeNombreActivo(Long idProveedor, String nombre, Integer idExcluir) {
         return repositorio.existeNombreActivo(idProveedor, nombre, idExcluir);
     }
 }

@@ -9,14 +9,14 @@ import java.util.Objects;
 public class Recurso {
 
     private final Integer id;
-    private final Integer idProveedor;
+    private final Long idProveedor;
     private String nombre;
     private BigDecimal precioUnitario;
     private int stock;
     private final LocalDateTime createdAt;
     private LocalDateTime eliminadoEn;
 
-    private Recurso(Integer id, Integer idProveedor, String nombre,
+    private Recurso(Integer id, Long idProveedor, String nombre,
                      BigDecimal precioUnitario, int stock, LocalDateTime createdAt,
                      LocalDateTime eliminadoEn) {
         validarNombre(nombre);
@@ -32,12 +32,12 @@ public class Recurso {
     }
 
     // Para crear un recurso NUEVO (todavía sin id, activo por definición)
-    public static Recurso nuevo(Integer idProveedor, String nombre, BigDecimal precioUnitario, int stock) {
+    public static Recurso nuevo(Long idProveedor, String nombre, BigDecimal precioUnitario, int stock) {
         return new Recurso(null, idProveedor, nombre, precioUnitario, stock, LocalDateTime.now(), null);
     }
 
     // Para reconstruir un recurso que YA existe en la base de datos
-    public static Recurso reconstruir(Integer id, Integer idProveedor, String nombre,
+    public static Recurso reconstruir(Integer id, Long idProveedor, String nombre,
                                        BigDecimal precioUnitario, int stock, LocalDateTime createdAt,
                                        LocalDateTime eliminadoEn) {
         return new Recurso(id, idProveedor, nombre, precioUnitario, stock, createdAt, eliminadoEn);
@@ -87,7 +87,7 @@ public class Recurso {
     }
 
     public Integer getId() { return id; }
-    public Integer getIdProveedor() { return idProveedor; }
+    public Long getIdProveedor() { return idProveedor; }
     public String getNombre() { return nombre; }
     public BigDecimal getPrecioUnitario() { return precioUnitario; }
     public int getStock() { return stock; }

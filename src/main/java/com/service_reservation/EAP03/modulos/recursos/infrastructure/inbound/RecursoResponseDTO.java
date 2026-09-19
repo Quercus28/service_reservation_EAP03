@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 public record RecursoResponseDTO(
         Integer id,
-        Integer idProveedor,
+        Long idProveedor,
         String nombre,
         BigDecimal precioUnitario,
         Integer stock,

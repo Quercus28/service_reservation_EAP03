@@ -42,7 +42,7 @@ class RegistrarPrestamoRecursoServiceTest {
     }
 
     private Recurso recurso() {
-        return Recurso.reconstruir(1, 7, "Camilla", PRECIO, 5,
+        return Recurso.reconstruir(1, 7L, "Camilla", PRECIO, 5,
                 LocalDateTime.of(2026, 9, 1, 8, 0), null);
     }
 

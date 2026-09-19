@@ -37,7 +37,7 @@ class RecursoSecurityTest {
         return new UsernamePasswordAuthenticationToken(principal, null, List.of());
     }
 
-    private Recurso recursoDelProveedor(int idProveedor) {
+    private Recurso recursoDelProveedor(long idProveedor) {
         return Recurso.reconstruir(1, idProveedor, "Camilla", PRECIO, 3,
                 LocalDateTime.of(2026, 9, 1, 8, 0), null);
     }
@@ -45,7 +45,7 @@ class RecursoSecurityTest {
     @Test
     @DisplayName("El proveedor dueño del recurso pasa la verificacion")
     void dueñoPasa() {
-        when(consultarProveedorUseCase.buscarIdProveedorPorUsuario(10L)).thenReturn(Optional.of(4));
+        when(consultarProveedorUseCase.buscarIdProveedorPorUsuario(10L)).thenReturn(Optional.of(4L));
         when(recursoRepositoryPort.buscarPorId(1)).thenReturn(Optional.of(recursoDelProveedor(4)));
 
         assertTrue(recursoSecurity.esPropietario(autenticadoComoUsuario(10L), 1));
@@ -54,7 +54,7 @@ class RecursoSecurityTest {
     @Test
     @DisplayName("Un proveedor de otro negocio NO pasa la verificacion")
     void otroProveedorNoPasa() {
-        when(consultarProveedorUseCase.buscarIdProveedorPorUsuario(10L)).thenReturn(Optional.of(4));
+        when(consultarProveedorUseCase.buscarIdProveedorPorUsuario(10L)).thenReturn(Optional.of(4L));
         when(recursoRepositoryPort.buscarPorId(1)).thenReturn(Optional.of(recursoDelProveedor(9)));
 
         assertFalse(recursoSecurity.esPropietario(autenticadoComoUsuario(10L), 1));
@@ -71,7 +71,7 @@ class RecursoSecurityTest {
     @Test
     @DisplayName("Si el recurso no existe NO pasa")
     void recursoInexistente() {
-        when(consultarProveedorUseCase.buscarIdProveedorPorUsuario(10L)).thenReturn(Optional.of(4));
+        when(consultarProveedorUseCase.buscarIdProveedorPorUsuario(10L)).thenReturn(Optional.of(4L));
         when(recursoRepositoryPort.buscarPorId(1)).thenReturn(Optional.empty());
 
         assertFalse(recursoSecurity.esPropietario(autenticadoComoUsuario(10L), 1));

@@ -95,12 +95,12 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
     }
 
     @Override
-    public Optional<Integer> buscarIdProveedorPorUsuario(Long idUsuario) {
+    public Optional<Long> buscarIdProveedorPorUsuario(Long idUsuario) {
         if (idUsuario == null) {
             return Optional.empty();
         }
         return proveedorJpaRepo.findByIdUsuario(idUsuario)
-                .map(proveedor -> proveedor.getId().intValue());
+                .map(ProveedorJpaEntity::getId);
     }
 
     @Override

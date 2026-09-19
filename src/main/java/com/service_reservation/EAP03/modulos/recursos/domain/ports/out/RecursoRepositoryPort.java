@@ -8,7 +8,7 @@ public interface RecursoRepositoryPort {
     Recurso guardar(Recurso recurso);
     Optional<Recurso> buscarPorId(Integer id);
     Optional<Recurso> buscarPorIdConBloqueo(Integer id);
-    ResultadoPaginado<Recurso> buscarActivosPorProveedor(Integer idProveedor, int pagina, int tamano);
+    ResultadoPaginado<Recurso> buscarActivosPorProveedor(Long idProveedor, int pagina, int tamano);
     boolean existePorId(Integer id);
-    boolean existeNombreActivo(Integer idProveedor, String nombre, Integer idExcluir);
+    boolean existeNombreActivo(Long idProveedor, String nombre, Integer idExcluir);
 }

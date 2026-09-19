@@ -18,7 +18,7 @@ public class ConsultarRecursosService implements ConsultarRecursosUseCase {
 
     @Override
     @Transactional(readOnly = true)
-    public ResultadoPaginado<Recurso> ejecutar(Integer idProveedor, int pagina, int tamano) {
+    public ResultadoPaginado<Recurso> ejecutar(Long idProveedor, int pagina, int tamano) {
         return recursoRepositoryPort.buscarActivosPorProveedor(idProveedor, pagina, tamano);
     }
 }

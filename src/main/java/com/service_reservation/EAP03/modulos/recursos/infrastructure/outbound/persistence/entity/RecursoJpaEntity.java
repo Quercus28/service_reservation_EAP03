@@ -13,7 +13,7 @@ public class RecursoJpaEntity {
     private Integer id;
 
     @Column(name = "id_proveedor", nullable = false)
-    private Integer idProveedor;
+    private Long idProveedor;
 
     @Column(nullable = false, length = 150)
     private String nombre;
@@ -32,8 +32,8 @@ public class RecursoJpaEntity {
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
-    public Integer getIdProveedor() { return idProveedor; }
-    public void setIdProveedor(Integer idProveedor) { this.idProveedor = idProveedor; }
+    public Long getIdProveedor() { return idProveedor; }
+    public void setIdProveedor(Long idProveedor) { this.idProveedor = idProveedor; }
     public String getNombre() { return nombre; }
     public void setNombre(String nombre) { this.nombre = nombre; }
     public BigDecimal getPrecioUnitario() { return precioUnitario; }

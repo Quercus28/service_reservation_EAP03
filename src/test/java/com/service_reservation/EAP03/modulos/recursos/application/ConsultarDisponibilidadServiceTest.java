@@ -39,7 +39,7 @@ class ConsultarDisponibilidadServiceTest {
     @Test
     @DisplayName("Resta del stock solo los prestamos que realmente se solapan")
     void calculaDisponibilidad() {
-        Recurso recurso = Recurso.reconstruir(1, 7, "Camilla", PRECIO, 5,
+        Recurso recurso = Recurso.reconstruir(1, 7L, "Camilla", PRECIO, 5,
                 LocalDateTime.of(2026, 9, 1, 8, 0), null);
 
         RecursoPrestado solapaA = RecursoPrestado.nuevo(1, 100, 2,
@@ -63,7 +63,7 @@ class ConsultarDisponibilidadServiceTest {
     @Test
     @DisplayName("Sin prestamos, todo el stock esta disponible")
     void sinPrestamos() {
-        Recurso recurso = Recurso.reconstruir(1, 7, "Camilla", PRECIO, 4,
+        Recurso recurso = Recurso.reconstruir(1, 7L, "Camilla", PRECIO, 4,
                 LocalDateTime.of(2026, 9, 1, 8, 0), null);
 
         when(recursoRepositoryPort.buscarPorId(1)).thenReturn(Optional.of(recurso));

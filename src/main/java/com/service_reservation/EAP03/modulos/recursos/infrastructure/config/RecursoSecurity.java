@@ -20,7 +20,7 @@ public class RecursoSecurity {
         this.recursoRepositoryPort = recursoRepositoryPort;
     }
 
-    public Optional<Integer> idProveedorDe(Authentication authentication) {
+    public Optional<Long> idProveedorDe(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return Optional.empty();
         }

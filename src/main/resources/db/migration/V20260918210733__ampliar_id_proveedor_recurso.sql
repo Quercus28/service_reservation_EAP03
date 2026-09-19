@@ -1,0 +1,11 @@
+-- recurso.id_proveedor pasa de INTEGER a BIGINT para coincidir con proveedor.id,
+-- que es BIGSERIAL desde V1__crear_modelo_inicial.sql. Antes de este cambio el id se
+-- estrechaba a int al cruzar el puerto de identidad, con pérdida silenciosa de precisión.
+--
+-- Se usa la forma estándar SET DATA TYPE (no la abreviada "TYPE" de PostgreSQL) porque
+-- H2, usado en los tests, solo acepta la estándar.
+--
+-- Los índices idx_recurso_id_proveedor e idx_recurso_proveedor_activos NO se recrean:
+-- tanto PostgreSQL como H2 los reconstruyen solos al cambiar el tipo de la columna.
+-- El NOT NULL también se conserva.
+ALTER TABLE recurso ALTER COLUMN id_proveedor SET DATA TYPE BIGINT;

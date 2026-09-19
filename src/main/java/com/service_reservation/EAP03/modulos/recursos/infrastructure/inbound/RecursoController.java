@@ -50,7 +50,7 @@ public class RecursoController {
     @PreAuthorize("hasRole('PROVEEDOR')")
     public RecursoResponseDTO crear(@Valid @RequestBody CrearRecursoRequestDTO request,
                                     Authentication authentication) {
-        Integer idProveedor = recursoSecurity.idProveedorDe(authentication)
+        Long idProveedor = recursoSecurity.idProveedorDe(authentication)
                 .orElseThrow(() -> new DatosInvalidosException("El usuario autenticado no tiene un perfil de proveedor asociado"));
 
         Recurso recurso = crearRecursoUseCase.ejecutar(new CrearRecursoComando(
@@ -69,7 +69,7 @@ public class RecursoController {
             @RequestParam(defaultValue = "20") int tamano,
             Authentication authentication) {
 
-        Integer idProveedor = recursoSecurity.idProveedorDe(authentication)
+        Long idProveedor = recursoSecurity.idProveedorDe(authentication)
                 .orElseThrow(() -> new DatosInvalidosException("El usuario autenticado no tiene un perfil de proveedor asociado"));
 
         ResultadoPaginado<Recurso> resultado = consultarRecursosUseCase.ejecutar(idProveedor, pagina, tamano);

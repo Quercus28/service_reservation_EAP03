@@ -18,7 +18,7 @@ public class ConsultarProveedorService implements ConsultarProveedorUseCase {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<Integer> buscarIdProveedorPorUsuario(Long idUsuario) {
+    public Optional<Long> buscarIdProveedorPorUsuario(Long idUsuario) {
         return usuarioRepository.buscarIdProveedorPorUsuario(idUsuario);
     }
 }
