@@ -51,4 +51,8 @@ public class UsuarioJpaEntity {
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public String getSecret2fa() { return secret2fa; }
+    public void setSecret2fa(String secret2fa) { this.secret2fa = secret2fa; }
+    public boolean is2faEnabled() { return is2faEnabled; }
+    public void set2faEnabled(boolean is2faEnabled) { this.is2faEnabled = is2faEnabled; }
 }

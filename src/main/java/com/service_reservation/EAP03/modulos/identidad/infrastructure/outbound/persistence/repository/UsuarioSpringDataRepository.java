@@ -9,4 +9,7 @@ public interface UsuarioSpringDataRepository extends JpaRepository<UsuarioJpaEnt
     boolean existsByEmail(String email);
     @EntityGraph(attributePaths = "roles")
     Optional<UsuarioJpaEntity> findByEmail(String email);
+
+    @EntityGraph(attributePaths = "roles")
+    Optional<UsuarioJpaEntity> findById(Long id);
 }

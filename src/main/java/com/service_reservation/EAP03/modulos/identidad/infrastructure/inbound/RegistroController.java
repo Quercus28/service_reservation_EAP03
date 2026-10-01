@@ -31,4 +31,10 @@ public class RegistroController {
         registrarUsuarioUseCase.ejecutar(comando);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
+
+    @PostMapping("/admin")
+    public ResponseEntity<Void> crearAdministrador(@Valid @RequestBody CrearAdministradorRequestDTO request) {
+        registrarUsuarioUseCase.crearAdministrador(request.email(), request.password());
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
 }
