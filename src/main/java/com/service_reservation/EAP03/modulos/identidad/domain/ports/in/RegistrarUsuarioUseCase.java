@@ -3,6 +3,7 @@ import com.service_reservation.EAP03.modulos.identidad.domain.model.UsuarioNuevo
 
 public interface RegistrarUsuarioUseCase {
     void ejecutar(UsuarioNuevoComando comando);
+    void crearAdministrador(String email, String password);
     void guardarPerfilCliente(Long idUsuario, String nombre, String telefono, String documento);
     void guardarPerfilProveedor(Long idUsuario, String razonSocial, String telefono, String nitRut);
 }
