@@ -5,5 +5,5 @@ import com.service_reservation.EAP03.modulos.agendas_horarios.domain.model.Horar
 import java.util.List;
 
 public interface IDisponibilidad {
-    List<Horario> consultarHorariosDisponibles(Long proveedorId);
+    List<Horario> consultarHorariosDisponibles(Integer proveedorId, Integer servicioId);
 }
