@@ -1,7 +1,11 @@
 // src/main/java/config/GlobalExceptionHandler.java
 package com.service_reservation.EAP03.config;
 
+import com.service_reservation.EAP03.modulos.agendas_horarios.domain.exception.AgendaDuplicadaException;
+import com.service_reservation.EAP03.modulos.agendas_horarios.domain.exception.AgendaNoEncontradaException;
+import com.service_reservation.EAP03.modulos.agendas_horarios.domain.exception.DatosAgendaInvalidosException;
 import com.service_reservation.EAP03.modulos.agendas_horarios.domain.exception.HorarioSolapadoException;
+import com.service_reservation.EAP03.modulos.agendas_horarios.domain.exception.ServicioNoPerteneceAlProveedorException;
 import com.service_reservation.EAP03.modulos.identidad.application.exception.ReglaNegocioException;
 import com.service_reservation.EAP03.modulos.agendas_horarios.application.PersistenciaAgendasHorariosNoDisponibleException;
 import com.service_reservation.EAP03.modulos.identidad.domain.exception.CredencialesInvalidasException;
@@ -61,6 +65,42 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
                 .body(error);
+    }
+
+    @ExceptionHandler(AgendaNoEncontradaException.class)
+    public ResponseEntity<Map<String, Object>> handleAgendaNoEncontrada(AgendaNoEncontradaException ex) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("errorCode", "AGENDA_NO_ENCONTRADA");
+        error.put("message", ex.getMessage());
+        error.put("traceId", UUID.randomUUID().toString());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(AgendaDuplicadaException.class)
+    public ResponseEntity<Map<String, Object>> handleAgendaDuplicada(AgendaDuplicadaException ex) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("errorCode", "AGENDA_DUPLICADA");
+        error.put("message", ex.getMessage());
+        error.put("traceId", UUID.randomUUID().toString());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    @ExceptionHandler(ServicioNoPerteneceAlProveedorException.class)
+    public ResponseEntity<Map<String, Object>> handleServicioNoPerteneceAlProveedor(ServicioNoPerteneceAlProveedorException ex) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("errorCode", "SERVICIO_NO_PERTENECE_AL_PROVEEDOR");
+        error.put("message", ex.getMessage());
+        error.put("traceId", UUID.randomUUID().toString());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    }
+
+    @ExceptionHandler(DatosAgendaInvalidosException.class)
+    public ResponseEntity<Map<String, Object>> handleDatosAgendaInvalidos(DatosAgendaInvalidosException ex) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("errorCode", "DATOS_AGENDA_INVALIDOS");
+        error.put("message", ex.getMessage());
+        error.put("traceId", UUID.randomUUID().toString());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
     @ExceptionHandler(PersistenciaAgendasHorariosNoDisponibleException.class)
