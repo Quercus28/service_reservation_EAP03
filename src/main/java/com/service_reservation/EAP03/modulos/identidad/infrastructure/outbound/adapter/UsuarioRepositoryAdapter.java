@@ -84,23 +84,6 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
         return new Usuario(guardado.getId(), guardado.getEmail(), guardado.getPasswordHash());
     }
 
-    @Override
-    public Usuario guardarAdministrador(Usuario usuario) {
-        UsuarioJpaEntity usuarioEntity = new UsuarioJpaEntity();
-        usuarioEntity.setEmail(usuario.getEmail());
-        usuarioEntity.setPasswordHash(usuario.getPasswordHash());
-        usuarioEntity.setEnabled(true);
-        usuarioEntity.set2faEnabled(true);
-        usuarioEntity.setCreatedAt(LocalDateTime.now());
-
-        RolJpaEntity rolAdmin = rolJpaRepo.findByNombre("ROLE_ADMIN")
-            .orElseThrow(() -> new RuntimeException("Rol no encontrado en BD: ROLE_ADMIN"));
-        usuarioEntity.addRol(rolAdmin);
-
-        UsuarioJpaEntity guardado = usuarioJpaRepo.save(usuarioEntity);
-        return new Usuario(guardado.getId(), guardado.getEmail(), guardado.getPasswordHash());
-    }
-
     private String normalizarNombreRol(String nombreRol) {
         if (nombreRol == null) {
             return null;

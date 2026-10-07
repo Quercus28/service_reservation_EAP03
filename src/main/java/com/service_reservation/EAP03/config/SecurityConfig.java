@@ -46,7 +46,6 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/auth/registro").permitAll()
                 .requestMatchers("/api/v1/auth/login").permitAll()
-                .requestMatchers("/api/v1/auth/admin").hasRole("ADMIN")
                 .requestMatchers("/api/v1/auth/2fa/verificar-login").permitAll()
                 .requestMatchers("/api/v1/auth/2fa/qr").authenticated()
                 .requestMatchers("/h2-console/**").permitAll()

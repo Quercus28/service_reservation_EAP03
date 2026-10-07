@@ -7,7 +7,6 @@ public interface UsuarioRepositoryPort {
     boolean existePorEmail(String email);
     Optional<Usuario> buscarPorEmail(String email);
     Usuario guardarUsuarioConRol(Usuario usuario, String nombreRol);
-    Usuario guardarAdministrador(Usuario usuario);
     void guardarPerfilCliente(Long idUsuario, String nombre, String telefono, String documento);
     void guardarPerfilProveedor(Long idUsuario, String razonSocial, String telefono, String nitRut);
     Optional<Integer> buscarIdProveedorPorUsuario(Long idUsuario);

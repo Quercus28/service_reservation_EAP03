@@ -54,17 +54,6 @@ public class RegistrarUsuarioService implements RegistrarUsuarioUseCase {
 
     @Override
     @Transactional
-    public void crearAdministrador(String email, String password) {
-        if (usuarioRepository.existePorEmail(email)) {
-            throw new ReglaNegocioException("El correo ya está en uso");
-        }
-
-        Usuario administrador = new Usuario(email, passwordEncoder.codificar(password));
-        usuarioRepository.guardarAdministrador(administrador);
-    }
-
-    @Override
-    @Transactional
     public void guardarPerfilCliente(Long usuarioId, String nombreIdentificacion, String telefono, String documentoIdentidad) {
         usuarioRepository.guardarPerfilCliente(usuarioId, nombreIdentificacion, telefono, documentoIdentidad);
     }
