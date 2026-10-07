@@ -48,8 +48,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = authHeader.substring(BEARER_PREFIX.length());
 
-        if (!jwtPort.validarToken(token)) {
-            log.debug("Token JWT rechazado para [{}] {}", request.getMethod(), request.getRequestURI());
+        if (!jwtPort.validarToken(token) || jwtPort.esTokenTemporal2faValido(token)) {
+            log.debug("Token JWT rechazado o es token temporal 2FA para [{}] {}", request.getMethod(), request.getRequestURI());
             filterChain.doFilter(request, response);
             return;
         }

@@ -15,4 +15,8 @@ public interface JwtPort {
     String extraerEmail(String token);
     Long extraerUsuarioId(String token);
     List<String> extraerRoles(String token);
+
+    // --- Flujo 2FA ---
+    String generarTokenTemporal2fa(Usuario usuario);
+    boolean esTokenTemporal2faValido(String token);
 }
