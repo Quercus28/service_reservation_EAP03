@@ -1,11 +1,13 @@
 package com.service_reservation.EAP03.modulos.identidad.application;
 
 import com.service_reservation.EAP03.modulos.identidad.application.exception.ReglaNegocioException;
+import com.service_reservation.EAP03.modulos.identidad.domain.events.UsuarioRegistradoEvent;
 import com.service_reservation.EAP03.modulos.identidad.domain.model.Usuario;
 import com.service_reservation.EAP03.modulos.identidad.domain.model.UsuarioNuevoComando;
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.in.RegistrarUsuarioUseCase;
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.out.PasswordEncoderPort;
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.out.UsuarioRepositoryPort;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.Set;
 import org.springframework.stereotype.Service;
@@ -16,10 +18,14 @@ public class RegistrarUsuarioService implements RegistrarUsuarioUseCase {
 
     private final UsuarioRepositoryPort usuarioRepository;
     private final PasswordEncoderPort passwordEncoder;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public RegistrarUsuarioService(UsuarioRepositoryPort usuarioRepository, PasswordEncoderPort passwordEncoder) {
+    public RegistrarUsuarioService(UsuarioRepositoryPort usuarioRepository, 
+                                   PasswordEncoderPort passwordEncoder,
+                                   ApplicationEventPublisher eventPublisher) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -50,6 +56,8 @@ public class RegistrarUsuarioService implements RegistrarUsuarioUseCase {
                 comando.documentoIdentidad()
             );
         }
+        
+        eventPublisher.publishEvent(new UsuarioRegistradoEvent(usuarioGuardado.getId(), rolNormalizado));
     }
 
     @Override
