@@ -2,6 +2,7 @@ package com.service_reservation.EAP03.modulos.recursos.application;
 
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.DisponibilidadInsuficienteException;
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.RecursoNoEncontradoException;
+import com.service_reservation.EAP03.modulos.recursos.domain.exception.RecursoNoOperativoException;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.DisponibilidadRecurso;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.RecursoPrestado;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.RegistrarPrestamoComando;
@@ -40,6 +41,16 @@ public class RegistrarPrestamoRecursoService implements RegistrarPrestamoRecurso
                 comando.fechaInicio(),
                 comando.fechaFin()
         );
+
+        // Fuera del horario o dentro de un bloqueo: se informa como no operativo en vez de
+        // como falta de unidades, aunque en ese caso disponible también sea 0.
+        if (!disponibilidad.operativo()) {
+            throw new RecursoNoOperativoException(
+                    comando.idRecurso(),
+                    comando.fechaInicio(),
+                    comando.fechaFin()
+            );
+        }
 
         if (comando.cantidad() > disponibilidad.disponible()) {
             throw new DisponibilidadInsuficienteException(

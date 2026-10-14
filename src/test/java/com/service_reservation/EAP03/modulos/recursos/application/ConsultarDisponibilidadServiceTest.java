@@ -5,6 +5,8 @@ import com.service_reservation.EAP03.modulos.recursos.domain.exception.RecursoNo
 import com.service_reservation.EAP03.modulos.recursos.domain.model.DisponibilidadRecurso;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.Recurso;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.RecursoPrestado;
+import com.service_reservation.EAP03.modulos.recursos.domain.ports.out.BloqueoRecursoRepositoryPort;
+import com.service_reservation.EAP03.modulos.recursos.domain.ports.out.HorarioRecursoRepositoryPort;
 import com.service_reservation.EAP03.modulos.recursos.domain.ports.out.RecursoPrestadoRepositoryPort;
 import com.service_reservation.EAP03.modulos.recursos.domain.ports.out.RecursoRepositoryPort;
 import org.junit.jupiter.api.DisplayName;
@@ -33,6 +35,8 @@ class ConsultarDisponibilidadServiceTest {
 
     @Mock private RecursoRepositoryPort recursoRepositoryPort;
     @Mock private RecursoPrestadoRepositoryPort recursoPrestadoRepositoryPort;
+    @Mock private HorarioRecursoRepositoryPort horarioRecursoRepositoryPort;
+    @Mock private BloqueoRecursoRepositoryPort bloqueoRecursoRepositoryPort;
 
     @InjectMocks private ConsultarDisponibilidadService service;
 
