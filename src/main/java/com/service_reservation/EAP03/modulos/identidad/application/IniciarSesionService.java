@@ -70,9 +70,15 @@ public class IniciarSesionService implements IniciarSesionUseCase {
         // 5. Credenciales válidas: reiniciar intentos fallidos
         bloqueoFuerzaBrutaPort.resetearIntentos(email);
 
-        // 6. Generación del token JWT
+        // 6. Si el usuario tiene 2FA activado, emitir token temporal
+        if (usuario.is2faEnabled()) {
+            String tokenTemporal = jwtPort.generarTokenTemporal2fa(usuario);
+            return TokenRespuesta.requiere2fa(tokenTemporal);
+        }
+
+        // 7. Generación del token JWT normal
         String token = jwtPort.generarToken(usuario);
 
-        return new TokenRespuesta(token, "Bearer", jwtPort.getExpiracionSegundos());
+        return TokenRespuesta.exitoso(token, "Bearer", jwtPort.getExpiracionSegundos());
     }
 }
