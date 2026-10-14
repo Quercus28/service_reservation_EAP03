@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
-@Service
+@Service("availabilityConsultarDisponibilidadService")
 public class ConsultarDisponibilidadService implements ConsultarDisponibilidadUseCase {
 
     public static final int MAX_DIAS_RANGO = 30;
@@ -28,6 +28,7 @@ public class ConsultarDisponibilidadService implements ConsultarDisponibilidadUs
     private final DisponibilidadCalculator disponibilidadCalculator;
     private final Clock clock;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public ConsultarDisponibilidadService(
             AvailabilityRepository availabilityRepository,
             DisponibilidadCalculator disponibilidadCalculator,
@@ -35,16 +36,6 @@ public class ConsultarDisponibilidadService implements ConsultarDisponibilidadUs
         this.availabilityRepository = availabilityRepository;
         this.disponibilidadCalculator = disponibilidadCalculator;
         this.clock = clock;
-    }
-
-    public ConsultarDisponibilidadService(
-            AvailabilityRepository availabilityRepository,
-            DisponibilidadCalculator disponibilidadCalculator) {
-        this(availabilityRepository, disponibilidadCalculator, Clock.systemDefaultZone());
-    }
-
-    public ConsultarDisponibilidadService(AvailabilityRepository availabilityRepository) {
-        this(availabilityRepository, new DisponibilidadCalculator(), Clock.systemDefaultZone());
     }
 
     @Override
