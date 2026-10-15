@@ -1,14 +1,15 @@
 package com.service_reservation.EAP03.modulos.availability.infrastructure.outbound.adapter;
 
-import com.service_reservation.EAP03.modulos.agendas_horarios.infrastructure.outbound.persistence.entity.AgendaJpaEntity;
-import com.service_reservation.EAP03.modulos.agendas_horarios.infrastructure.outbound.persistence.entity.HorarioJpaEntity;
-import com.service_reservation.EAP03.modulos.agendas_horarios.infrastructure.outbound.persistence.repository.AgendaSpringDataRepository;
+import com.service_reservation.EAP03.modulos.agendas_horarios.domain.model.Agenda;
+import com.service_reservation.EAP03.modulos.agendas_horarios.domain.model.Horario;
+import com.service_reservation.EAP03.modulos.agendas_horarios.domain.ports.out.IPersistenciaAgendasHorarios;
 import com.service_reservation.EAP03.modulos.availability.domain.model.HorarioSemanal;
 import com.service_reservation.EAP03.modulos.availability.domain.model.ServicioDisponibilidadInfo;
 import com.service_reservation.EAP03.modulos.availability.domain.model.TimeSlot;
 import com.service_reservation.EAP03.modulos.availability.domain.ports.out.AvailabilityRepository;
-import com.service_reservation.EAP03.modulos.servicios_catalogo.infrastructure.adapter.out.persistence.ServicioJpaEntity;
-import com.service_reservation.EAP03.modulos.servicios_catalogo.infrastructure.adapter.out.persistence.SpringDataServicioRepository;
+import com.service_reservation.EAP03.modulos.servicios_catalogo.application.dto.ServicioResponse;
+import com.service_reservation.EAP03.modulos.servicios_catalogo.application.usecase.ObtenerServicioPorIdUseCase;
+import com.service_reservation.EAP03.modulos.servicios_catalogo.domain.exception.ServicioNoEncontradoException;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -16,17 +17,22 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Adaptador de salida (Outbound Adapter) para Availability.
+ * En lugar de acoplarse directamente a repositorios JPA ajenos,
+ * consume los puertos y casos de uso públicos de los módulos de catálogos y agendas.
+ */
 @Component
 public class AvailabilityJpaAdapter implements AvailabilityRepository {
 
-    private final SpringDataServicioRepository servicioRepository;
-    private final AgendaSpringDataRepository agendaRepository;
+    private final ObtenerServicioPorIdUseCase obtenerServicioPorIdUseCase;
+    private final IPersistenciaAgendasHorarios persistenciaAgendasHorarios;
 
     public AvailabilityJpaAdapter(
-            SpringDataServicioRepository servicioRepository,
-            AgendaSpringDataRepository agendaRepository) {
-        this.servicioRepository = servicioRepository;
-        this.agendaRepository = agendaRepository;
+            ObtenerServicioPorIdUseCase obtenerServicioPorIdUseCase,
+            IPersistenciaAgendasHorarios persistenciaAgendasHorarios) {
+        this.obtenerServicioPorIdUseCase = obtenerServicioPorIdUseCase;
+        this.persistenciaAgendasHorarios = persistenciaAgendasHorarios;
     }
 
     @Override
@@ -34,8 +40,19 @@ public class AvailabilityJpaAdapter implements AvailabilityRepository {
         if (servicioId == null) {
             return Optional.empty();
         }
-        return servicioRepository.findById(servicioId)
-                .map(this::mapServicioInfo);
+        try {
+            ServicioResponse servicio = obtenerServicioPorIdUseCase.ejecutar(servicioId);
+            if (servicio == null) {
+                return Optional.empty();
+            }
+            return Optional.of(new ServicioDisponibilidadInfo(
+                    servicio.id(),
+                    servicio.idProveedor(),
+                    servicio.duracionMinutos()
+            ));
+        } catch (ServicioNoEncontradoException e) {
+            return Optional.empty();
+        }
     }
 
     @Override
@@ -44,13 +61,13 @@ public class AvailabilityJpaAdapter implements AvailabilityRepository {
             return Collections.emptyList();
         }
 
-        Optional<AgendaJpaEntity> agendaOpt = agendaRepository.findByIdServicioAndActivaTrue(servicioId);
+        Optional<Agenda> agendaOpt = persistenciaAgendasHorarios.buscarAgendaActivaPorServicio(servicioId);
         if (agendaOpt.isEmpty()) {
             return Collections.emptyList();
         }
 
-        AgendaJpaEntity agenda = agendaOpt.get();
-        if (proveedorId != null && !proveedorId.equals(agenda.getIdProveedor())) {
+        Agenda agenda = agendaOpt.get();
+        if (proveedorId != null && !proveedorId.equals(agenda.getProveedorId())) {
             return Collections.emptyList();
         }
 
@@ -67,19 +84,11 @@ public class AvailabilityJpaAdapter implements AvailabilityRepository {
         return Collections.emptyList();
     }
 
-    private ServicioDisponibilidadInfo mapServicioInfo(ServicioJpaEntity entidad) {
-        return new ServicioDisponibilidadInfo(
-                entidad.getId(),
-                entidad.getIdProveedor(),
-                entidad.getDuracionMinutos()
-        );
-    }
-
-    private HorarioSemanal mapHorarioSemanal(HorarioJpaEntity horario) {
+    private HorarioSemanal mapHorarioSemanal(Horario horario) {
         return new HorarioSemanal(
-                horario.getDiaSemana(),
-                horario.getHoraInicio(),
-                horario.getHoraFin()
+                horario.diaSemana(),
+                horario.horaInicio(),
+                horario.horaFin()
         );
     }
 }

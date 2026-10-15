@@ -50,7 +50,6 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/auth/2fa/qr").authenticated()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/error").permitAll()
-                .requestMatchers("/api/services/*/availability").permitAll()
                 .requestMatchers("/api/v1/agendas/**").hasRole("PROVEEDOR")
                 .anyRequest().authenticated()
             )

@@ -7,6 +7,7 @@ import com.service_reservation.EAP03.modulos.availability.infrastructure.inbound
 import com.service_reservation.EAP03.modulos.availability.infrastructure.inbound.dto.DisponibilidadServicioResponseDTO;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,7 +22,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/services")
+@RequestMapping("/api/v1/servicios")
 public class AvailabilityController {
 
     private final ConsultarDisponibilidadUseCase consultarDisponibilidadUseCase;
@@ -30,7 +31,8 @@ public class AvailabilityController {
         this.consultarDisponibilidadUseCase = consultarDisponibilidadUseCase;
     }
 
-    @GetMapping("/{id}/availability")
+    @GetMapping("/{id}/disponibilidad")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<DisponibilidadServicioResponseDTO> consultarDisponibilidad(
             @PathVariable("id") Integer id,
             @RequestParam(value = "startDate", required = false)
