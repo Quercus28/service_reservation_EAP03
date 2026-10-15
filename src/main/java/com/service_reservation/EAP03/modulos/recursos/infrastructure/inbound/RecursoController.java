@@ -47,7 +47,7 @@ public class RecursoController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('PROVEEDOR')")
+    @PreAuthorize("hasRole('PROVEEDOR') and @permisoOperativo.activo(authentication, 'PROVEEDOR')")
     public RecursoResponseDTO crear(@Valid @RequestBody CrearRecursoRequestDTO request,
                                     Authentication authentication) {
         Integer idProveedor = recursoSecurity.idProveedorDe(authentication)
@@ -63,7 +63,7 @@ public class RecursoController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('PROVEEDOR')")
+    @PreAuthorize("hasRole('PROVEEDOR') and @permisoOperativo.activo(authentication, 'PROVEEDOR')")
     public PaginaResponseDTO<RecursoResponseDTO> listar(
             @RequestParam(defaultValue = "0") int pagina,
             @RequestParam(defaultValue = "20") int tamano,
@@ -88,13 +88,13 @@ public class RecursoController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVEEDOR') and @recursoSecurity.esPropietario(authentication, #id))")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVEEDOR') and @permisoOperativo.activo(authentication, 'PROVEEDOR') and @recursoSecurity.esPropietario(authentication, #id))")
     public RecursoResponseDTO obtener(@PathVariable Integer id) {
         return RecursoResponseDTO.desde(obtenerRecursoPorIdUseCase.ejecutar(id));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVEEDOR') and @recursoSecurity.esPropietario(authentication, #id))")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVEEDOR') and @permisoOperativo.activo(authentication, 'PROVEEDOR') and @recursoSecurity.esPropietario(authentication, #id))")
     public RecursoResponseDTO actualizar(@PathVariable Integer id,
                                          @Valid @RequestBody ActualizarRecursoRequestDTO request) {
         Recurso recurso = actualizarRecursoUseCase.ejecutar(new ActualizarRecursoComando(
@@ -108,7 +108,7 @@ public class RecursoController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVEEDOR') and @recursoSecurity.esPropietario(authentication, #id))")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVEEDOR') and @permisoOperativo.activo(authentication, 'PROVEEDOR') and @recursoSecurity.esPropietario(authentication, #id))")
     public void desactivar(@PathVariable Integer id) {
         desactivarRecursoUseCase.ejecutar(id);
     }
@@ -126,7 +126,7 @@ public class RecursoController {
 
     @PostMapping("/{id}/prestamos")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasAnyRole('PROVEEDOR', 'ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVEEDOR') and @permisoOperativo.activo(authentication, 'PROVEEDOR'))")
     public RecursoPrestadoResponseDTO registrarPrestamo(
             @PathVariable Integer id,
             @Valid @RequestBody RegistrarPrestamoRequestDTO request) {

@@ -3,6 +3,11 @@ package com.service_reservation.EAP03.modulos.admin.infrastructure.adapter.in.we
 import com.service_reservation.EAP03.modulos.admin.domain.model.*;
 import com.service_reservation.EAP03.modulos.admin.domain.ports.in.GestionarPermisosOperativosUseCase;
 import com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound.security.UsuarioAutenticadoPrincipal;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -23,7 +28,7 @@ public class PermisoOperativoController {
 
     @PostMapping("/revocar")
     public ResponseEntity<RevocacionPermiso> revocar(
-            @RequestBody RevocarRequest request,
+            @Valid @RequestBody RevocarRequest request,
             @AuthenticationPrincipal UsuarioAutenticadoPrincipal admin) {
         RevocarPermisoComando comando = new RevocarPermisoComando(
                 admin.getIdUsuario(),
@@ -36,7 +41,7 @@ public class PermisoOperativoController {
 
     @PostMapping("/restaurar")
     public ResponseEntity<Void> restaurar(
-            @RequestBody RestaurarRequest request,
+            @Valid @RequestBody RestaurarRequest request,
             @AuthenticationPrincipal UsuarioAutenticadoPrincipal admin) {
         RestaurarPermisoComando comando = new RestaurarPermisoComando(
                 admin.getIdUsuario(),
@@ -59,6 +64,30 @@ public class PermisoOperativoController {
         return ResponseEntity.ok(useCase.listarRevocaciones(estado));
     }
 
-    public record RevocarRequest(Long idUsuario, RolOperativo rol, String motivo) {}
-    public record RestaurarRequest(Long idUsuario, RolOperativo rol, String motivo) {}
+    public record RevocarRequest(
+            @NotNull(message = "El idUsuario es obligatorio")
+            Long idUsuario,
+
+            @NotNull(message = "El rol es obligatorio")
+            RolOperativo rol,
+
+            @NotBlank(message = "El motivo es obligatorio")
+            @Size(min = 3, max = 500, message = "El motivo debe tener entre 3 y 500 caracteres")
+            @Pattern(regexp = "^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\\s.,;:_\\-()¿?¡!/]+$",
+                    message = "El motivo contiene caracteres no permitidos o secuencias sospechosas")
+            String motivo
+    ) {}
+
+    public record RestaurarRequest(
+            @NotNull(message = "El idUsuario es obligatorio")
+            Long idUsuario,
+
+            @NotNull(message = "El rol es obligatorio")
+            RolOperativo rol,
+
+            @Size(max = 500, message = "El motivo no puede superar 500 caracteres")
+            @Pattern(regexp = "^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\\s.,;:_\\-()¿?¡!/]*$",
+                    message = "El motivo contiene caracteres no permitidos o secuencias sospechosas")
+            String motivo
+    ) {}
 }

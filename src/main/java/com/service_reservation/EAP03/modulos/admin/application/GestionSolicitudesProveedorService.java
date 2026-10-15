@@ -11,6 +11,9 @@ import com.service_reservation.EAP03.modulos.admin.domain.ports.in.GestionarSoli
 import com.service_reservation.EAP03.modulos.admin.domain.ports.out.AuditoriaPort;
 import com.service_reservation.EAP03.modulos.admin.domain.ports.out.PermisoOperativoPort;
 import com.service_reservation.EAP03.modulos.admin.domain.ports.out.SolicitudProveedorRepositoryPort;
+import com.service_reservation.EAP03.modulos.admin.domain.model.ActualizarProveedorPerfilComando;
+import com.service_reservation.EAP03.modulos.admin.domain.model.ProveedorPerfilDTO;
+import com.service_reservation.EAP03.modulos.admin.domain.ports.out.ProveedorPerfilPort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,15 +26,18 @@ public class GestionSolicitudesProveedorService implements GestionarSolicitudesP
 
     private final SolicitudProveedorRepositoryPort solicitudRepository;
     private final PermisoOperativoPort permisoOperativoPort;
+    private final ProveedorPerfilPort proveedorPerfilPort;
     private final AuditoriaPort auditoriaPort;
     private final Clock clock;
 
     public GestionSolicitudesProveedorService(SolicitudProveedorRepositoryPort solicitudRepository,
                                               PermisoOperativoPort permisoOperativoPort,
+                                              ProveedorPerfilPort proveedorPerfilPort,
                                               AuditoriaPort auditoriaPort,
                                               Clock clock) {
         this.solicitudRepository = solicitudRepository;
         this.permisoOperativoPort = permisoOperativoPort;
+        this.proveedorPerfilPort = proveedorPerfilPort;
         this.auditoriaPort = auditoriaPort;
         this.clock = clock;
     }
@@ -39,6 +45,8 @@ public class GestionSolicitudesProveedorService implements GestionarSolicitudesP
     @Override
     @Transactional
     public SolicitudAprobacionProveedor registrarSolicitud(Long idUsuario) {
+        // Asegurar que comience inactivo hasta aprobación
+        permisoOperativoPort.actualizarEstado(idUsuario, RolOperativo.PROVEEDOR, false);
         if (solicitudRepository.existePendienteParaUsuario(idUsuario)) {
             return solicitudRepository.buscarUltimaPorUsuario(idUsuario).orElseThrow();
         }
@@ -106,12 +114,60 @@ public class GestionSolicitudesProveedorService implements GestionarSolicitudesP
     }
 
     private SolicitudAprobacionProveedor crearSolicitud(Long idUsuario, AccionAdmin accion) {
+        permisoOperativoPort.actualizarEstado(idUsuario, RolOperativo.PROVEEDOR, false);
         LocalDateTime ahora = LocalDateTime.now(clock);
         SolicitudAprobacionProveedor guardada =
                 solicitudRepository.guardar(SolicitudAprobacionProveedor.nueva(idUsuario, ahora));
         auditoriaPort.registrar(RegistroAuditoria.exito(ahora, idUsuario, idUsuario,
                 accion, RolOperativo.PROVEEDOR, "solicitud=" + guardada.getId()));
         return guardada;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProveedorPerfilDTO consultarPerfilProveedor(Long idUsuario) {
+        if (idUsuario == null) {
+            throw new com.service_reservation.EAP03.modulos.admin.domain.exception.DatosAdminInvalidosException("El idUsuario es obligatorio");
+        }
+        return proveedorPerfilPort.buscarPorIdUsuario(idUsuario)
+                .orElseThrow(() -> new RecursoAdminNoEncontradoException(
+                        "No se encontró el perfil de proveedor para el usuario " + idUsuario));
+    }
+
+    @Override
+    @Transactional
+    public ProveedorPerfilDTO actualizarPerfilProveedor(ActualizarProveedorPerfilComando comando) {
+        if (comando == null || comando.idAdmin() == null || comando.idUsuario() == null) {
+            throw new com.service_reservation.EAP03.modulos.admin.domain.exception.DatosAdminInvalidosException("Administrador y usuario son obligatorios");
+        }
+        if (comando.razonSocial() == null || comando.razonSocial().isBlank()) {
+            throw new com.service_reservation.EAP03.modulos.admin.domain.exception.DatosAdminInvalidosException("La razón social es obligatoria");
+        }
+
+        // Verificar existencia previa
+        proveedorPerfilPort.buscarPorIdUsuario(comando.idUsuario())
+                .orElseThrow(() -> new RecursoAdminNoEncontradoException(
+                        "No se encontró el perfil de proveedor para el usuario " + comando.idUsuario()));
+
+        proveedorPerfilPort.actualizarPerfil(
+                comando.idUsuario(),
+                comando.razonSocial().trim(),
+                comando.nitRut() != null ? comando.nitRut().trim() : null,
+                comando.telefono() != null ? comando.telefono().trim() : null
+        );
+
+        LocalDateTime ahora = LocalDateTime.now(clock);
+        // Auditoría sin almacenar datos personales confidenciales
+        auditoriaPort.registrar(RegistroAuditoria.exito(
+                ahora,
+                comando.idAdmin(),
+                comando.idUsuario(),
+                AccionAdmin.PERFIL_PROVEEDOR_ACTUALIZADO,
+                RolOperativo.PROVEEDOR,
+                "perfil actualizado por admin"
+        ));
+
+        return proveedorPerfilPort.buscarPorIdUsuario(comando.idUsuario()).orElseThrow();
     }
 
     private SolicitudAprobacionProveedor buscar(Long idSolicitud) {

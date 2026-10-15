@@ -17,11 +17,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+import org.springframework.context.ApplicationEventPublisher;
+
 @ExtendWith(MockitoExtension.class)
 class RegistrarUsuarioServiceTest {
 
     @Mock private UsuarioRepositoryPort usuarioRepository;
     @Mock private PasswordEncoderPort passwordEncoder;
+    @Mock private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks private RegistrarUsuarioService service;
 

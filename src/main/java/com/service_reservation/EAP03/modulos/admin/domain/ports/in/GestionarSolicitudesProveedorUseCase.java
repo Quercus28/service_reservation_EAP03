@@ -1,6 +1,8 @@
 package com.service_reservation.EAP03.modulos.admin.domain.ports.in;
 
+import com.service_reservation.EAP03.modulos.admin.domain.model.ActualizarProveedorPerfilComando;
 import com.service_reservation.EAP03.modulos.admin.domain.model.EstadoSolicitud;
+import com.service_reservation.EAP03.modulos.admin.domain.model.ProveedorPerfilDTO;
 import com.service_reservation.EAP03.modulos.admin.domain.model.SolicitudAprobacionProveedor;
 
 import java.util.List;
@@ -21,4 +23,8 @@ public interface GestionarSolicitudesProveedorUseCase {
 
     /** @param estado filtro opcional (null = todas) */
     List<SolicitudAprobacionProveedor> listar(EstadoSolicitud estado);
+
+    ProveedorPerfilDTO consultarPerfilProveedor(Long idUsuario);
+
+    ProveedorPerfilDTO actualizarPerfilProveedor(ActualizarProveedorPerfilComando comando);
 }

@@ -67,13 +67,19 @@ public class SolicitudAprobacionProveedor {
         }
     }
 
-    static String validarMotivo(String motivo) {
+    private static final java.util.regex.Pattern PATRON_SEGURO =
+            java.util.regex.Pattern.compile("^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\\s.,;:_\\-()¿?¡!/]+$");
+
+    public static String validarMotivo(String motivo) {
         if (motivo == null || motivo.isBlank()) {
             throw new DatosAdminInvalidosException("El motivo es obligatorio");
         }
         String limpio = motivo.trim();
         if (limpio.length() > MOTIVO_MAX) {
             throw new DatosAdminInvalidosException("El motivo no puede superar " + MOTIVO_MAX + " caracteres");
+        }
+        if (!PATRON_SEGURO.matcher(limpio).matches()) {
+            throw new DatosAdminInvalidosException("El motivo contiene caracteres no permitidos o secuencias sospechosas");
         }
         return limpio;
     }

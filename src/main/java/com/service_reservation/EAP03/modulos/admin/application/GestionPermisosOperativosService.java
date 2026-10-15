@@ -11,6 +11,7 @@ import com.service_reservation.EAP03.modulos.admin.domain.model.RestaurarPermiso
 import com.service_reservation.EAP03.modulos.admin.domain.model.RevocacionPermiso;
 import com.service_reservation.EAP03.modulos.admin.domain.model.RevocarPermisoComando;
 import com.service_reservation.EAP03.modulos.admin.domain.model.RolOperativo;
+import com.service_reservation.EAP03.modulos.admin.domain.model.SolicitudAprobacionProveedor;
 import com.service_reservation.EAP03.modulos.admin.domain.ports.in.GestionarPermisosOperativosUseCase;
 import com.service_reservation.EAP03.modulos.admin.domain.ports.out.AuditoriaPort;
 import com.service_reservation.EAP03.modulos.admin.domain.ports.out.PermisoOperativoPort;
@@ -138,7 +139,10 @@ public class GestionPermisosOperativosService implements GestionarPermisosOperat
 
         permisoOperativoPort.actualizarEstado(comando.idUsuario(), comando.rol(), true);
 
-        String motivo = comando.motivo() == null || comando.motivo().isBlank() ? "-" : comando.motivo().trim();
+        String motivo = "-";
+        if (comando.motivo() != null && !comando.motivo().isBlank()) {
+            motivo = SolicitudAprobacionProveedor.validarMotivo(comando.motivo());
+        }
         auditoriaPort.registrar(RegistroAuditoria.exito(ahora, comando.idAdmin(), comando.idUsuario(),
                 AccionAdmin.PERMISOS_RESTAURADOS, comando.rol(), "motivo=" + motivo));
     }
