@@ -10,12 +10,13 @@ public record DisponibilidadResponseDTO(
         LocalDateTime hasta,
         int stockTotal,
         int comprometido,
-        int disponible
+        int disponible,
+        boolean operativo
 ) {
     public static DisponibilidadResponseDTO desde(DisponibilidadRecurso d) {
         return new DisponibilidadResponseDTO(
                 d.idRecurso(), d.desde(), d.hasta(),
-                d.stockTotal(), d.comprometido(), d.disponible()
+                d.stockTotal(), d.comprometido(), d.disponible(), d.operativo()
         );
     }
 }

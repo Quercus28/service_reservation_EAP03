@@ -1,5 +1,6 @@
 package com.service_reservation.EAP03.modulos.servicios_catalogo.infrastructure.config;
 
+import com.service_reservation.EAP03.modulos.identidad.domain.ports.in.ConsultarProveedorUseCase;
 import com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound.security.UsuarioAutenticadoPrincipal;
 import com.service_reservation.EAP03.modulos.servicios_catalogo.domain.model.Servicio;
 import com.service_reservation.EAP03.modulos.servicios_catalogo.domain.repository.ServicioRepository;
@@ -16,9 +17,12 @@ import java.util.Optional;
 public class ServicioSecurity {
 
     private final ServicioRepository servicioRepository;
+    private final ConsultarProveedorUseCase consultarProveedorUseCase;
 
-    public ServicioSecurity(ServicioRepository servicioRepository) {
+    public ServicioSecurity(ServicioRepository servicioRepository,
+                            ConsultarProveedorUseCase consultarProveedorUseCase) {
         this.servicioRepository = servicioRepository;
+        this.consultarProveedorUseCase = consultarProveedorUseCase;
     }
 
     /**
@@ -42,10 +46,16 @@ public class ServicioSecurity {
             return false;
         }
 
+        // servicio.id_proveedor guarda el id del PROVEEDOR, no el del usuario. Sin perfil de
+        // proveedor no hay propiedad posible.
+        Optional<Integer> idProveedor = consultarProveedorUseCase.buscarIdProveedorPorUsuario(usuario.getIdUsuario());
+        if (idProveedor.isEmpty()) {
+            return false;
+        }
+
         Optional<Servicio> servicioOpt = servicioRepository.buscarPorId(id);
         return servicioOpt
-                .map(s -> s.getIdProveedor() != null
-                        && s.getIdProveedor().longValue() == usuario.getIdUsuario())
+                .map(s -> idProveedor.get().equals(s.getIdProveedor()))
                 .orElse(false);
     }
 }

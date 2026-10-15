@@ -154,4 +154,44 @@ public class GlobalExceptionHandler {
         error.put("traceId", UUID.randomUUID().toString());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
-}
+
+    @ExceptionHandler(com.service_reservation.EAP03.modulos.availability.domain.exception.DisponibilidadInvalidaException.class)
+    public ResponseEntity<Map<String, Object>> handleDisponibilidadInvalida(
+            com.service_reservation.EAP03.modulos.availability.domain.exception.DisponibilidadInvalidaException ex) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("errorCode", "PARAMETROS_INVALIDOS");
+        error.put("message", ex.getMessage());
+        error.put("traceId", UUID.randomUUID().toString());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(com.service_reservation.EAP03.modulos.availability.domain.exception.RangoFechasExcedidoException.class)
+    public ResponseEntity<Map<String, Object>> handleRangoFechasExcedido(
+            com.service_reservation.EAP03.modulos.availability.domain.exception.RangoFechasExcedidoException ex) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("errorCode", "RANGO_FECHAS_EXCEDIDO");
+        error.put("message", ex.getMessage());
+        error.put("traceId", UUID.randomUUID().toString());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(com.service_reservation.EAP03.modulos.availability.domain.exception.ServicioParaDisponibilidadNoEncontradoException.class)
+    public ResponseEntity<Map<String, Object>> handleServicioNoEncontrado(
+            com.service_reservation.EAP03.modulos.availability.domain.exception.ServicioParaDisponibilidadNoEncontradoException ex) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("errorCode", "SERVICIO_NO_ENCONTRADO");
+        error.put("message", ex.getMessage());
+        error.put("traceId", UUID.randomUUID().toString());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> handleTypeMismatch(
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("errorCode", "FORMATO_PARAMETRO_INVALIDO");
+        error.put("message", "El parámetro '" + ex.getName() + "' tiene un formato o valor inválido");
+        error.put("traceId", UUID.randomUUID().toString());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+}

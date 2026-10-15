@@ -60,6 +60,32 @@ public class JwtAdapter implements JwtPort {
         return expirationInSeconds;
     }
 
+    @Override
+    public String generarTokenTemporal2fa(Usuario usuario) {
+        Instant now = Instant.now();
+        Instant expiry = now.plus(5, ChronoUnit.MINUTES);
+
+        return Jwts.builder()
+                .subject(usuario.getEmail())
+                .claim("id", usuario.getId())
+                .claim("stage", "2FA_PENDING")
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiry))
+                .signWith(signingKey)
+                .compact();
+    }
+
+    @Override
+    public boolean esTokenTemporal2faValido(String token) {
+        try {
+            Claims claims = parsearClaims(token);
+            return "2FA_PENDING".equals(claims.get("stage"));
+        } catch (Exception e) {
+            log.warn("Token temporal 2FA inválido o expirado: {}", e.getMessage());
+            return false;
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Validación y extracción
     // -------------------------------------------------------------------------

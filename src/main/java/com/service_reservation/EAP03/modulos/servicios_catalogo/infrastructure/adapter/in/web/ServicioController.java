@@ -1,5 +1,6 @@
 package com.service_reservation.EAP03.modulos.servicios_catalogo.infrastructure.adapter.in.web;
 
+import com.service_reservation.EAP03.modulos.identidad.domain.ports.in.ConsultarProveedorUseCase;
 import com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound.security.UsuarioAutenticadoPrincipal;
 import com.service_reservation.EAP03.modulos.servicios_catalogo.application.dto.ActualizarServicioRequest;
 import com.service_reservation.EAP03.modulos.servicios_catalogo.application.dto.CrearServicioRequest;
@@ -13,6 +14,7 @@ import com.service_reservation.EAP03.modulos.servicios_catalogo.application.usec
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -38,6 +40,7 @@ public class ServicioController {
     private final ObtenerServicioPorIdUseCase obtenerServicioPorIdUseCase;
     private final ConsultarServiciosUseCase consultarServiciosUseCase;
     private final EliminarServicioUseCase eliminarServicioUseCase;
+    private final ConsultarProveedorUseCase consultarProveedorUseCase;
 
     @Autowired
     public ServicioController(
@@ -45,18 +48,20 @@ public class ServicioController {
             ActualizarServicioUseCase actualizarServicioUseCase,
             ObtenerServicioPorIdUseCase obtenerServicioPorIdUseCase,
             ConsultarServiciosUseCase consultarServiciosUseCase,
-            EliminarServicioUseCase eliminarServicioUseCase
+            EliminarServicioUseCase eliminarServicioUseCase,
+            ConsultarProveedorUseCase consultarProveedorUseCase
     ) {
         this.crearServicioUseCase = Objects.requireNonNull(crearServicioUseCase, "crearServicioUseCase no puede ser nulo");
         this.actualizarServicioUseCase = actualizarServicioUseCase;
         this.obtenerServicioPorIdUseCase = obtenerServicioPorIdUseCase;
         this.consultarServiciosUseCase = consultarServiciosUseCase;
         this.eliminarServicioUseCase = eliminarServicioUseCase;
+        this.consultarProveedorUseCase = consultarProveedorUseCase;
     }
 
     // Constructor de compatibilidad para tests existentes que instancian solo CrearServicioUseCase
     public ServicioController(CrearServicioUseCase crearServicioUseCase) {
-        this(crearServicioUseCase, null, null, null, null);
+        this(crearServicioUseCase, null, null, null, null, null);
     }
 
     /**
@@ -127,23 +132,25 @@ public class ServicioController {
     // Helpers privados
     // -------------------------------------------------------------------------
 
+    /**
+     * Resuelve el id del PROVEEDOR (no el del usuario) a partir del usuario autenticado.
+     * Si el usuario no tiene perfil de proveedor se niega el acceso (403): nunca se usa el
+     * id de usuario ni el idProveedor del body como respaldo.
+     */
     private Integer extraerIdProveedor(Authentication authentication) {
         if (authentication != null && authentication.getPrincipal() instanceof UsuarioAutenticadoPrincipal principal) {
-            Long id = principal.getIdUsuario();
-            return id != null ? id.intValue() : null;
+            return consultarProveedorUseCase.buscarIdProveedorPorUsuario(principal.getIdUsuario())
+                    .orElseThrow(() -> new AccessDeniedException(
+                            "El usuario autenticado no tiene un perfil de proveedor asociado"));
         }
-        return null;
+        throw new AccessDeniedException("No se pudo identificar al proveedor autenticado");
     }
 
     /**
-     * Devuelve el mismo request o uno nuevo con el idProveedor corregido.
-     * Si CrearServicioRequest es un record con idProveedor, construye uno nuevo;
-     * en caso contrario, el use case deberá aceptar el valor del token.
+     * Devuelve un request nuevo con el idProveedor del proveedor autenticado,
+     * ignorando el que venga en el body.
      */
     private CrearServicioRequest resolverIdProveedor(CrearServicioRequest original, Integer idProveedorAutenticado) {
-        if (idProveedorAutenticado == null) {
-            return original;
-        }
         // Reconstruir el request con el idProveedor del token (previene IDOR)
         return new CrearServicioRequest(
                 idProveedorAutenticado,

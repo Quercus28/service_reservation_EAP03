@@ -27,7 +27,9 @@ public class LoginController {
         return ResponseEntity.ok(new LoginResponseDTO(
                 respuesta.token(),
                 respuesta.tipo(),
-                respuesta.expiracionSegundos()
+                respuesta.expiracionSegundos(),
+                respuesta.requiere2fa(),
+                respuesta.tokenTemporal()
         ));
     }
 }
