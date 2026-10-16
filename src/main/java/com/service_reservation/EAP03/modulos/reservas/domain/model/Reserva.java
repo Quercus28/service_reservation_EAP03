@@ -74,7 +74,8 @@ public class Reserva {
 
     // Cancela la reserva. Solo se puede si todavía está en estado RESERVADO y si faltan al
     // menos "anticipacionMinimaHoras" horas para que empiece. Por ejemplo, con 2 horas, una
-    // reserva de las 15:00 se puede cancelar hasta las 13:00 en punto.
+    // reserva de las 15:00 se puede cancelar hasta las 13:00 en punto. Si la reserva ya
+    // empezó o ya pasó, el mensaje lo dice así, para que el cliente entienda el motivo.
     // Al quedar CANCELADO, la reserva deja de ocupar el horario y otro cliente puede tomarlo.
     public void cancelar(LocalDateTime ahora, int anticipacionMinimaHoras, String motivo) {
         Objects.requireNonNull(ahora, "ahora es obligatorio");
@@ -83,8 +84,11 @@ public class Reserva {
                     ? ReservaNoCancelableException.yaCancelada(id)
                     : ReservaNoCancelableException.noActiva(id, estado);
         }
+        if (!ahora.isBefore(fechaInicio)) {
+            throw CancelacionFueraDeTiempoException.yaEmpezo(id);
+        }
         if (ahora.plusHours(anticipacionMinimaHoras).isAfter(fechaInicio)) {
-            throw new CancelacionFueraDeTiempoException(id, anticipacionMinimaHoras);
+            throw CancelacionFueraDeTiempoException.faltaPocoTiempo(id, anticipacionMinimaHoras);
         }
         String motivoLimpio = limpiarTexto(motivo, MOTIVO_CANCELACION_MAX,
                 "El motivo no puede superar los " + MOTIVO_CANCELACION_MAX + " caracteres");
