@@ -5,8 +5,8 @@ import com.service_reservation.EAP03.modulos.reservas.domain.model.IntervaloRese
 import java.time.LocalDateTime;
 import java.util.List;
 
-// Puerto público para otros módulos (p. ej. availability): qué intervalos de un servicio
-// están ocupados por reservas activas dentro de [desde, hasta).
+// Consulta pensada para otros módulos (por ejemplo availability): devuelve los horarios
+// de un servicio que ya están ocupados por reservas vigentes entre "desde" y "hasta".
 public interface ConsultarReservasActivasUseCase {
     List<IntervaloReservado> ejecutar(Integer idServicio, LocalDateTime desde, LocalDateTime hasta);
 }

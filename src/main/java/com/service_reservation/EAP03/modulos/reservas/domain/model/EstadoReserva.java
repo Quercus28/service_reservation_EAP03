@@ -7,7 +7,8 @@ public enum EstadoReserva {
     CANCELADO,
     NO_ASISTIO;
 
-    // Solo una reserva activa ocupa el horario del servicio.
+    // Solo las reservas vigentes (reservada o en curso) ocupan el horario. Una cancelada,
+    // completada o en la que el cliente no asistió deja el horario libre.
     public boolean esActiva() {
         return this == RESERVADO || this == EN_PROCESO;
     }

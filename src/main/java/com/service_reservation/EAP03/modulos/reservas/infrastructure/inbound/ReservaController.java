@@ -25,7 +25,8 @@ public class ReservaController {
     @PreAuthorize("hasRole('CLIENTE')")
     public ReservaResponseDTO crear(@Valid @RequestBody CrearReservaRequestDTO request,
                                     Authentication authentication) {
-        // El cliente sale del token; si no hay principal, el caso de uso responde 403.
+        // Se toma el usuario que inició sesión. Si no se puede identificar, el caso de uso
+        // responde 403 (no es cliente).
         Long idUsuario = authentication != null
                 && authentication.getPrincipal() instanceof UsuarioAutenticadoPrincipal principal
                 ? principal.getIdUsuario()

@@ -43,9 +43,9 @@ public class ReservaExceptionHandler {
         return construir(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", ex.getMessage());
     }
 
-    // Falla de serialización o de bloqueo al confirmar dos reservas simultáneas que se cruzan.
-    // PessimisticLockingFailureException es la superclase de CannotAcquireLockException y
-    // CannotSerializeTransactionException, que es como Spring traduce ese error según la base.
+    // Error que da la base de datos cuando dos reservas del mismo horario se guardan al mismo
+    // tiempo y deja pasar solo una (ver CrearReservaService). Según la base, Spring lo
+    // reporta con nombres distintos; esta clase los agrupa a todos.
     @ExceptionHandler(PessimisticLockingFailureException.class)
     public ResponseEntity<Map<String, Object>> manejarConcurrencia(PessimisticLockingFailureException ex) {
         return construir(HttpStatus.CONFLICT, "HORARIO_NO_DISPONIBLE",

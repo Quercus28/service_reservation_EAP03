@@ -4,7 +4,9 @@ import com.service_reservation.EAP03.modulos.reservas.domain.model.EstadoReserva
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-// Mapea exactamente la tabla servicio_prestado (V20261014112723__crear_esquema_reservas.sql).
+// Representa la tabla servicio_prestado tal como la crea la migración
+// V20261014112723__crear_esquema_reservas.sql. Si no coincide exactamente, la aplicación
+// no arranca, porque al iniciar se compara contra la base.
 @Entity
 @Table(name = "servicio_prestado")
 public class ReservaJpaEntity {

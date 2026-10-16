@@ -14,7 +14,8 @@ import java.util.List;
 @Component
 public class ReservaRepositoryAdapter implements ReservaRepositoryPort {
 
-    // Los estados activos salen de EstadoReserva.esActiva(), así la regla vive en un solo lugar.
+    // Qué estados cuentan como "vigentes" se decide solo en EstadoReserva.esActiva(); aquí se
+    // reutiliza esa regla para no repetirla.
     private static final List<EstadoReserva> ESTADOS_ACTIVOS = Arrays.stream(EstadoReserva.values())
             .filter(EstadoReserva::esActiva)
             .toList();

@@ -34,8 +34,9 @@ public class Reserva {
         this.createdAt = createdAt;
     }
 
-    // Para crear una reserva NUEVA (todavía sin id). "ahora" llega desde fuera para que el
-    // dominio no dependa del reloj del sistema.
+    // Para crear una reserva NUEVA (todavía sin id). La hora actual ("ahora") se recibe como
+    // dato en vez de leerla del reloj aquí adentro; así en las pruebas se puede usar
+    // cualquier fecha.
     public static Reserva nueva(Long idCliente, Integer idServicio, Integer idProveedor,
                                 LocalDateTime fechaInicio, LocalDateTime fechaFin,
                                 String notas, LocalDateTime ahora) {
@@ -61,8 +62,8 @@ public class Reserva {
                 estado, notas, createdAt);
     }
 
-    // Mismo criterio que RecursoPrestado: rangos [inicio, fin) que solo se tocan en el
-    // borde no cuentan como solapamiento.
+    // ¿Esta reserva se cruza con el rango desde-hasta? Si una termina justo cuando la otra
+    // empieza (por ejemplo 9:00-10:00 y 10:00-11:00), NO se cruzan. Igual que en recursos.
     public boolean seSolapaCon(LocalDateTime desde, LocalDateTime hasta) {
         return this.fechaInicio.isBefore(hasta) && desde.isBefore(this.fechaFin);
     }

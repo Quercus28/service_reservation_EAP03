@@ -30,8 +30,8 @@ public class CrearReservaService implements CrearReservaUseCase {
     private final ObtenerServicioPorIdUseCase obtenerServicioPorIdUseCase;
     private final IDisponibilidad disponibilidadAgenda;
     private final ReservaRepositoryPort reservaRepositoryPort;
-    // Bean declarado en AvailabilityConfig; no se declara otro porque dos beans Clock
-    // impedirían que la aplicación arranque.
+    // El reloj ya está configurado en el módulo availability (AvailabilityConfig).
+    // No se crea otro aquí: si hubiera dos relojes configurados, la aplicación no arrancaría.
     private final Clock clock;
 
     public CrearReservaService(ConsultarClienteUseCase consultarClienteUseCase,
@@ -46,18 +46,25 @@ public class CrearReservaService implements CrearReservaUseCase {
         this.clock = clock;
     }
 
-    // No hay una fila propia del módulo que bloquear (en recursos se bloquea la fila del
-    // recurso), así que se usa aislamiento SERIALIZABLE: si dos reservas que se cruzan se
-    // guardan al mismo tiempo, la base de datos solo deja confirmar una y la otra falla con
-    // un error de serialización (ReservaExceptionHandler lo responde como 409).
+    // Problema: dos clientes pueden pedir el mismo horario en el mismo instante. Los dos
+    // revisan, los dos ven el horario libre y los dos guardarían su reserva.
+    // En recursos esto se evita "bloqueando" el registro del recurso mientras se presta,
+    // pero aquí no hay un registro propio que bloquear. Por eso se le pide a la base de
+    // datos el modo más estricto (SERIALIZABLE): si detecta que dos reservas que se cruzan
+    // se están guardando a la vez, deja pasar solo una y la otra falla. Ese fallo se le
+    // responde al cliente como 409 en ReservaExceptionHandler.
+    // Ojo: PostgreSQL sí hace esta detección; la base de pruebas (H2) no, así que en las
+    // pruebas automáticas esta protección no se puede comprobar.
     @Override
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public Reserva ejecutar(CrearReservaComando comando) {
-        // 1. El cliente sale siempre del usuario autenticado, nunca del body.
+        // 1. El cliente sale siempre del usuario que inició sesión, nunca de los datos que
+        //    manda la petición (así nadie puede reservar a nombre de otro).
         Long idCliente = consultarClienteUseCase.buscarIdClientePorUsuario(comando.idUsuario())
                 .orElseThrow(UsuarioNoEsClienteException::new);
 
-        // 2. Servicio desde catálogo, con el error traducido al formato de reservas.
+        // 2. Se pide el servicio al módulo de catálogo. Si no existe, se responde con el
+        //    error propio de reservas para que el mensaje tenga el mismo formato.
         ServicioResponse servicio;
         try {
             servicio = obtenerServicioPorIdUseCase.ejecutar(comando.idServicio());
@@ -69,7 +76,7 @@ public class CrearReservaService implements CrearReservaUseCase {
         LocalDateTime fechaInicio = comando.fechaInicio();
         LocalDateTime fechaFin = fechaInicio.plusMinutes(servicio.duracionMinutos());
 
-        // 4. Valida que no sea en el pasado y que el rango sea coherente.
+        // 4. Se arma la reserva; aquí se rechaza si la fecha ya pasó.
         Reserva nueva = Reserva.nueva(
                 idCliente,
                 servicio.id(),
@@ -80,7 +87,8 @@ public class CrearReservaService implements CrearReservaUseCase {
                 LocalDateTime.now(clock)
         );
 
-        // 5. Tiene que caber completa en una franja de la agenda del servicio.
+        // 5. La reserva tiene que caber completa dentro de uno de los horarios de atención
+        //    de la agenda del servicio.
         List<Horario> horarios;
         try {
             horarios = disponibilidadAgenda.consultarHorariosDisponibles(servicio.idProveedor(), servicio.id());
@@ -91,7 +99,7 @@ public class CrearReservaService implements CrearReservaUseCase {
             throw HorarioNoDisponibleException.fueraDeAgenda(servicio.id(), fechaInicio, fechaFin);
         }
 
-        // 6. No puede cruzarse con otra reserva activa del mismo servicio.
+        // 6. No puede cruzarse con otra reserva vigente del mismo servicio.
         boolean ocupado = reservaRepositoryPort.buscarActivasQueSeSolapan(servicio.id(), fechaInicio, fechaFin)
                 .stream()
                 .anyMatch(r -> r.seSolapaCon(fechaInicio, fechaFin));
@@ -99,12 +107,12 @@ public class CrearReservaService implements CrearReservaUseCase {
             throw HorarioNoDisponibleException.yaReservado(servicio.id(), fechaInicio, fechaFin);
         }
 
-        // 7.
+        // 7. Todo en orden: se guarda.
         return reservaRepositoryPort.guardar(nueva);
     }
 
-    // Mismo día calendario, ese día coincide con el de la franja y el rango completo cae
-    // dentro de [horaInicio, horaFin].
+    // La reserva cabe en el horario si empieza y termina el mismo día, ese día de la semana
+    // es el del horario, y empieza y termina dentro de la hora de inicio y fin del horario.
     private static boolean cabeEnHorario(Horario horario, LocalDateTime inicio, LocalDateTime fin) {
         if (!inicio.toLocalDate().equals(fin.toLocalDate())) {
             return false;
@@ -116,7 +124,8 @@ public class CrearReservaService implements CrearReservaUseCase {
                 && !fin.toLocalTime().isAfter(horario.horaFin());
     }
 
-    // Se compara por nombre para no depender del enum DiaSemana interno de agendas_horarios.
+    // Se compara el día por su nombre ("LUNES", "MARTES"...) para no usar la lista de días
+    // interna del módulo de agendas.
     private static String diaSemanaEnEspanol(DayOfWeek dia) {
         return switch (dia) {
             case MONDAY -> "LUNES";
