@@ -10,6 +10,7 @@ public interface UsuarioRepositoryPort {
     void guardarPerfilCliente(Long idUsuario, String nombre, String telefono, String documento);
     void guardarPerfilProveedor(Long idUsuario, String razonSocial, String telefono, String nitRut);
     Optional<Integer> buscarIdProveedorPorUsuario(Long idUsuario);
+    Optional<Long> buscarIdClientePorUsuario(Long idUsuario);
 
     // --- Operaciones 2FA ---
     Optional<Usuario> buscarPorId(Long id);
