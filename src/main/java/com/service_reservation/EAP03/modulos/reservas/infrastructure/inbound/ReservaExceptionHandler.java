@@ -1,8 +1,12 @@
 package com.service_reservation.EAP03.modulos.reservas.infrastructure.inbound;
 
+import com.service_reservation.EAP03.modulos.reservas.domain.exception.CancelacionFueraDeTiempoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.DatosReservaInvalidosException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.FechaEnElPasadoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.HorarioNoDisponibleException;
+import com.service_reservation.EAP03.modulos.reservas.domain.exception.ReservaAjenaException;
+import com.service_reservation.EAP03.modulos.reservas.domain.exception.ReservaNoCancelableException;
+import com.service_reservation.EAP03.modulos.reservas.domain.exception.ReservaNoEncontradaException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.ServicioNoReservableException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.UsuarioNoEsClienteException;
 import org.springframework.dao.PessimisticLockingFailureException;
@@ -36,6 +40,26 @@ public class ReservaExceptionHandler {
     @ExceptionHandler(UsuarioNoEsClienteException.class)
     public ResponseEntity<Map<String, Object>> manejarNoEsCliente(UsuarioNoEsClienteException ex) {
         return construir(HttpStatus.FORBIDDEN, "NO_ES_CLIENTE", ex.getMessage());
+    }
+
+    @ExceptionHandler(ReservaNoEncontradaException.class)
+    public ResponseEntity<Map<String, Object>> manejarReservaNoEncontrada(ReservaNoEncontradaException ex) {
+        return construir(HttpStatus.NOT_FOUND, "RESERVA_NO_ENCONTRADA", ex.getMessage());
+    }
+
+    @ExceptionHandler(ReservaAjenaException.class)
+    public ResponseEntity<Map<String, Object>> manejarReservaAjena(ReservaAjenaException ex) {
+        return construir(HttpStatus.FORBIDDEN, "RESERVA_AJENA", ex.getMessage());
+    }
+
+    @ExceptionHandler(ReservaNoCancelableException.class)
+    public ResponseEntity<Map<String, Object>> manejarNoCancelable(ReservaNoCancelableException ex) {
+        return construir(HttpStatus.CONFLICT, "RESERVA_NO_CANCELABLE", ex.getMessage());
+    }
+
+    @ExceptionHandler(CancelacionFueraDeTiempoException.class)
+    public ResponseEntity<Map<String, Object>> manejarFueraDeTiempo(CancelacionFueraDeTiempoException ex) {
+        return construir(HttpStatus.CONFLICT, "CANCELACION_FUERA_DE_TIEMPO", ex.getMessage());
     }
 
     @ExceptionHandler(DatosReservaInvalidosException.class)

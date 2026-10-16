@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 public class ReservaRepositoryAdapter implements ReservaRepositoryPort {
@@ -31,6 +32,11 @@ public class ReservaRepositoryAdapter implements ReservaRepositoryPort {
     @Override
     public Reserva guardar(Reserva reserva) {
         return mapper.aDominio(repositorio.save(mapper.aEntidad(reserva)));
+    }
+
+    @Override
+    public Optional<Reserva> buscarPorId(Integer id) {
+        return repositorio.findById(id).map(mapper::aDominio);
     }
 
     @Override
