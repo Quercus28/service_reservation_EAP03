@@ -18,6 +18,8 @@ public class ReservaMapper {
         entidad.setEstado(reserva.getEstado());
         entidad.setNotas(reserva.getNotas());
         entidad.setCreatedAt(reserva.getCreatedAt());
+        entidad.setCanceladaEn(reserva.getCanceladaEn());
+        entidad.setMotivoCancelacion(reserva.getMotivoCancelacion());
         return entidad;
     }
 
@@ -31,7 +33,9 @@ public class ReservaMapper {
                 entidad.getFechaFin(),
                 entidad.getEstado(),
                 entidad.getNotas(),
-                entidad.getCreatedAt()
+                entidad.getCreatedAt(),
+                entidad.getCanceladaEn(),
+                entidad.getMotivoCancelacion()
         );
     }
 }

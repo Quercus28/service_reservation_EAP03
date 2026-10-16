@@ -40,6 +40,12 @@ public class ReservaJpaEntity {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "cancelada_en")
+    private LocalDateTime canceladaEn;
+
+    @Column(name = "motivo_cancelacion", length = 255)
+    private String motivoCancelacion;
+
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
     public Long getIdCliente() { return idCliente; }
@@ -58,4 +64,8 @@ public class ReservaJpaEntity {
     public void setNotas(String notas) { this.notas = notas; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public LocalDateTime getCanceladaEn() { return canceladaEn; }
+    public void setCanceladaEn(LocalDateTime canceladaEn) { this.canceladaEn = canceladaEn; }
+    public String getMotivoCancelacion() { return motivoCancelacion; }
+    public void setMotivoCancelacion(String motivoCancelacion) { this.motivoCancelacion = motivoCancelacion; }
 }
