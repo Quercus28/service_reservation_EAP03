@@ -45,4 +45,28 @@ public class ReservaRepositoryAdapter implements ReservaRepositoryPort {
                 .map(mapper::aDominio)
                 .toList();
     }
+
+    @Override
+    public List<Reserva> buscarActivasDeCliente(Long idCliente) {
+        return repositorio.findByIdClienteAndEstadoIn(idCliente, ESTADOS_ACTIVOS).stream()
+                .map(mapper::aDominio)
+                .toList();
+    }
+
+    @Override
+    public List<Reserva> buscarActivasDeProveedor(Integer idProveedor) {
+        return repositorio.findByIdProveedorAndEstadoIn(idProveedor, ESTADOS_ACTIVOS).stream()
+                .map(mapper::aDominio)
+                .toList();
+    }
+
+    @Override
+    public int contarActivasDeCliente(Long idCliente) {
+        return (int) repositorio.countByIdClienteAndEstadoIn(idCliente, ESTADOS_ACTIVOS);
+    }
+
+    @Override
+    public int contarActivasDeProveedor(Integer idProveedor) {
+        return (int) repositorio.countByIdProveedorAndEstadoIn(idProveedor, ESTADOS_ACTIVOS);
+    }
 }
