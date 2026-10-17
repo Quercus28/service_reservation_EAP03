@@ -4,10 +4,12 @@ import com.service_reservation.EAP03.modulos.agendas_horarios.domain.exception.A
 import com.service_reservation.EAP03.modulos.agendas_horarios.domain.model.Horario;
 import com.service_reservation.EAP03.modulos.agendas_horarios.domain.ports.in.IDisponibilidad;
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.in.ConsultarClienteUseCase;
+import com.service_reservation.EAP03.modulos.reservas.domain.exception.HoraFueraDeTurnoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.HorarioNoDisponibleException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.ServicioNoReservableException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.UsuarioNoEsClienteException;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.CrearReservaComando;
+import com.service_reservation.EAP03.modulos.reservas.domain.model.ReglaDeTurnos;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.Reserva;
 import com.service_reservation.EAP03.modulos.reservas.domain.ports.in.CrearReservaUseCase;
 import com.service_reservation.EAP03.modulos.reservas.domain.ports.out.ReservaRepositoryPort;
@@ -95,8 +97,21 @@ public class CrearReservaService implements CrearReservaUseCase {
         } catch (AgendaNoEncontradaException e) {
             throw HorarioNoDisponibleException.sinAgenda(servicio.id());
         }
-        if (horarios.stream().noneMatch(h -> cabeEnHorario(h, fechaInicio, fechaFin))) {
+        List<Horario> horariosDondeCabe = horarios.stream()
+                .filter(h -> cabeEnHorario(h, fechaInicio, fechaFin))
+                .toList();
+        if (horariosDondeCabe.isEmpty()) {
             throw HorarioNoDisponibleException.fueraDeAgenda(servicio.id(), fechaInicio, fechaFin);
+        }
+
+        // 5b. Además tiene que empezar justo en uno de los turnos de ese horario (los mismos
+        //     que muestra la consulta de disponibilidad). Si no, por ejemplo una reserva a las
+        //     8:30 en turnos de 60 minutos desde las 8:00 taparía dos turnos y escondería
+        //     horarios que sí están libres.
+        int duracion = servicio.duracionMinutos();
+        if (horariosDondeCabe.stream().noneMatch(
+                h -> ReglaDeTurnos.caeEnTurno(h.horaInicio(), fechaInicio.toLocalTime(), duracion))) {
+            throw new HoraFueraDeTurnoException(duracion, horariosDondeCabe.get(0).horaInicio());
         }
 
         // 6. No puede cruzarse con otra reserva vigente del mismo servicio.
