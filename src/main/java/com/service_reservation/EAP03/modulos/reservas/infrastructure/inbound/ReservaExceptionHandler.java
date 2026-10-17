@@ -3,6 +3,7 @@ package com.service_reservation.EAP03.modulos.reservas.infrastructure.inbound;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.CancelacionFueraDeTiempoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.DatosReservaInvalidosException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.FechaEnElPasadoException;
+import com.service_reservation.EAP03.modulos.reservas.domain.exception.HoraFueraDeTurnoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.HorarioNoDisponibleException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.ReservaAjenaException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.ReservaNoCancelableException;
@@ -25,6 +26,11 @@ public class ReservaExceptionHandler {
     @ExceptionHandler(FechaEnElPasadoException.class)
     public ResponseEntity<Map<String, Object>> manejarFechaEnElPasado(FechaEnElPasadoException ex) {
         return construir(HttpStatus.BAD_REQUEST, "FECHA_EN_EL_PASADO", ex.getMessage());
+    }
+
+    @ExceptionHandler(HoraFueraDeTurnoException.class)
+    public ResponseEntity<Map<String, Object>> manejarHoraFueraDeTurno(HoraFueraDeTurnoException ex) {
+        return construir(HttpStatus.BAD_REQUEST, "HORA_FUERA_DE_TURNO", ex.getMessage());
     }
 
     @ExceptionHandler(HorarioNoDisponibleException.class)
