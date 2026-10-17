@@ -2,7 +2,7 @@ package com.service_reservation.EAP03.modulos.availability.infrastructure.inboun
 
 import com.service_reservation.EAP03.modulos.availability.domain.exception.DisponibilidadInvalidaException;
 import com.service_reservation.EAP03.modulos.availability.domain.model.TimeSlot;
-import com.service_reservation.EAP03.modulos.availability.domain.ports.in.ConsultarDisponibilidadUseCase;
+import com.service_reservation.EAP03.modulos.availability.domain.ports.in.ConsultarDisponibilidadServicioUseCase;
 import com.service_reservation.EAP03.modulos.availability.infrastructure.inbound.dto.BloqueDisponibilidadDTO;
 import com.service_reservation.EAP03.modulos.availability.infrastructure.inbound.dto.DisponibilidadServicioResponseDTO;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -25,10 +25,10 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/v1/servicios")
 public class AvailabilityController {
 
-    private final ConsultarDisponibilidadUseCase consultarDisponibilidadUseCase;
+    private final ConsultarDisponibilidadServicioUseCase consultarDisponibilidadServicioUseCase;
 
-    public AvailabilityController(ConsultarDisponibilidadUseCase consultarDisponibilidadUseCase) {
-        this.consultarDisponibilidadUseCase = consultarDisponibilidadUseCase;
+    public AvailabilityController(ConsultarDisponibilidadServicioUseCase consultarDisponibilidadServicioUseCase) {
+        this.consultarDisponibilidadServicioUseCase = consultarDisponibilidadServicioUseCase;
     }
 
     @GetMapping("/{id}/disponibilidad")
@@ -53,7 +53,7 @@ public class AvailabilityController {
             throw new DisponibilidadInvalidaException("El parámetro 'endDate' no puede ser anterior a 'startDate'");
         }
 
-        List<TimeSlot> slotsLibres = consultarDisponibilidadUseCase.ejecutar(id, startDate, endDate);
+        List<TimeSlot> slotsLibres = consultarDisponibilidadServicioUseCase.ejecutar(id, startDate, endDate);
 
         // Agrupar resultados por fecha (bloques por día)
         Map<LocalDate, List<TimeSlot>> porFecha = slotsLibres.stream()

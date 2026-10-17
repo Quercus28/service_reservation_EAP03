@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Input Port (Caso de uso): Consultar la disponibilidad de un servicio entre dos fechas.
  */
-public interface ConsultarDisponibilidadUseCase {
+public interface ConsultarDisponibilidadServicioUseCase {
 
     /**
      * Consulta las franjas horarias disponibles para un servicio en un rango de fechas.
