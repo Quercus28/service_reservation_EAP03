@@ -150,20 +150,15 @@ public class GlobalExceptionHandler {
         if (request.getRequestURI().startsWith("/api/admin")) {
             RegistrarAccesoDenegadoUseCase auditUseCase = registrarAccesoDenegadoUseCaseProvider.getIfAvailable();
             if (auditUseCase != null) {
+                // Solo se guarda el id del usuario (si se sabe), el método y la ruta: nada de
+                // correo ni IP, para no dejar datos personales en la auditoría.
                 Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-                Long idUsuario = null;
-                String email = null;
-                if (auth != null && auth.getPrincipal() instanceof UsuarioAutenticadoPrincipal principal) {
-                    idUsuario = principal.getIdUsuario();
-                    email = principal.getEmail();
-                } else if (auth != null) {
-                    email = auth.getName();
-                }
+                Long idUsuario = auth != null && auth.getPrincipal() instanceof UsuarioAutenticadoPrincipal principal
+                        ? principal.getIdUsuario()
+                        : null;
                 auditUseCase.registrar(new IntentoAccesoDenegado(
                         LocalDateTime.now(),
                         idUsuario,
-                        email,
-                        request.getRemoteAddr(),
                         request.getMethod(),
                         request.getRequestURI()
                 ));

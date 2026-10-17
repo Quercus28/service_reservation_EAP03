@@ -27,7 +27,7 @@ public class RegistrarAccesoDenegadoService implements RegistrarAccesoDenegadoUs
                 null,
                 ResultadoAuditoria.DENEGADO,
                 intento.metodo() + " " + intento.endpoint(),
-                "email=" + intento.email() + ", ip=" + intento.ip() + ", motivo=sin ROLE_ADMIN"
+                "motivo=sin ROLE_ADMIN"
         ));
     }
 }
