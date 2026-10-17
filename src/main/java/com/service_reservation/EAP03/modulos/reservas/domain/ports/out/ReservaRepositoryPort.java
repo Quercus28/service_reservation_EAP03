@@ -10,4 +10,8 @@ public interface ReservaRepositoryPort {
     Reserva guardar(Reserva reserva);
     Optional<Reserva> buscarPorId(Integer id);
     List<Reserva> buscarActivasQueSeSolapan(Integer idServicio, LocalDateTime desde, LocalDateTime hasta);
+    List<Reserva> buscarActivasDeCliente(Long idCliente);
+    List<Reserva> buscarActivasDeProveedor(Integer idProveedor);
+    int contarActivasDeCliente(Long idCliente);
+    int contarActivasDeProveedor(Integer idProveedor);
 }

@@ -17,4 +17,12 @@ public interface ReservaSpringDataRepository extends JpaRepository<ReservaJpaEnt
                                               @Param("estados") Collection<EstadoReserva> estados,
                                               @Param("desde") LocalDateTime desde,
                                               @Param("hasta") LocalDateTime hasta);
+
+    List<ReservaJpaEntity> findByIdClienteAndEstadoIn(Long idCliente, Collection<EstadoReserva> estados);
+
+    List<ReservaJpaEntity> findByIdProveedorAndEstadoIn(Integer idProveedor, Collection<EstadoReserva> estados);
+
+    long countByIdClienteAndEstadoIn(Long idCliente, Collection<EstadoReserva> estados);
+
+    long countByIdProveedorAndEstadoIn(Integer idProveedor, Collection<EstadoReserva> estados);
 }
