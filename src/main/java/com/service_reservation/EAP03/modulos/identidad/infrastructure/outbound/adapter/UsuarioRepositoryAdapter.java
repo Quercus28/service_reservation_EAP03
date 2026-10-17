@@ -14,17 +14,22 @@ import java.util.stream.Collectors;
 @Component
 public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
 
+    private static final String ROL_PROVEEDOR = "ROLE_PROVEEDOR";
+
     private final UsuarioSpringDataRepository usuarioJpaRepo;
     private final RolSpringDataRepository rolJpaRepo;
+    private final UsuarioRolSpringDataRepository usuarioRolJpaRepo;
     private final ClienteSpringDataRepository clienteJpaRepo;
     private final ProveedorSpringDataRepository proveedorJpaRepo;
 
-    public UsuarioRepositoryAdapter(UsuarioSpringDataRepository usuarioJpaRepo, 
-                                    RolSpringDataRepository rolJpaRepo, 
-                                    ClienteSpringDataRepository clienteJpaRepo, 
+    public UsuarioRepositoryAdapter(UsuarioSpringDataRepository usuarioJpaRepo,
+                                    RolSpringDataRepository rolJpaRepo,
+                                    UsuarioRolSpringDataRepository usuarioRolJpaRepo,
+                                    ClienteSpringDataRepository clienteJpaRepo,
                                     ProveedorSpringDataRepository proveedorJpaRepo) {
         this.usuarioJpaRepo = usuarioJpaRepo;
         this.rolJpaRepo = rolJpaRepo;
+        this.usuarioRolJpaRepo = usuarioRolJpaRepo;
         this.clienteJpaRepo = clienteJpaRepo;
         this.proveedorJpaRepo = proveedorJpaRepo;
     }
@@ -78,9 +83,14 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
         RolJpaEntity rolEntity = rolJpaRepo.findByNombre(rolBuscado)
             .orElseThrow(() -> new RuntimeException("Rol no encontrado en BD: " + rolBuscado));
 
-        usuarioEntity.addRol(rolEntity);
-
         UsuarioJpaEntity guardado = usuarioJpaRepo.save(usuarioEntity);
+
+        // La fila de USUARIO_ROL se guarda aparte para poder fijar "activo" en el mismo insert.
+        // Un proveedor recién registrado queda inactivo hasta que el administrador apruebe su
+        // solicitud; cliente y admin quedan activos desde el principio.
+        boolean activo = !ROL_PROVEEDOR.equals(rolBuscado);
+        usuarioRolJpaRepo.save(new UsuarioRolJpaEntity(guardado.getId(), rolEntity.getId(), activo));
+
         return new Usuario(guardado.getId(), guardado.getEmail(), guardado.getPasswordHash());
     }
 
