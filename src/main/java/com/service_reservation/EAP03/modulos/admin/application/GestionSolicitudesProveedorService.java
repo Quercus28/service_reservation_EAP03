@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class GestionSolicitudesProveedorService implements GestionarSolicitudesProveedorUseCase {
@@ -45,10 +46,25 @@ public class GestionSolicitudesProveedorService implements GestionarSolicitudesP
     @Override
     @Transactional
     public SolicitudAprobacionProveedor registrarSolicitud(Long idUsuario) {
-        // Asegurar que comience inactivo hasta aprobación
-        permisoOperativoPort.actualizarEstado(idUsuario, RolOperativo.PROVEEDOR, false);
-        if (solicitudRepository.existePendienteParaUsuario(idUsuario)) {
-            return solicitudRepository.buscarUltimaPorUsuario(idUsuario).orElseThrow();
+        Optional<SolicitudAprobacionProveedor> ultimaOpt = solicitudRepository.buscarUltimaPorUsuario(idUsuario);
+        if (ultimaOpt.isPresent()) {
+            SolicitudAprobacionProveedor ultima = ultimaOpt.get();
+            switch (ultima.getEstado()) {
+                case PENDIENTE:
+                    return ultima;
+                case APROBADA:
+                    boolean activo = permisoOperativoPort.estadoPermiso(idUsuario, RolOperativo.PROVEEDOR).orElse(false);
+                    if (activo) {
+                        throw new OperacionAdminInvalidaException(
+                                "La cuenta de proveedor ya se encuentra aprobada y activa");
+                    } else {
+                        throw new OperacionAdminInvalidaException(
+                                "Los permisos operativos de la cuenta fueron revocados. Para volver a operar, debe solicitar la restauración de permisos a un administrador");
+                    }
+                case RECHAZADA:
+                    throw new OperacionAdminInvalidaException(
+                            "Su solicitud anterior fue rechazada. Debe reenviar la solicitud de aprobación a través del endpoint correspondiente");
+            }
         }
         return crearSolicitud(idUsuario, AccionAdmin.SOLICITUD_PROVEEDOR_CREADA);
     }
