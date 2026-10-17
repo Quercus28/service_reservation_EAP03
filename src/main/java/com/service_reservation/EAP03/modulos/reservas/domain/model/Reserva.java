@@ -90,6 +90,25 @@ public class Reserva {
         if (ahora.plusHours(anticipacionMinimaHoras).isAfter(fechaInicio)) {
             throw CancelacionFueraDeTiempoException.faltaPocoTiempo(id, anticipacionMinimaHoras);
         }
+        marcarCancelada(ahora, motivo);
+    }
+
+    // Cancelación hecha por el administrador (por ejemplo, al quitarle los permisos a un
+    // cliente o a un proveedor). A diferencia de la del cliente, NO exige las horas de
+    // anticipación: se puede cancelar aunque falte poco o ya haya empezado. Solo se rechaza
+    // si la reserva ya no está activa (por ejemplo, si ya estaba cancelada o terminó).
+    public void cancelarPorAdministrador(LocalDateTime ahora, String motivo) {
+        Objects.requireNonNull(ahora, "ahora es obligatorio");
+        if (!estaActiva()) {
+            throw estado == EstadoReserva.CANCELADO
+                    ? ReservaNoCancelableException.yaCancelada(id)
+                    : ReservaNoCancelableException.noActiva(id, estado);
+        }
+        marcarCancelada(ahora, motivo);
+    }
+
+    // Lo que se guarda al cancelar, la haga el cliente o el administrador.
+    private void marcarCancelada(LocalDateTime ahora, String motivo) {
         String motivoLimpio = limpiarTexto(motivo, MOTIVO_CANCELACION_MAX,
                 "El motivo no puede superar los " + MOTIVO_CANCELACION_MAX + " caracteres");
         this.estado = EstadoReserva.CANCELADO;
