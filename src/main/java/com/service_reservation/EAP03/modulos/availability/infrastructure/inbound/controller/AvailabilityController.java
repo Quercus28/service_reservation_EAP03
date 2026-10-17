@@ -73,7 +73,8 @@ public class AvailabilityController {
         DisponibilidadServicioResponseDTO respuesta = new DisponibilidadServicioResponseDTO(
                 id,
                 slotsLibres.size(),
-                bloques != null ? bloques : Collections.emptyList()
+                bloques != null ? bloques : Collections.emptyList(),
+                slotsLibres.isEmpty() ? DisponibilidadServicioResponseDTO.MENSAJE_SIN_ESPACIOS : null
         );
 
         return ResponseEntity.ok(respuesta);
