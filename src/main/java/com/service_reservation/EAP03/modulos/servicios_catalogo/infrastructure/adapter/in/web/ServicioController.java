@@ -69,7 +69,7 @@ public class ServicioController {
      * Anti-IDOR: el idProveedor se resuelve desde el contexto de autenticación,
      * ignorando cualquier valor que pudiera venir en el body.
      */
-    @PreAuthorize("hasRole('PROVEEDOR')")
+    @PreAuthorize("hasRole('PROVEEDOR') and @permisoOperativo.activo(authentication, 'PROVEEDOR')")
     @PostMapping
     public ResponseEntity<ServicioResponse> crearServicio(
             @Valid @RequestBody CrearServicioRequest request,
@@ -109,8 +109,8 @@ public class ServicioController {
         return ResponseEntity.ok(response);
     }
 
-    /** Actualizar servicio — ADMIN siempre; PROVEEDOR solo si es propietario. */
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVEEDOR') and @servicioSecurity.esPropietario(authentication, #id))")
+    /** Actualizar servicio — ADMIN siempre; PROVEEDOR solo si es propietario y tiene permiso operativo activo. */
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVEEDOR') and @permisoOperativo.activo(authentication, 'PROVEEDOR') and @servicioSecurity.esPropietario(authentication, #id))")
     @PutMapping("/{id}")
     public ResponseEntity<ServicioResponse> actualizarServicio(
             @PathVariable Integer id,
@@ -120,8 +120,8 @@ public class ServicioController {
         return ResponseEntity.ok(response);
     }
 
-    /** Eliminar servicio — ADMIN siempre; PROVEEDOR solo si es propietario. */
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVEEDOR') and @servicioSecurity.esPropietario(authentication, #id))")
+    /** Eliminar servicio — ADMIN siempre; PROVEEDOR solo si es propietario y tiene permiso operativo activo. */
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVEEDOR') and @permisoOperativo.activo(authentication, 'PROVEEDOR') and @servicioSecurity.esPropietario(authentication, #id))")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarServicio(@PathVariable Integer id) {
         eliminarServicioUseCase.eliminar(id);

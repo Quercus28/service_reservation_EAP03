@@ -19,7 +19,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/agendas")
-@PreAuthorize("hasRole('PROVEEDOR')")
+@PreAuthorize("hasRole('PROVEEDOR') and @permisoOperativo.activo(authentication, 'PROVEEDOR')")
 public class AgendaController {
     private final IGestionAgendas gestionAgendas;
     private final IGestionHorarios gestionHorarios;

@@ -10,14 +10,26 @@ import com.service_reservation.EAP03.modulos.identidad.application.exception.Reg
 import com.service_reservation.EAP03.modulos.agendas_horarios.application.PersistenciaAgendasHorariosNoDisponibleException;
 import com.service_reservation.EAP03.modulos.identidad.domain.exception.CredencialesInvalidasException;
 import com.service_reservation.EAP03.modulos.identidad.domain.exception.CuentaBloqueadaException;
+import com.service_reservation.EAP03.modulos.admin.domain.exception.AdminDominioException;
+import com.service_reservation.EAP03.modulos.admin.domain.exception.DatosAdminInvalidosException;
+import com.service_reservation.EAP03.modulos.admin.domain.exception.OperacionAdminInvalidaException;
+import com.service_reservation.EAP03.modulos.admin.domain.exception.RecursoAdminNoEncontradoException;
+import com.service_reservation.EAP03.modulos.admin.domain.model.IntentoAccesoDenegado;
+import com.service_reservation.EAP03.modulos.admin.domain.ports.in.RegistrarAccesoDenegadoUseCase;
+import com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound.security.UsuarioAutenticadoPrincipal;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.access.AccessDeniedException;
 import lombok.extern.slf4j.Slf4j;
+
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -25,6 +37,12 @@ import java.util.UUID;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private final ObjectProvider<RegistrarAccesoDenegadoUseCase> registrarAccesoDenegadoUseCaseProvider;
+
+    public GlobalExceptionHandler(ObjectProvider<RegistrarAccesoDenegadoUseCase> registrarAccesoDenegadoUseCaseProvider) {
+        this.registrarAccesoDenegadoUseCaseProvider = registrarAccesoDenegadoUseCaseProvider;
+    }
 
     @ExceptionHandler(CredencialesInvalidasException.class)
     public ResponseEntity<Map<String, Object>> handleCredencialesInvalidas(CredencialesInvalidasException ex) {
@@ -128,6 +146,30 @@ public class GlobalExceptionHandler {
                 request.getRequestURI()
         );
 
+        // Auditoría de intentos de acceso denegado a rutas administrativas
+        if (request.getRequestURI().startsWith("/api/admin")) {
+            RegistrarAccesoDenegadoUseCase auditUseCase = registrarAccesoDenegadoUseCaseProvider.getIfAvailable();
+            if (auditUseCase != null) {
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                Long idUsuario = null;
+                String email = null;
+                if (auth != null && auth.getPrincipal() instanceof UsuarioAutenticadoPrincipal principal) {
+                    idUsuario = principal.getIdUsuario();
+                    email = principal.getEmail();
+                } else if (auth != null) {
+                    email = auth.getName();
+                }
+                auditUseCase.registrar(new IntentoAccesoDenegado(
+                        LocalDateTime.now(),
+                        idUsuario,
+                        email,
+                        request.getRemoteAddr(),
+                        request.getMethod(),
+                        request.getRequestURI()
+                ));
+            }
+        }
+
         Map<String, Object> error = new HashMap<>();
         error.put("errorCode", "ACCESO_NO_AUTORIZADO");
         error.put("message", "No tiene privilegios para realizar esta operación");
@@ -191,6 +233,42 @@ public class GlobalExceptionHandler {
         Map<String, Object> error = new HashMap<>();
         error.put("errorCode", "FORMATO_PARAMETRO_INVALIDO");
         error.put("message", "El parámetro '" + ex.getName() + "' tiene un formato o valor inválido");
+        error.put("traceId", UUID.randomUUID().toString());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(DatosAdminInvalidosException.class)
+    public ResponseEntity<Map<String, Object>> handleDatosAdminInvalidos(DatosAdminInvalidosException ex) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("errorCode", "DATOS_ADMIN_INVALIDOS");
+        error.put("message", ex.getMessage());
+        error.put("traceId", UUID.randomUUID().toString());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(OperacionAdminInvalidaException.class)
+    public ResponseEntity<Map<String, Object>> handleOperacionAdminInvalida(OperacionAdminInvalidaException ex) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("errorCode", "OPERACION_ADMIN_INVALIDA");
+        error.put("message", ex.getMessage());
+        error.put("traceId", UUID.randomUUID().toString());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(RecursoAdminNoEncontradoException.class)
+    public ResponseEntity<Map<String, Object>> handleRecursoAdminNoEncontrado(RecursoAdminNoEncontradoException ex) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("errorCode", "RECURSO_ADMIN_NO_ENCONTRADO");
+        error.put("message", ex.getMessage());
+        error.put("traceId", UUID.randomUUID().toString());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(AdminDominioException.class)
+    public ResponseEntity<Map<String, Object>> handleAdminDominio(AdminDominioException ex) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("errorCode", "ERROR_DOMINIO_ADMIN");
+        error.put("message", ex.getMessage());
         error.put("traceId", UUID.randomUUID().toString());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
