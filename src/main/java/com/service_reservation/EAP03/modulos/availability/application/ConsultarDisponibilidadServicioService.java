@@ -7,9 +7,10 @@ import com.service_reservation.EAP03.modulos.availability.domain.model.DateRange
 import com.service_reservation.EAP03.modulos.availability.domain.model.HorarioSemanal;
 import com.service_reservation.EAP03.modulos.availability.domain.model.ServicioDisponibilidadInfo;
 import com.service_reservation.EAP03.modulos.availability.domain.model.TimeSlot;
-import com.service_reservation.EAP03.modulos.availability.domain.ports.in.ConsultarDisponibilidadUseCase;
+import com.service_reservation.EAP03.modulos.availability.domain.ports.in.ConsultarDisponibilidadServicioUseCase;
 import com.service_reservation.EAP03.modulos.availability.domain.ports.out.AvailabilityRepository;
 import com.service_reservation.EAP03.modulos.availability.domain.service.DisponibilidadCalculator;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,8 +20,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
-@Service("availabilityConsultarDisponibilidadService")
-public class ConsultarDisponibilidadService implements ConsultarDisponibilidadUseCase {
+@Service
+public class ConsultarDisponibilidadServicioService implements ConsultarDisponibilidadServicioUseCase {
 
     public static final int MAX_DIAS_RANGO = 30;
 
@@ -28,8 +29,8 @@ public class ConsultarDisponibilidadService implements ConsultarDisponibilidadUs
     private final DisponibilidadCalculator disponibilidadCalculator;
     private final Clock clock;
 
-    @org.springframework.beans.factory.annotation.Autowired
-    public ConsultarDisponibilidadService(
+    @Autowired
+    public ConsultarDisponibilidadServicioService(
             AvailabilityRepository availabilityRepository,
             DisponibilidadCalculator disponibilidadCalculator,
             Clock clock) {
