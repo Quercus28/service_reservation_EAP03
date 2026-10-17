@@ -19,8 +19,11 @@ import java.util.List;
 @RequestMapping("/api/v1/recursos")
 public class DisponibilidadRecursoController {
 
+    // El proveedor además tiene que tener sus permisos activos: si el administrador se los
+    // quitó (o todavía no aprobó su cuenta), ya no puede tocar horarios ni bloqueos.
     private static final String PROPIETARIO_O_ADMIN =
-            "hasRole('ADMIN') or (hasRole('PROVEEDOR') and @recursoSecurity.esPropietario(authentication, #id))";
+            "hasRole('ADMIN') or (hasRole('PROVEEDOR') and @permisoOperativo.activo(authentication, 'PROVEEDOR')"
+                    + " and @recursoSecurity.esPropietario(authentication, #id))";
 
     private final RegistrarHorarioRecursoUseCase registrarHorarioRecursoUseCase;
     private final ListarHorariosRecursoUseCase listarHorariosRecursoUseCase;
@@ -118,7 +121,7 @@ public class DisponibilidadRecursoController {
     }
 
     @GetMapping("/disponibilidad")
-    @PreAuthorize("hasRole('PROVEEDOR')")
+    @PreAuthorize("hasRole('PROVEEDOR') and @permisoOperativo.activo(authentication, 'PROVEEDOR')")
     public PaginaResponseDTO<RecursoDisponibilidadResponseDTO> consultarDisponibilidadProveedor(
             @RequestParam(defaultValue = "0") int pagina,
             @RequestParam(defaultValue = "20") int tamano,

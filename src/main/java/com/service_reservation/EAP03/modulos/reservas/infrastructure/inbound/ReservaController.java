@@ -25,9 +25,11 @@ public class ReservaController {
         this.cancelarReservaUseCase = cancelarReservaUseCase;
     }
 
+    // Además del rol, el cliente tiene que tener sus permisos activos: si el administrador
+    // se los quitó, ya no puede reservar ni cancelar.
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('CLIENTE')")
+    @PreAuthorize("hasRole('CLIENTE') and @permisoOperativo.activo(authentication, 'CLIENTE')")
     public ReservaResponseDTO crear(@Valid @RequestBody CrearReservaRequestDTO request,
                                     Authentication authentication) {
         Reserva reserva = crearReservaUseCase.ejecutar(new CrearReservaComando(
@@ -42,7 +44,7 @@ public class ReservaController {
     // El cuerpo es opcional: el cliente puede cancelar sin dar motivo.
     // Si {id} no es un número, Spring responde 400 antes de llegar aquí.
     @PostMapping("/{id}/cancelacion")
-    @PreAuthorize("hasRole('CLIENTE')")
+    @PreAuthorize("hasRole('CLIENTE') and @permisoOperativo.activo(authentication, 'CLIENTE')")
     public CancelacionReservaResponseDTO cancelar(@PathVariable Integer id,
                                                   @Valid @RequestBody(required = false) CancelarReservaRequestDTO request,
                                                   Authentication authentication) {
