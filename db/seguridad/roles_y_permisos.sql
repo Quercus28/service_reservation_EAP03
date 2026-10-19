@@ -75,13 +75,22 @@ ALTER DEFAULT PRIVILEGES FOR ROLE eap03_migraciones IN SCHEMA public
 GRANT USAGE ON SCHEMA public TO eap03_reportes;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO eap03_reportes;
 
--- Sin acceso al historial de Flyway
+-- Sin acceso al historial de Flyway ni a la auditoría
 REVOKE ALL ON public.flyway_schema_history FROM eap03_reportes;
+REVOKE ALL ON public.admin_auditoria FROM eap03_reportes;
 
--- De usuario solo ve estas columnas: nunca password_hash ni secret_2fa
+-- Sin datos personales: en estas tablas solo ve las columnas listadas.
+-- (REVOKE ALL también quita permisos de columnas dados en corridas anteriores)
 REVOKE ALL ON public.usuario FROM eap03_reportes;
-GRANT SELECT (id, email, enabled, is_2fa_enabled, created_at)
+GRANT SELECT (id, enabled, is_2fa_enabled, created_at)
     ON public.usuario TO eap03_reportes;
+
+REVOKE ALL ON public.cliente FROM eap03_reportes;
+GRANT SELECT (id, id_usuario) ON public.cliente TO eap03_reportes;
+
+REVOKE ALL ON public.proveedor FROM eap03_reportes;
+GRANT SELECT (id, id_usuario, razon_social, created_at)
+    ON public.proveedor TO eap03_reportes;
 
 -- A propósito NO hay ALTER DEFAULT PRIVILEGES para reportes: una tabla nueva
 -- puede traer datos sensibles, así que se revisa y se vuelve a correr este script.
