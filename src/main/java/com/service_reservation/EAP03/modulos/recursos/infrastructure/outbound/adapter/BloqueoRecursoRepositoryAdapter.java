@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -58,5 +59,13 @@ public class BloqueoRecursoRepositoryAdapter implements BloqueoRecursoRepository
     @Override
     public void eliminar(Integer id) {
         repositorio.deleteById(id);
+    }
+
+    @Override
+    public List<BloqueoRecurso> buscarQueSeSolapanDeRecursos(Collection<Integer> idsRecurso,
+                                                            LocalDateTime desde, LocalDateTime hasta) {
+        return repositorio.buscarQueSeSolapanDeRecursos(idsRecurso, desde, hasta).stream()
+                .map(mapper::aDominio)
+                .toList();
     }
 }

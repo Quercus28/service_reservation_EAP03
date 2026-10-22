@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -60,5 +61,12 @@ public class RecursoRepositoryAdapter implements RecursoRepositoryPort {
     @Override
     public boolean existeNombreActivo(Integer idProveedor, String nombre, Integer idExcluir) {
         return repositorio.existeNombreActivo(idProveedor, nombre, idExcluir);
+    }
+
+    @Override
+    public List<Recurso> buscarPorIds(Collection<Integer> ids) {
+        return repositorio.findAllById(ids).stream()
+                .map(mapper::aDominio)
+                .toList();
     }
 }

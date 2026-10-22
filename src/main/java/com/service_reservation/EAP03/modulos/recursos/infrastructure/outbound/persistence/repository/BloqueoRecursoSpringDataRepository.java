@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 public interface BloqueoRecursoSpringDataRepository extends JpaRepository<BloqueoRecursoJpaEntity, Integer> {
@@ -16,6 +17,11 @@ public interface BloqueoRecursoSpringDataRepository extends JpaRepository<Bloque
     List<BloqueoRecursoJpaEntity> buscarQueSeSolapan(@Param("idRecurso") Integer idRecurso,
                                                      @Param("desde") LocalDateTime desde,
                                                      @Param("hasta") LocalDateTime hasta);
+
+    @Query("SELECT b FROM BloqueoRecursoJpaEntity b WHERE b.idRecurso IN :idsRecurso AND b.fechaInicio < :hasta AND :desde < b.fechaFin")
+    List<BloqueoRecursoJpaEntity> buscarQueSeSolapanDeRecursos(@Param("idsRecurso") Collection<Integer> idsRecurso,
+                                                               @Param("desde") LocalDateTime desde,
+                                                               @Param("hasta") LocalDateTime hasta);
 
     Page<BloqueoRecursoJpaEntity> findByIdRecursoOrderByFechaInicioAsc(Integer idRecurso, Pageable pageable);
 }

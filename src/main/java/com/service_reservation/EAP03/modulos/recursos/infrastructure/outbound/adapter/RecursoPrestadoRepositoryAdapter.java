@@ -7,6 +7,7 @@ import com.service_reservation.EAP03.modulos.recursos.infrastructure.outbound.pe
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 @Component
@@ -36,6 +37,14 @@ public class RecursoPrestadoRepositoryAdapter implements RecursoPrestadoReposito
     @Override
     public List<RecursoPrestado> buscarActivosDeReserva(Integer idServicioPrestado) {
         return repositorio.findByIdServicioPrestadoAndLiberadoEnIsNull(idServicioPrestado).stream()
+                .map(mapper::aDominio)
+                .toList();
+    }
+
+    @Override
+    public List<RecursoPrestado> buscarQueSeSolapanDeRecursos(Collection<Integer> idsRecurso,
+                                                             LocalDateTime desde, LocalDateTime hasta) {
+        return repositorio.buscarQueSeSolapanDeRecursos(idsRecurso, desde, hasta).stream()
                 .map(mapper::aDominio)
                 .toList();
     }

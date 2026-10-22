@@ -10,6 +10,8 @@ import com.service_reservation.EAP03.modulos.availability.domain.model.TimeSlot;
 import com.service_reservation.EAP03.modulos.availability.domain.ports.in.ConsultarDisponibilidadServicioUseCase;
 import com.service_reservation.EAP03.modulos.availability.domain.ports.out.AvailabilityRepository;
 import com.service_reservation.EAP03.modulos.availability.domain.service.DisponibilidadCalculator;
+import com.service_reservation.EAP03.modulos.recursos.domain.model.Turno;
+import com.service_reservation.EAP03.modulos.recursos.domain.ports.in.FiltrarTurnosConRecursosDisponiblesUseCase;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,15 +29,18 @@ public class ConsultarDisponibilidadServicioService implements ConsultarDisponib
 
     private final AvailabilityRepository availabilityRepository;
     private final DisponibilidadCalculator disponibilidadCalculator;
+    private final FiltrarTurnosConRecursosDisponiblesUseCase filtrarTurnosConRecursosDisponiblesUseCase;
     private final Clock clock;
 
     @Autowired
     public ConsultarDisponibilidadServicioService(
             AvailabilityRepository availabilityRepository,
             DisponibilidadCalculator disponibilidadCalculator,
+            FiltrarTurnosConRecursosDisponiblesUseCase filtrarTurnosConRecursosDisponiblesUseCase,
             Clock clock) {
         this.availabilityRepository = availabilityRepository;
         this.disponibilidadCalculator = disponibilidadCalculator;
+        this.filtrarTurnosConRecursosDisponiblesUseCase = filtrarTurnosConRecursosDisponiblesUseCase;
         this.clock = clock;
     }
 
@@ -86,9 +91,17 @@ public class ConsultarDisponibilidadServicioService implements ConsultarDisponib
                 servicioInfo.duracionMinutos()
         );
 
+        // Quitar los turnos en los que falta algún recurso obligatorio del servicio
+        List<TimeSlot> slotsConRecursos = filtrarTurnosConRecursosDisponiblesUseCase.ejecutar(
+                        servicioId,
+                        slotsDisponibles.stream().map(slot -> new Turno(slot.start(), slot.end())).toList()
+                ).stream()
+                .map(turno -> new TimeSlot(turno.inicio(), turno.fin()))
+                .toList();
+
         // Si la consulta inicia hoy, descartar franjas que ya hayan pasado en el tiempo actual
         LocalDateTime ahora = LocalDateTime.now(clock);
-        return slotsDisponibles.stream()
+        return slotsConRecursos.stream()
                 .filter(slot -> slot.start().isAfter(ahora))
                 .toList();
     }
