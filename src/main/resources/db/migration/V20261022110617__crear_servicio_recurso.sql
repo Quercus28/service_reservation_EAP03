@@ -1,8 +1,9 @@
 -- Módulo: recursos
 --
--- servicio_recurso: qué recursos usa cada servicio y cuántas unidades de cada uno.
---   obligatorio = TRUE quiere decir que el servicio no se puede prestar sin ese recurso;
---   FALSE quiere decir que el cliente puede pedirlo como extra.
+-- servicio_recurso: qué recursos ofrece cada servicio como adicionales y cuántas unidades
+--   de cada uno. El cliente puede pedirlos al reservar; si no los pide, no se usan.
+--   Los recursos esenciales para prestar el servicio no se guardan aquí: de ellos
+--   responde el proveedor.
 --   Por ahora solo se guarda la lista; las reservas todavía no la usan.
 --
 -- id_servicio no lleva FOREIGN KEY porque el servicio es del módulo de catálogo (misma
@@ -15,7 +16,6 @@ CREATE TABLE servicio_recurso (
     id_servicio INTEGER NOT NULL,
     id_recurso INTEGER NOT NULL,
     cantidad INTEGER NOT NULL DEFAULT 1,
-    obligatorio BOOLEAN NOT NULL DEFAULT TRUE,
     CONSTRAINT fk_servicio_recurso_recurso FOREIGN KEY (id_recurso) REFERENCES recurso(id) ON DELETE CASCADE,
     CONSTRAINT chk_servicio_recurso_cantidad CHECK (cantidad > 0),
     CONSTRAINT uq_servicio_recurso UNIQUE (id_servicio, id_recurso)

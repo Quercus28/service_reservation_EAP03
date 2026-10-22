@@ -13,7 +13,6 @@ public class ServicioRecursoMapper {
         entidad.setIdServicio(servicioRecurso.getIdServicio());
         entidad.setIdRecurso(servicioRecurso.getIdRecurso());
         entidad.setCantidad(servicioRecurso.getCantidad());
-        entidad.setObligatorio(servicioRecurso.isObligatorio());
         return entidad;
     }
 
@@ -22,8 +21,7 @@ public class ServicioRecursoMapper {
                 entidad.getId(),
                 entidad.getIdServicio(),
                 entidad.getIdRecurso(),
-                entidad.getCantidad(),
-                entidad.getObligatorio()
+                entidad.getCantidad()
         );
     }
 }

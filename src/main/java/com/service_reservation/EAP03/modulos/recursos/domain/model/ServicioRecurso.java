@@ -10,28 +10,26 @@ public class ServicioRecurso {
     private final Integer idServicio;
     private final Integer idRecurso;
     private final int cantidad;
-    private final boolean obligatorio;
 
     private ServicioRecurso(Integer id, Integer idServicio, Integer idRecurso,
-                            int cantidad, boolean obligatorio) {
+                            int cantidad) {
         validarCantidad(cantidad);
         this.id = id;
         this.idServicio = Objects.requireNonNull(idServicio, "idServicio es obligatorio");
         this.idRecurso = Objects.requireNonNull(idRecurso, "idRecurso es obligatorio");
         this.cantidad = cantidad;
-        this.obligatorio = obligatorio;
     }
 
     // Para crear una asociación NUEVA (todavía sin id)
     public static ServicioRecurso nuevo(Integer idServicio, Integer idRecurso,
-                                        int cantidad, boolean obligatorio) {
-        return new ServicioRecurso(null, idServicio, idRecurso, cantidad, obligatorio);
+                                        int cantidad) {
+        return new ServicioRecurso(null, idServicio, idRecurso, cantidad);
     }
 
     // Para reconstruir una asociación que YA existe en la base de datos
     public static ServicioRecurso reconstruir(Integer id, Integer idServicio, Integer idRecurso,
-                                              int cantidad, boolean obligatorio) {
-        return new ServicioRecurso(id, idServicio, idRecurso, cantidad, obligatorio);
+                                              int cantidad) {
+        return new ServicioRecurso(id, idServicio, idRecurso, cantidad);
     }
 
     private static void validarCantidad(int cantidad) {
@@ -44,5 +42,4 @@ public class ServicioRecurso {
     public Integer getIdServicio() { return idServicio; }
     public Integer getIdRecurso() { return idRecurso; }
     public int getCantidad() { return cantidad; }
-    public boolean isObligatorio() { return obligatorio; }
 }

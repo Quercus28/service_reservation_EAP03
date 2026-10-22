@@ -9,7 +9,5 @@ public record AsociarRecursoRequestDTO(
         Integer idRecurso,
 
         @Min(value = 1, message = "La cantidad debe ser mayor que cero")
-        Integer cantidad,
-
-        Boolean obligatorio
+        Integer cantidad
 ) {}

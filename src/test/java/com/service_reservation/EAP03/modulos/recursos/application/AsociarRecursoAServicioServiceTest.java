@@ -42,7 +42,7 @@ class AsociarRecursoAServicioServiceTest {
     @InjectMocks private AsociarRecursoAServicioService service;
 
     private AsociarRecursoComando comando(int cantidad) {
-        return new AsociarRecursoComando(ID_SERVICIO, ID_RECURSO, cantidad, true);
+        return new AsociarRecursoComando(ID_SERVICIO, ID_RECURSO, cantidad);
     }
 
     private ServicioResponse servicioDe(Integer idProveedor) {
@@ -64,7 +64,6 @@ class AsociarRecursoAServicioServiceTest {
         ServicioRecurso resultado = service.ejecutar(comando(2));
 
         assertEquals(2, resultado.getCantidad());
-        assertTrue(resultado.isObligatorio());
     }
 
     @Test

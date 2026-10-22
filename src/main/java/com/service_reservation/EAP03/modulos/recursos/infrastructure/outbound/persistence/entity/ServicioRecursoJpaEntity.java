@@ -19,9 +19,6 @@ public class ServicioRecursoJpaEntity {
     @Column(name = "cantidad", nullable = false)
     private Integer cantidad;
 
-    @Column(name = "obligatorio", nullable = false)
-    private Boolean obligatorio;
-
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
     public Integer getIdServicio() { return idServicio; }
@@ -30,6 +27,4 @@ public class ServicioRecursoJpaEntity {
     public void setIdRecurso(Integer idRecurso) { this.idRecurso = idRecurso; }
     public Integer getCantidad() { return cantidad; }
     public void setCantidad(Integer cantidad) { this.cantidad = cantidad; }
-    public Boolean getObligatorio() { return obligatorio; }
-    public void setObligatorio(Boolean obligatorio) { this.obligatorio = obligatorio; }
 }

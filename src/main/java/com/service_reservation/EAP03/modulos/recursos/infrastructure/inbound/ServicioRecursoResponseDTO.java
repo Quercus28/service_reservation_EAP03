@@ -6,12 +6,11 @@ public record ServicioRecursoResponseDTO(
         Integer id,
         Integer idServicio,
         Integer idRecurso,
-        int cantidad,
-        boolean obligatorio
+        int cantidad
 ) {
     public static ServicioRecursoResponseDTO desde(ServicioRecurso sr) {
         return new ServicioRecursoResponseDTO(
-                sr.getId(), sr.getIdServicio(), sr.getIdRecurso(), sr.getCantidad(), sr.isObligatorio()
+                sr.getId(), sr.getIdServicio(), sr.getIdRecurso(), sr.getCantidad()
         );
     }
 }
