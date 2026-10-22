@@ -126,7 +126,7 @@ public class RecursoController {
 
     @PostMapping("/{id}/prestamos")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVEEDOR') and @permisoOperativo.activo(authentication, 'PROVEEDOR'))")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVEEDOR') and @permisoOperativo.activo(authentication, 'PROVEEDOR') and @recursoSecurity.esPropietario(authentication, #id))")
     public RecursoPrestadoResponseDTO registrarPrestamo(
             @PathVariable Integer id,
             @Valid @RequestBody RegistrarPrestamoRequestDTO request) {
