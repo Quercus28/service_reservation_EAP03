@@ -55,9 +55,8 @@ public class ApartarRecursosDeReservaService implements ApartarRecursosDeReserva
         Set<Integer> elegidos = idsOpcionalesElegidos == null ? Set.of() : Set.copyOf(idsOpcionalesElegidos);
         List<ServicioRecurso> asociados = servicioRecursoRepositoryPort.buscarPorServicio(idServicio);
 
-        // 1. El cliente solo puede pedir recursos que el servicio ofrece como opcionales.
+        // 1. El cliente solo puede pedir recursos que el servicio ofrece como adicionales.
         Set<Integer> opcionalesDelServicio = asociados.stream()
-                .filter(a -> !a.isObligatorio())
                 .map(ServicioRecurso::getIdRecurso)
                 .collect(Collectors.toSet());
         List<Integer> noValidos = elegidos.stream()
@@ -70,11 +69,12 @@ public class ApartarRecursosDeReservaService implements ApartarRecursosDeReserva
                     .toList());
         }
 
-        // 2. Se apartan los obligatorios y los opcionales elegidos, siempre en orden de id del
-        //    recurso. Así dos reservas que usan los mismos recursos los toman en el mismo orden
-        //    y ninguna se queda esperando a la otra para siempre.
+        // 2. Se apartan solo los que pidió el cliente; si no pidió nada, no se aparta nada.
+        //    Van siempre en orden de id del recurso. Así dos reservas que piden los mismos
+        //    recursos los toman en el mismo orden y ninguna se queda esperando a la otra para
+        //    siempre.
         List<ServicioRecurso> aApartar = asociados.stream()
-                .filter(a -> a.isObligatorio() || elegidos.contains(a.getIdRecurso()))
+                .filter(a -> elegidos.contains(a.getIdRecurso()))
                 .sorted(Comparator.comparing(ServicioRecurso::getIdRecurso))
                 .toList();
 
@@ -110,11 +110,8 @@ public class ApartarRecursosDeReservaService implements ApartarRecursosDeReserva
         Recurso recurso = recursoRepositoryPort.buscarPorIdConBloqueo(idRecurso)
                 .orElseThrow(() -> new RecursoNoEncontradoException(idRecurso));
 
-        // Los obligatorios ya van incluidos en el precio del servicio; los opcionales se
-        // cobran aparte.
-        BigDecimal precioTotal = asociacion.isObligatorio()
-                ? BigDecimal.ZERO
-                : recurso.getPrecioUnitario().multiply(BigDecimal.valueOf(cantidad));
+        // Los adicionales se cobran aparte: precio unitario por la cantidad de la asociación.
+        BigDecimal precioTotal = recurso.getPrecioUnitario().multiply(BigDecimal.valueOf(cantidad));
 
         // Desactivado, stock, horario y bloqueos se revisan con la misma lógica de un préstamo
         // normal. Los mensajes se cambian para que hablen de la reserva.

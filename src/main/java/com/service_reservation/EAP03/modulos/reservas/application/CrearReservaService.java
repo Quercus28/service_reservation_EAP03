@@ -133,8 +133,8 @@ public class CrearReservaService implements CrearReservaUseCase {
         // 7. Todo en orden: se guarda.
         Reserva guardada = reservaRepositoryPort.guardar(nueva);
 
-        // 8. Se apartan los recursos del servicio: los obligatorios y los extra que eligió el
-        //    cliente. Va después de guardar porque cada recurso apartado queda ligado al
+        // 8. Se apartan los recursos adicionales que pidió el cliente (si no pidió ninguno, no
+        //    se aparta nada). Va después de guardar porque cada recurso apartado queda ligado al
         //    número de la reserva. Si alguno no se puede apartar, se lanza el error y, como
         //    todo está en la misma transacción, la reserva tampoco queda guardada.
         //    Los errores de recursos se pasan a errores de reservas para que la respuesta
