@@ -91,7 +91,7 @@ public class ReservaExceptionHandler {
     @ExceptionHandler(PessimisticLockingFailureException.class)
     public ResponseEntity<Map<String, Object>> manejarConcurrencia(PessimisticLockingFailureException ex) {
         return construir(HttpStatus.CONFLICT, "HORARIO_NO_DISPONIBLE",
-                "El horario no está disponible: el horario acaba de ser reservado.");
+                "Otra persona acaba de tomar este horario o uno de los recursos que necesita. Intenta de nuevo.");
     }
 
     private ResponseEntity<Map<String, Object>> construir(HttpStatus status, String errorCode, String mensaje) {

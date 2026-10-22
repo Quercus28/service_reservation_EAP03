@@ -59,7 +59,9 @@ public class ApartarRecursosDeReservaService implements ApartarRecursosDeReserva
                 .sorted()
                 .toList();
         if (!noValidos.isEmpty()) {
-            throw new RecursoOpcionalNoValidoException(idServicio, noValidos);
+            throw new RecursoOpcionalNoValidoException(idServicio, noValidos.stream()
+                    .map(this::nombreParaMensaje)
+                    .toList());
         }
 
         // 2. Se apartan los obligatorios y los opcionales elegidos, siempre en orden de id del
@@ -77,17 +79,22 @@ public class ApartarRecursosDeReservaService implements ApartarRecursosDeReserva
         return prestamos;
     }
 
+    // El nombre del recurso entre comillas; si no existe, su número.
+    private String nombreParaMensaje(Integer idRecurso) {
+        return recursoRepositoryPort.buscarPorId(idRecurso)
+                .map(r -> "'" + r.getNombre() + "'")
+                .orElse(String.valueOf(idRecurso));
+    }
+
     private RecursoPrestado apartar(ServicioRecurso asociacion, Integer idReserva,
                                     LocalDateTime inicio, LocalDateTime fin) {
         Integer idRecurso = asociacion.getIdRecurso();
         int cantidad = asociacion.getCantidad();
 
-        // Se toma el recurso con bloqueo de la fila, igual que al registrar un préstamo.
+        // Se toma el recurso con bloqueo de la fila, igual que al registrar un préstamo. Si
+        // está desactivado, el registro del préstamo lo rechaza más abajo.
         Recurso recurso = recursoRepositoryPort.buscarPorIdConBloqueo(idRecurso)
                 .orElseThrow(() -> new RecursoNoEncontradoException(idRecurso));
-        if (!recurso.estaActivo()) {
-            throw RecursoNoDisponibleParaReservaException.desactivado(recurso.getNombre());
-        }
 
         // Los obligatorios ya van incluidos en el precio del servicio; los opcionales se
         // cobran aparte.
