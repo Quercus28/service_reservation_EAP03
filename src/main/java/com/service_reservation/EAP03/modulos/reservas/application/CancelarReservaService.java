@@ -1,6 +1,7 @@
 package com.service_reservation.EAP03.modulos.reservas.application;
 
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.in.ConsultarClienteUseCase;
+import com.service_reservation.EAP03.modulos.recursos.domain.ports.in.LiberarRecursosDeReservaUseCase;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.DatosReservaInvalidosException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.ReservaAjenaException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.ReservaNoEncontradaException;
@@ -25,6 +26,7 @@ public class CancelarReservaService implements CancelarReservaUseCase {
 
     private final ConsultarClienteUseCase consultarClienteUseCase;
     private final ReservaRepositoryPort reservaRepositoryPort;
+    private final LiberarRecursosDeReservaUseCase liberarRecursosDeReservaUseCase;
     private final int anticipacionMinimaHoras;
     // El reloj ya está configurado en el módulo availability (AvailabilityConfig).
     // No se crea otro aquí: si hubiera dos relojes configurados, la aplicación no arrancaría.
@@ -32,10 +34,12 @@ public class CancelarReservaService implements CancelarReservaUseCase {
 
     public CancelarReservaService(ConsultarClienteUseCase consultarClienteUseCase,
                                   ReservaRepositoryPort reservaRepositoryPort,
+                                  LiberarRecursosDeReservaUseCase liberarRecursosDeReservaUseCase,
                                   ReservaProperties reservaProperties,
                                   Clock clock) {
         this.consultarClienteUseCase = consultarClienteUseCase;
         this.reservaRepositoryPort = reservaRepositoryPort;
+        this.liberarRecursosDeReservaUseCase = liberarRecursosDeReservaUseCase;
         this.anticipacionMinimaHoras = reservaProperties.getAnticipacionMinimaHorasCancelacion();
         this.clock = clock;
     }
@@ -68,6 +72,10 @@ public class CancelarReservaService implements CancelarReservaUseCase {
         reserva.cancelar(LocalDateTime.now(clock), anticipacionMinimaHoras, comando.motivo());
 
         // 5. Se guarda. Al quedar CANCELADO, el horario vuelve a estar libre para otros.
-        return reservaRepositoryPort.guardar(reserva);
+        Reserva cancelada = reservaRepositoryPort.guardar(reserva);
+
+        // 6. Se devuelven los recursos que la reserva tenía apartados.
+        liberarRecursosDeReservaUseCase.ejecutar(cancelada.getId());
+        return cancelada;
     }
 }

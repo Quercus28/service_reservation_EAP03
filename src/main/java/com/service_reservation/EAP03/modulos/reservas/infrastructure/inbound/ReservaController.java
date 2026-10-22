@@ -36,7 +36,8 @@ public class ReservaController {
                 idUsuarioDe(authentication),
                 request.idServicio(),
                 request.fechaInicio(),
-                request.notas()
+                request.notas(),
+                request.recursosOpcionales()
         ));
         return ReservaResponseDTO.desde(reserva);
     }

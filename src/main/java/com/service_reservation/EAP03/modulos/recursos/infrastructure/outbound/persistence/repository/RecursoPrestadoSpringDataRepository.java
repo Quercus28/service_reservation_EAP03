@@ -10,8 +10,11 @@ import java.util.List;
 
 public interface RecursoPrestadoSpringDataRepository extends JpaRepository<RecursoPrestadoJpaEntity, Integer> {
 
-    @Query("SELECT p FROM RecursoPrestadoJpaEntity p WHERE p.idRecurso = :idRecurso AND p.fechaInicio < :hasta AND :desde < p.fechaFin")
+    // Los préstamos liberados (reserva cancelada) ya no ocupan unidades.
+    @Query("SELECT p FROM RecursoPrestadoJpaEntity p WHERE p.idRecurso = :idRecurso AND p.liberadoEn IS NULL AND p.fechaInicio < :hasta AND :desde < p.fechaFin")
     List<RecursoPrestadoJpaEntity> buscarQueSeSolapan(@Param("idRecurso") Integer idRecurso,
                                                       @Param("desde") LocalDateTime desde,
                                                       @Param("hasta") LocalDateTime hasta);
+
+    List<RecursoPrestadoJpaEntity> findByIdServicioPrestadoAndLiberadoEnIsNull(Integer idServicioPrestado);
 }

@@ -32,4 +32,11 @@ public class RecursoPrestadoRepositoryAdapter implements RecursoPrestadoReposito
                 .map(mapper::aDominio)
                 .toList();
     }
+
+    @Override
+    public List<RecursoPrestado> buscarActivosDeReserva(Integer idServicioPrestado) {
+        return repositorio.findByIdServicioPrestadoAndLiberadoEnIsNull(idServicioPrestado).stream()
+                .map(mapper::aDominio)
+                .toList();
+    }
 }

@@ -5,6 +5,8 @@ import com.service_reservation.EAP03.modulos.reservas.domain.exception.DatosRese
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.FechaEnElPasadoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.HoraFueraDeTurnoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.HorarioNoDisponibleException;
+import com.service_reservation.EAP03.modulos.reservas.domain.exception.RecursoNoDisponibleException;
+import com.service_reservation.EAP03.modulos.reservas.domain.exception.RecursoOpcionalInvalidoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.ReservaAjenaException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.ReservaNoCancelableException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.ReservaNoEncontradaException;
@@ -36,6 +38,16 @@ public class ReservaExceptionHandler {
     @ExceptionHandler(HorarioNoDisponibleException.class)
     public ResponseEntity<Map<String, Object>> manejarHorarioNoDisponible(HorarioNoDisponibleException ex) {
         return construir(HttpStatus.CONFLICT, "HORARIO_NO_DISPONIBLE", ex.getMessage());
+    }
+
+    @ExceptionHandler(RecursoNoDisponibleException.class)
+    public ResponseEntity<Map<String, Object>> manejarRecursoNoDisponible(RecursoNoDisponibleException ex) {
+        return construir(HttpStatus.CONFLICT, "RECURSO_NO_DISPONIBLE", ex.getMessage());
+    }
+
+    @ExceptionHandler(RecursoOpcionalInvalidoException.class)
+    public ResponseEntity<Map<String, Object>> manejarRecursoOpcionalInvalido(RecursoOpcionalInvalidoException ex) {
+        return construir(HttpStatus.BAD_REQUEST, "RECURSO_OPCIONAL_NO_VALIDO", ex.getMessage());
     }
 
     @ExceptionHandler(ServicioNoReservableException.class)
