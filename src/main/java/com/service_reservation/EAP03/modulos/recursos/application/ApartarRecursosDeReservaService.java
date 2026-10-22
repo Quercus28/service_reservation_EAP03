@@ -1,6 +1,7 @@
 package com.service_reservation.EAP03.modulos.recursos.application;
 
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.DisponibilidadInsuficienteException;
+import com.service_reservation.EAP03.modulos.recursos.domain.exception.RecursoDesactivadoException;
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.RecursoNoDisponibleParaReservaException;
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.RecursoNoEncontradoException;
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.RecursoNoOperativoException;
@@ -13,6 +14,8 @@ import com.service_reservation.EAP03.modulos.recursos.domain.ports.in.ApartarRec
 import com.service_reservation.EAP03.modulos.recursos.domain.ports.in.RegistrarPrestamoRecursoUseCase;
 import com.service_reservation.EAP03.modulos.recursos.domain.ports.out.RecursoRepositoryPort;
 import com.service_reservation.EAP03.modulos.recursos.domain.ports.out.ServicioRecursoRepositoryPort;
+import com.service_reservation.EAP03.modulos.servicios_catalogo.application.usecase.ObtenerServicioPorIdUseCase;
+import com.service_reservation.EAP03.modulos.servicios_catalogo.domain.exception.ServicioNoEncontradoException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,13 +34,16 @@ public class ApartarRecursosDeReservaService implements ApartarRecursosDeReserva
     private final ServicioRecursoRepositoryPort servicioRecursoRepositoryPort;
     private final RecursoRepositoryPort recursoRepositoryPort;
     private final RegistrarPrestamoRecursoUseCase registrarPrestamoRecursoUseCase;
+    private final ObtenerServicioPorIdUseCase obtenerServicioPorIdUseCase;
 
     public ApartarRecursosDeReservaService(ServicioRecursoRepositoryPort servicioRecursoRepositoryPort,
                                            RecursoRepositoryPort recursoRepositoryPort,
-                                           RegistrarPrestamoRecursoUseCase registrarPrestamoRecursoUseCase) {
+                                           RegistrarPrestamoRecursoUseCase registrarPrestamoRecursoUseCase,
+                                           ObtenerServicioPorIdUseCase obtenerServicioPorIdUseCase) {
         this.servicioRecursoRepositoryPort = servicioRecursoRepositoryPort;
         this.recursoRepositoryPort = recursoRepositoryPort;
         this.registrarPrestamoRecursoUseCase = registrarPrestamoRecursoUseCase;
+        this.obtenerServicioPorIdUseCase = obtenerServicioPorIdUseCase;
     }
 
     // Si algún recurso falla se lanza el error. Como todo va en la misma transacción que la
@@ -59,7 +65,7 @@ public class ApartarRecursosDeReservaService implements ApartarRecursosDeReserva
                 .sorted()
                 .toList();
         if (!noValidos.isEmpty()) {
-            throw new RecursoOpcionalNoValidoException(idServicio, noValidos.stream()
+            throw new RecursoOpcionalNoValidoException(nombreDeServicioParaMensaje(idServicio), noValidos.stream()
                     .map(this::nombreParaMensaje)
                     .toList());
         }
@@ -86,13 +92,21 @@ public class ApartarRecursosDeReservaService implements ApartarRecursosDeReserva
                 .orElse(String.valueOf(idRecurso));
     }
 
+    // El nombre del servicio entre comillas, preguntándole al catálogo; si no está, su número.
+    private String nombreDeServicioParaMensaje(Integer idServicio) {
+        try {
+            return "'" + obtenerServicioPorIdUseCase.ejecutar(idServicio).nombre() + "'";
+        } catch (ServicioNoEncontradoException e) {
+            return String.valueOf(idServicio);
+        }
+    }
+
     private RecursoPrestado apartar(ServicioRecurso asociacion, Integer idReserva,
                                     LocalDateTime inicio, LocalDateTime fin) {
         Integer idRecurso = asociacion.getIdRecurso();
         int cantidad = asociacion.getCantidad();
 
-        // Se toma el recurso con bloqueo de la fila, igual que al registrar un préstamo. Si
-        // está desactivado, el registro del préstamo lo rechaza más abajo.
+        // Se toma el recurso con bloqueo de la fila, igual que al registrar un préstamo.
         Recurso recurso = recursoRepositoryPort.buscarPorIdConBloqueo(idRecurso)
                 .orElseThrow(() -> new RecursoNoEncontradoException(idRecurso));
 
@@ -102,10 +116,13 @@ public class ApartarRecursosDeReservaService implements ApartarRecursosDeReserva
                 ? BigDecimal.ZERO
                 : recurso.getPrecioUnitario().multiply(BigDecimal.valueOf(cantidad));
 
-        // Stock, horario y bloqueos se revisan con la misma lógica de un préstamo normal.
+        // Desactivado, stock, horario y bloqueos se revisan con la misma lógica de un préstamo
+        // normal. Los mensajes se cambian para que hablen de la reserva.
         try {
             return registrarPrestamoRecursoUseCase.ejecutar(new RegistrarPrestamoComando(
                     idRecurso, idReserva, cantidad, inicio, fin, precioTotal));
+        } catch (RecursoDesactivadoException e) {
+            throw RecursoDesactivadoException.alReservar(recurso.getNombre());
         } catch (DisponibilidadInsuficienteException e) {
             throw RecursoNoDisponibleParaReservaException.sinUnidades(recurso.getNombre(), cantidad, e.getDisponible());
         } catch (RecursoNoOperativoException e) {

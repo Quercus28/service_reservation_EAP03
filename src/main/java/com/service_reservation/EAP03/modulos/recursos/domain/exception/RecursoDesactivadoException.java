@@ -9,8 +9,14 @@ public class RecursoDesactivadoException extends RecursoDominioException {
         super(mensaje);
     }
 
-    // Para un préstamo, sea manual o al reservar.
+    // Para el registro manual de un préstamo.
     public static RecursoDesactivadoException alPrestar(String nombre) {
+        return new RecursoDesactivadoException("No se puede prestar: el recurso '" + nombre
+                + "' ya no está disponible porque el proveedor lo desactivó.");
+    }
+
+    // Para cuando el recurso lo necesita una reserva.
+    public static RecursoDesactivadoException alReservar(String nombre) {
         return new RecursoDesactivadoException("No se puede reservar: el recurso '" + nombre
                 + "' ya no está disponible porque el proveedor lo desactivó.");
     }

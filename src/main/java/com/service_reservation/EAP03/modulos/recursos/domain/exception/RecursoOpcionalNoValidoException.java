@@ -3,13 +3,13 @@ package com.service_reservation.EAP03.modulos.recursos.domain.exception;
 import java.util.List;
 
 // El cliente pidió como extra un recurso que el servicio no ofrece como opcional.
-// recursos trae el nombre de cada recurso entre comillas, o su número si no existe.
+// servicio y recursos traen el nombre entre comillas, o el número si no se encontró.
 public class RecursoOpcionalNoValidoException extends RecursoDominioException {
-    public RecursoOpcionalNoValidoException(Integer idServicio, List<String> recursos) {
+    public RecursoOpcionalNoValidoException(String servicio, List<String> recursos) {
         super(recursos.size() == 1
-                ? "No se puede pedir el recurso " + recursos.get(0) + " con el servicio " + idServicio
+                ? "No se puede pedir el recurso " + recursos.get(0) + " con el servicio " + servicio
                         + ": no está entre sus recursos opcionales."
                 : "No se pueden pedir los recursos " + String.join(", ", recursos) + " con el servicio "
-                        + idServicio + ": no están entre sus recursos opcionales.");
+                        + servicio + ": no están entre sus recursos opcionales.");
     }
 }
