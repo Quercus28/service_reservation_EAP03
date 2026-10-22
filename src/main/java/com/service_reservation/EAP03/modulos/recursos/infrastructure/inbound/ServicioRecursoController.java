@@ -39,12 +39,12 @@ public class ServicioRecursoController {
     @PreAuthorize(PROPIETARIO_O_ADMIN)
     public ServicioRecursoResponseDTO asociar(@PathVariable Integer idServicio,
                                               @Valid @RequestBody AsociarRecursoRequestDTO request) {
-        // Si no mandan cantidad se usa 1, y si no dicen nada de obligatorio se toma como obligatorio.
+        // Cada asociación quiere decir que el servicio ofrece este recurso como adicional que
+        // el cliente puede pedir al reservar. Si no mandan cantidad se usa 1.
         ServicioRecurso asociacion = asociarRecursoAServicioUseCase.ejecutar(new AsociarRecursoComando(
                 idServicio,
                 request.idRecurso(),
-                request.cantidad() != null ? request.cantidad() : 1,
-                request.obligatorio() == null || request.obligatorio()
+                request.cantidad() != null ? request.cantidad() : 1
         ));
         return ServicioRecursoResponseDTO.desde(asociacion);
     }

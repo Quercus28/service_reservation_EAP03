@@ -62,8 +62,7 @@ public class AsociarRecursoAServicioService implements AsociarRecursoAServicioUs
         return servicioRecursoRepositoryPort.guardar(ServicioRecurso.nuevo(
                 comando.idServicio(),
                 comando.idRecurso(),
-                comando.cantidad(),
-                comando.obligatorio()
+                comando.cantidad()
         ));
     }
 }
