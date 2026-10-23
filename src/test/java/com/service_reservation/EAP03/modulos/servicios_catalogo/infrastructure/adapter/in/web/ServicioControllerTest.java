@@ -1,5 +1,6 @@
 package com.service_reservation.EAP03.modulos.servicios_catalogo.infrastructure.adapter.in.web;
 
+import com.service_reservation.EAP03.config.GlobalExceptionHandler;
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.in.ConsultarProveedorUseCase;
 import com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound.security.UsuarioAutenticadoPrincipal;
 import com.service_reservation.EAP03.modulos.servicios_catalogo.application.dto.CrearServicioRequest;
@@ -45,7 +46,7 @@ class ServicioControllerTest {
                 crearServicioUseCase, null, null, null, null, consultarProveedorUseCase);
         this.mockMvc = MockMvcBuilders
                 .standaloneSetup(controller)
-                .setControllerAdvice(new ServicioExceptionHandler())
+                .setControllerAdvice(new ServicioExceptionHandler(), new GlobalExceptionHandler(null))
                 .build();
     }
 
@@ -101,10 +102,10 @@ class ServicioControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonInvalido))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Validación Fallida"))
-                .andExpect(jsonPath("$.errores.idProveedor").exists())
-                .andExpect(jsonPath("$.errores.nombre").exists())
-                .andExpect(jsonPath("$.errores.duracionMinutos").exists());
+                .andExpect(jsonPath("$.errorCode").value("VALIDACION_ENTRADA"))
+                .andExpect(jsonPath("$.traceId").exists())
+                .andExpect(jsonPath("$.details.idProveedor").exists())
+                .andExpect(jsonPath("$.details.nombre").exists())
+                .andExpect(jsonPath("$.details.duracionMinutos").exists());
     }
 }
