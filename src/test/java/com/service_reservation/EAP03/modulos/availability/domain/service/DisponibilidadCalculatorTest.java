@@ -7,12 +7,15 @@ import com.service_reservation.EAP03.modulos.availability.domain.model.HorarioSe
 import com.service_reservation.EAP03.modulos.availability.domain.model.TimeSlot;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -35,132 +38,198 @@ class DisponibilidadCalculatorTest {
     @Test
     @DisplayName("Rechaza un rango de fechas nulo")
     void rechazaRangoNulo() {
-        assertThrows(NullPointerException.class,
-                () -> calculator.calcularDisponibilidad(null, List.of(), List.of(), 60));
-    }
-
-    @Test
-    @DisplayName("Rechaza una duración de turno cero o negativa")
-    void rechazaDuracionInvalida() {
+        // Arrange
         List<HorarioSemanal> horarios = List.of(horario(DiaSemana.LUNES, 8, 10));
 
-        assertThrows(DisponibilidadInvalidaException.class,
-                () -> calculator.calcularDisponibilidad(SOLO_LUNES, horarios, List.of(), 0));
-        assertThrows(DisponibilidadInvalidaException.class,
-                () -> calculator.calcularDisponibilidad(SOLO_LUNES, horarios, List.of(), -30));
+        // Act
+        NullPointerException ex = assertThrows(NullPointerException.class,
+                () -> calculator.calcularDisponibilidad(null, horarios, List.of(), 60));
+
+        // Assert
+        assertEquals("El rango de fechas no puede ser nulo", ex.getMessage());
+    }
+
+    @ParameterizedTest(name = "duración = {0}")
+    @ValueSource(ints = {0, -30})
+    @DisplayName("Rechaza una duración de turno cero o negativa")
+    void rechazaDuracionInvalida(int duracion) {
+        // Arrange
+        List<HorarioSemanal> horarios = List.of(horario(DiaSemana.LUNES, 8, 10));
+
+        // Act
+        DisponibilidadInvalidaException ex = assertThrows(DisponibilidadInvalidaException.class,
+                () -> calculator.calcularDisponibilidad(SOLO_LUNES, horarios, List.of(), duracion));
+
+        // Assert
+        assertEquals("La duración del turno debe ser mayor a 0 minutos", ex.getMessage());
     }
 
     @Test
-    @DisplayName("Sin horarios configurados no hay disponibilidad")
-    void sinHorariosDevuelveVacio() {
-        assertTrue(calculator.calcularDisponibilidad(SOLO_LUNES, null, List.of(), 60).isEmpty());
-        assertTrue(calculator.calcularDisponibilidad(SOLO_LUNES, List.of(), List.of(), 60).isEmpty());
+    @DisplayName("Sin horarios configurados (null) no hay disponibilidad")
+    void horariosNulosDevuelveVacio() {
+        // Arrange
+        List<HorarioSemanal> horarios = null;
+
+        // Act
+        List<TimeSlot> slots = calculator.calcularDisponibilidad(SOLO_LUNES, horarios, List.of(), 60);
+
+        // Assert
+        assertTrue(slots.isEmpty());
+    }
+
+    @Test
+    @DisplayName("Sin horarios configurados (lista vacía) no hay disponibilidad")
+    void horariosVaciosDevuelveVacio() {
+        // Arrange
+        List<HorarioSemanal> horarios = List.of();
+
+        // Act
+        List<TimeSlot> slots = calculator.calcularDisponibilidad(SOLO_LUNES, horarios, List.of(), 60);
+
+        // Assert
+        assertTrue(slots.isEmpty());
     }
 
     @Test
     @DisplayName("Divide la ventana de atención en turnos de la duración del servicio")
     void segmentaVentanaEnTurnos() {
-        List<TimeSlot> slots = calculator.calcularDisponibilidad(
-                SOLO_LUNES, List.of(horario(DiaSemana.LUNES, 8, 10)), List.of(), 60);
+        // Arrange
+        List<HorarioSemanal> horarios = List.of(horario(DiaSemana.LUNES, 8, 10));
 
+        // Act
+        List<TimeSlot> slots = calculator.calcularDisponibilidad(SOLO_LUNES, horarios, List.of(), 60);
+
+        // Assert
         assertEquals(List.of(franja(LUNES, 8, 0, 9, 0), franja(LUNES, 9, 0, 10, 0)), slots);
     }
 
     @Test
     @DisplayName("Descarta el último turno si no cabe completo en la ventana")
     void descartaTurnoIncompleto() {
-        HorarioSemanal ventana = new HorarioSemanal(DiaSemana.LUNES, LocalTime.of(8, 0), LocalTime.of(9, 30));
+        // Arrange
+        List<HorarioSemanal> horarios = List.of(
+                new HorarioSemanal(DiaSemana.LUNES, LocalTime.of(8, 0), LocalTime.of(9, 30)));
 
-        List<TimeSlot> slots = calculator.calcularDisponibilidad(SOLO_LUNES, List.of(ventana), List.of(), 60);
+        // Act
+        List<TimeSlot> slots = calculator.calcularDisponibilidad(SOLO_LUNES, horarios, List.of(), 60);
 
+        // Assert
         assertEquals(List.of(franja(LUNES, 8, 0, 9, 0)), slots);
     }
 
     @Test
     @DisplayName("Ventana más corta que la duración no genera turnos")
     void ventanaMasCortaQueDuracion() {
-        List<TimeSlot> slots = calculator.calcularDisponibilidad(
-                SOLO_LUNES, List.of(horario(DiaSemana.LUNES, 8, 9)), List.of(), 90);
+        // Arrange
+        List<HorarioSemanal> horarios = List.of(horario(DiaSemana.LUNES, 8, 9));
 
+        // Act
+        List<TimeSlot> slots = calculator.calcularDisponibilidad(SOLO_LUNES, horarios, List.of(), 90);
+
+        // Assert
         assertTrue(slots.isEmpty());
     }
 
     @Test
     @DisplayName("Excluye los turnos que se solapan con reservas ocupadas")
     void excluyeTurnosOcupados() {
+        // Arrange
+        List<HorarioSemanal> horarios = List.of(horario(DiaSemana.LUNES, 8, 11));
         List<TimeSlot> ocupadas = List.of(franja(LUNES, 8, 30, 9, 0));
 
-        List<TimeSlot> slots = calculator.calcularDisponibilidad(
-                SOLO_LUNES, List.of(horario(DiaSemana.LUNES, 8, 11)), ocupadas, 60);
+        // Act
+        List<TimeSlot> slots = calculator.calcularDisponibilidad(SOLO_LUNES, horarios, ocupadas, 60);
 
+        // Assert
         assertEquals(List.of(franja(LUNES, 9, 0, 10, 0), franja(LUNES, 10, 0, 11, 0)), slots);
     }
 
     @Test
     @DisplayName("Una reserva contigua a un turno no lo bloquea")
     void reservaContiguaNoBloquea() {
+        // Arrange
+        List<HorarioSemanal> horarios = List.of(horario(DiaSemana.LUNES, 8, 9));
         List<TimeSlot> ocupadas = List.of(franja(LUNES, 7, 0, 8, 0));
 
-        List<TimeSlot> slots = calculator.calcularDisponibilidad(
-                SOLO_LUNES, List.of(horario(DiaSemana.LUNES, 8, 9)), ocupadas, 60);
+        // Act
+        List<TimeSlot> slots = calculator.calcularDisponibilidad(SOLO_LUNES, horarios, ocupadas, 60);
 
+        // Assert
         assertEquals(List.of(franja(LUNES, 8, 0, 9, 0)), slots);
     }
 
     @Test
     @DisplayName("Acepta lista de reservas nula como si no hubiera ocupación")
     void reservasNulas() {
-        List<TimeSlot> slots = calculator.calcularDisponibilidad(
-                SOLO_LUNES, List.of(horario(DiaSemana.LUNES, 8, 10)), null, 60);
+        // Arrange
+        List<HorarioSemanal> horarios = List.of(horario(DiaSemana.LUNES, 8, 10));
+        List<TimeSlot> ocupadas = null;
 
+        // Act
+        List<TimeSlot> slots = calculator.calcularDisponibilidad(SOLO_LUNES, horarios, ocupadas, 60);
+
+        // Assert
         assertEquals(2, slots.size());
     }
 
     @Test
     @DisplayName("No genera turnos para días sin horario configurado")
     void diaSinHorario() {
-        List<TimeSlot> slots = calculator.calcularDisponibilidad(
-                SOLO_LUNES, List.of(horario(DiaSemana.MARTES, 8, 10)), List.of(), 60);
+        // Arrange
+        List<HorarioSemanal> horarios = List.of(horario(DiaSemana.MARTES, 8, 10));
 
+        // Act
+        List<TimeSlot> slots = calculator.calcularDisponibilidad(SOLO_LUNES, horarios, List.of(), 60);
+
+        // Assert
         assertTrue(slots.isEmpty());
     }
 
     @Test
     @DisplayName("Mapea correctamente cada día de la semana en un rango de 7 días")
     void mapeaTodosLosDiasDeLaSemana() {
+        // Arrange: cada día tiene una única hora de atención distinta (lunes 8-9, martes 9-10, ...)
         List<HorarioSemanal> horarios = Arrays.stream(DiaSemana.values())
                 .map(dia -> horario(dia, 8 + dia.ordinal(), 9 + dia.ordinal()))
                 .toList();
+        DateRange semana = new DateRange(LUNES, LUNES.plusDays(6));
+        List<TimeSlot> esperado = IntStream.range(0, 7)
+                .mapToObj(i -> franja(LUNES.plusDays(i), 8 + i, 0, 9 + i, 0))
+                .toList();
 
-        List<TimeSlot> slots = calculator.calcularDisponibilidad(
-                new DateRange(LUNES, LUNES.plusDays(6)), horarios, List.of(), 60);
+        // Act
+        List<TimeSlot> slots = calculator.calcularDisponibilidad(semana, horarios, List.of(), 60);
 
-        assertEquals(7, slots.size());
-        for (int i = 0; i < 7; i++) {
-            LocalDate fecha = LUNES.plusDays(i);
-            assertEquals(franja(fecha, 8 + i, 0, 9 + i, 0), slots.get(i),
-                    "Turno incorrecto para " + fecha.getDayOfWeek());
-        }
+        // Assert
+        assertEquals(esperado, slots);
     }
 
     @Test
     @DisplayName("Combina varias ventanas del mismo día y devuelve los turnos ordenados")
     void ordenaTurnosDeVariasVentanas() {
+        // Arrange
         List<HorarioSemanal> horarios = List.of(
                 horario(DiaSemana.LUNES, 14, 15),
                 horario(DiaSemana.LUNES, 8, 9));
 
+        // Act
         List<TimeSlot> slots = calculator.calcularDisponibilidad(SOLO_LUNES, horarios, List.of(), 60);
 
+        // Assert
         assertEquals(List.of(franja(LUNES, 8, 0, 9, 0), franja(LUNES, 14, 0, 15, 0)), slots);
     }
 
     @Test
     @DisplayName("Repite el horario semanal en cada semana del rango")
     void repiteHorarioCadaSemana() {
-        List<TimeSlot> slots = calculator.calcularDisponibilidad(
-                new DateRange(LUNES, LUNES.plusDays(13)), List.of(horario(DiaSemana.LUNES, 8, 9)), List.of(), 60);
+        // Arrange
+        List<HorarioSemanal> horarios = List.of(horario(DiaSemana.LUNES, 8, 9));
+        DateRange dosSemanas = new DateRange(LUNES, LUNES.plusDays(13));
 
+        // Act
+        List<TimeSlot> slots = calculator.calcularDisponibilidad(dosSemanas, horarios, List.of(), 60);
+
+        // Assert
         assertEquals(List.of(
                 franja(LUNES, 8, 0, 9, 0),
                 franja(LUNES.plusDays(7), 8, 0, 9, 0)), slots);
@@ -169,12 +238,15 @@ class DisponibilidadCalculatorTest {
     @Test
     @DisplayName("Una reserva de otro día no afecta los turnos del día consultado")
     void reservaDeOtroDiaNoAfecta() {
+        // Arrange
+        List<HorarioSemanal> horarios = List.of(horario(DiaSemana.LUNES, 8, 9));
         LocalDateTime martes = LUNES.plusDays(1).atTime(8, 0);
         List<TimeSlot> ocupadas = List.of(new TimeSlot(martes, martes.plusHours(1)));
 
-        List<TimeSlot> slots = calculator.calcularDisponibilidad(
-                SOLO_LUNES, List.of(horario(DiaSemana.LUNES, 8, 9)), ocupadas, 60);
+        // Act
+        List<TimeSlot> slots = calculator.calcularDisponibilidad(SOLO_LUNES, horarios, ocupadas, 60);
 
-        assertEquals(1, slots.size());
+        // Assert
+        assertEquals(List.of(franja(LUNES, 8, 0, 9, 0)), slots);
     }
 }

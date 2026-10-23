@@ -46,35 +46,55 @@ class AvailabilityJpaAdapterTest {
     @Test
     @DisplayName("obtenerServicioInfo mapea el servicio del catálogo")
     void obtenerServicioInfoMapea() {
+        // Arrange
         when(obtenerServicioPorIdUseCase.ejecutar(ID_SERVICIO))
                 .thenReturn(new ServicioResponse(ID_SERVICIO, ID_PROVEEDOR, "Masaje", 45, null));
 
+        // Act
         Optional<ServicioDisponibilidadInfo> info = adapter.obtenerServicioInfo(ID_SERVICIO);
 
+        // Assert
         assertEquals(Optional.of(new ServicioDisponibilidadInfo(ID_SERVICIO, ID_PROVEEDOR, 45)), info);
     }
 
     @Test
     @DisplayName("obtenerServicioInfo con id nulo no consulta el catálogo")
     void obtenerServicioInfoIdNulo() {
-        assertTrue(adapter.obtenerServicioInfo(null).isEmpty());
+        // Arrange
+        Integer idServicio = null;
+
+        // Act
+        Optional<ServicioDisponibilidadInfo> info = adapter.obtenerServicioInfo(idServicio);
+
+        // Assert
+        assertTrue(info.isEmpty());
         verifyNoInteractions(obtenerServicioPorIdUseCase);
     }
 
     @Test
     @DisplayName("obtenerServicioInfo devuelve vacío si el catálogo responde null")
     void obtenerServicioInfoRespuestaNula() {
+        // Arrange
         when(obtenerServicioPorIdUseCase.ejecutar(ID_SERVICIO)).thenReturn(null);
 
-        assertTrue(adapter.obtenerServicioInfo(ID_SERVICIO).isEmpty());
+        // Act
+        Optional<ServicioDisponibilidadInfo> info = adapter.obtenerServicioInfo(ID_SERVICIO);
+
+        // Assert
+        assertTrue(info.isEmpty());
     }
 
     @Test
     @DisplayName("obtenerServicioInfo devuelve vacío si el servicio no existe")
     void obtenerServicioInfoNoEncontrado() {
+        // Arrange
         when(obtenerServicioPorIdUseCase.ejecutar(ID_SERVICIO)).thenThrow(new ServicioNoEncontradoException(ID_SERVICIO));
 
-        assertTrue(adapter.obtenerServicioInfo(ID_SERVICIO).isEmpty());
+        // Act
+        Optional<ServicioDisponibilidadInfo> info = adapter.obtenerServicioInfo(ID_SERVICIO);
+
+        // Assert
+        assertTrue(info.isEmpty());
     }
 
     // ---- obtenerHorariosProveedor ----
@@ -82,40 +102,73 @@ class AvailabilityJpaAdapterTest {
     @Test
     @DisplayName("obtenerHorariosProveedor mapea los horarios de la agenda")
     void obtenerHorariosMapea() {
+        // Arrange
         when(disponibilidadAgendasPort.consultarHorariosDisponibles(ID_PROVEEDOR, ID_SERVICIO)).thenReturn(List.of(
                 new Horario(1L, DiaSemana.LUNES, LocalTime.of(8, 0), LocalTime.of(12, 0)),
                 new Horario(2L, DiaSemana.JUEVES, LocalTime.of(14, 0), LocalTime.of(18, 0))));
 
+        // Act
         List<HorarioSemanal> horarios = adapter.obtenerHorariosProveedor(ID_SERVICIO, ID_PROVEEDOR);
 
+        // Assert
         assertEquals(List.of(
                 new HorarioSemanal(DiaSemana.LUNES, LocalTime.of(8, 0), LocalTime.of(12, 0)),
                 new HorarioSemanal(DiaSemana.JUEVES, LocalTime.of(14, 0), LocalTime.of(18, 0))), horarios);
     }
 
     @Test
-    @DisplayName("obtenerHorariosProveedor con ids nulos no consulta la agenda")
-    void obtenerHorariosIdsNulos() {
-        assertTrue(adapter.obtenerHorariosProveedor(null, ID_PROVEEDOR).isEmpty());
-        assertTrue(adapter.obtenerHorariosProveedor(ID_SERVICIO, null).isEmpty());
+    @DisplayName("obtenerHorariosProveedor con servicio nulo no consulta la agenda")
+    void obtenerHorariosServicioNulo() {
+        // Arrange
+        Integer idServicio = null;
+
+        // Act
+        List<HorarioSemanal> horarios = adapter.obtenerHorariosProveedor(idServicio, ID_PROVEEDOR);
+
+        // Assert
+        assertTrue(horarios.isEmpty());
+        verifyNoInteractions(disponibilidadAgendasPort);
+    }
+
+    @Test
+    @DisplayName("obtenerHorariosProveedor con proveedor nulo no consulta la agenda")
+    void obtenerHorariosProveedorNulo() {
+        // Arrange
+        Integer idProveedor = null;
+
+        // Act
+        List<HorarioSemanal> horarios = adapter.obtenerHorariosProveedor(ID_SERVICIO, idProveedor);
+
+        // Assert
+        assertTrue(horarios.isEmpty());
         verifyNoInteractions(disponibilidadAgendasPort);
     }
 
     @Test
     @DisplayName("obtenerHorariosProveedor devuelve vacío si la agenda responde null")
     void obtenerHorariosRespuestaNula() {
+        // Arrange
         when(disponibilidadAgendasPort.consultarHorariosDisponibles(ID_PROVEEDOR, ID_SERVICIO)).thenReturn(null);
 
-        assertTrue(adapter.obtenerHorariosProveedor(ID_SERVICIO, ID_PROVEEDOR).isEmpty());
+        // Act
+        List<HorarioSemanal> horarios = adapter.obtenerHorariosProveedor(ID_SERVICIO, ID_PROVEEDOR);
+
+        // Assert
+        assertTrue(horarios.isEmpty());
     }
 
     @Test
     @DisplayName("obtenerHorariosProveedor devuelve vacío si no hay agenda")
     void obtenerHorariosSinAgenda() {
+        // Arrange
         when(disponibilidadAgendasPort.consultarHorariosDisponibles(ID_PROVEEDOR, ID_SERVICIO))
                 .thenThrow(new AgendaNoEncontradaException(1L));
 
-        assertTrue(adapter.obtenerHorariosProveedor(ID_SERVICIO, ID_PROVEEDOR).isEmpty());
+        // Act
+        List<HorarioSemanal> horarios = adapter.obtenerHorariosProveedor(ID_SERVICIO, ID_PROVEEDOR);
+
+        // Assert
+        assertTrue(horarios.isEmpty());
     }
 
     // ---- obtenerReservasActivas ----
@@ -123,38 +176,85 @@ class AvailabilityJpaAdapterTest {
     @Test
     @DisplayName("obtenerReservasActivas convierte los intervalos reservados en franjas")
     void obtenerReservasMapea() {
+        // Arrange
         LocalDateTime ocho = INICIO.withHour(8);
         when(consultarReservasActivasUseCase.ejecutar(ID_SERVICIO, INICIO, FIN))
                 .thenReturn(List.of(new IntervaloReservado(ocho, ocho.plusHours(1))));
 
+        // Act
         List<TimeSlot> reservas = adapter.obtenerReservasActivas(ID_SERVICIO, ID_PROVEEDOR, INICIO, FIN);
 
+        // Assert
         assertEquals(List.of(new TimeSlot(ocho, ocho.plusHours(1))), reservas);
     }
 
     @Test
     @DisplayName("obtenerReservasActivas no requiere el id del proveedor")
     void obtenerReservasSinProveedor() {
+        // Arrange
+        Integer idProveedor = null;
         when(consultarReservasActivasUseCase.ejecutar(ID_SERVICIO, INICIO, FIN)).thenReturn(List.of());
 
-        assertTrue(adapter.obtenerReservasActivas(ID_SERVICIO, null, INICIO, FIN).isEmpty());
+        // Act
+        List<TimeSlot> reservas = adapter.obtenerReservasActivas(ID_SERVICIO, idProveedor, INICIO, FIN);
+
+        // Assert
+        assertTrue(reservas.isEmpty());
         verify(consultarReservasActivasUseCase).ejecutar(ID_SERVICIO, INICIO, FIN);
     }
 
     @Test
-    @DisplayName("obtenerReservasActivas con parámetros nulos no consulta reservas")
-    void obtenerReservasParametrosNulos() {
-        assertTrue(adapter.obtenerReservasActivas(null, ID_PROVEEDOR, INICIO, FIN).isEmpty());
-        assertTrue(adapter.obtenerReservasActivas(ID_SERVICIO, ID_PROVEEDOR, null, FIN).isEmpty());
-        assertTrue(adapter.obtenerReservasActivas(ID_SERVICIO, ID_PROVEEDOR, INICIO, null).isEmpty());
+    @DisplayName("obtenerReservasActivas con servicio nulo no consulta reservas")
+    void obtenerReservasServicioNulo() {
+        // Arrange
+        Integer idServicio = null;
+
+        // Act
+        List<TimeSlot> reservas = adapter.obtenerReservasActivas(idServicio, ID_PROVEEDOR, INICIO, FIN);
+
+        // Assert
+        assertTrue(reservas.isEmpty());
+        verifyNoInteractions(consultarReservasActivasUseCase);
+    }
+
+    @Test
+    @DisplayName("obtenerReservasActivas con inicio nulo no consulta reservas")
+    void obtenerReservasInicioNulo() {
+        // Arrange
+        LocalDateTime inicio = null;
+
+        // Act
+        List<TimeSlot> reservas = adapter.obtenerReservasActivas(ID_SERVICIO, ID_PROVEEDOR, inicio, FIN);
+
+        // Assert
+        assertTrue(reservas.isEmpty());
+        verifyNoInteractions(consultarReservasActivasUseCase);
+    }
+
+    @Test
+    @DisplayName("obtenerReservasActivas con fin nulo no consulta reservas")
+    void obtenerReservasFinNulo() {
+        // Arrange
+        LocalDateTime fin = null;
+
+        // Act
+        List<TimeSlot> reservas = adapter.obtenerReservasActivas(ID_SERVICIO, ID_PROVEEDOR, INICIO, fin);
+
+        // Assert
+        assertTrue(reservas.isEmpty());
         verifyNoInteractions(consultarReservasActivasUseCase);
     }
 
     @Test
     @DisplayName("obtenerReservasActivas devuelve vacío si reservas responde null")
     void obtenerReservasRespuestaNula() {
+        // Arrange
         when(consultarReservasActivasUseCase.ejecutar(ID_SERVICIO, INICIO, FIN)).thenReturn(null);
 
-        assertTrue(adapter.obtenerReservasActivas(ID_SERVICIO, ID_PROVEEDOR, INICIO, FIN).isEmpty());
+        // Act
+        List<TimeSlot> reservas = adapter.obtenerReservasActivas(ID_SERVICIO, ID_PROVEEDOR, INICIO, FIN);
+
+        // Assert
+        assertTrue(reservas.isEmpty());
     }
 }

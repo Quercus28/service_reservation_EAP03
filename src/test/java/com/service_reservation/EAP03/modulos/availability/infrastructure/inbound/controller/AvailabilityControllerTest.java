@@ -44,79 +44,115 @@ class AvailabilityControllerTest {
     @Test
     @DisplayName("Rechaza id nulo")
     void rechazaIdNulo() {
-        assertThrows(DisponibilidadInvalidaException.class,
-                () -> controller.consultarDisponibilidad(null, HOY, MANANA));
+        // Arrange
+        Integer idServicio = null;
+
+        // Act
+        DisponibilidadInvalidaException ex = assertThrows(DisponibilidadInvalidaException.class,
+                () -> controller.consultarDisponibilidad(idServicio, HOY, MANANA));
+
+        // Assert
+        assertEquals("El parámetro 'id' del servicio es obligatorio", ex.getMessage());
         verifyNoInteractions(useCase);
     }
 
     @Test
-    @DisplayName("Rechaza startDate o endDate ausentes")
-    void rechazaFechasAusentes() {
-        DisponibilidadInvalidaException sinInicio = assertThrows(DisponibilidadInvalidaException.class,
-                () -> controller.consultarDisponibilidad(ID_SERVICIO, null, MANANA));
-        DisponibilidadInvalidaException sinFin = assertThrows(DisponibilidadInvalidaException.class,
-                () -> controller.consultarDisponibilidad(ID_SERVICIO, HOY, null));
+    @DisplayName("Rechaza startDate ausente")
+    void rechazaInicioAusente() {
+        // Arrange
+        LocalDate inicio = null;
 
-        assertTrue(sinInicio.getMessage().contains("startDate"));
-        assertTrue(sinFin.getMessage().contains("endDate"));
+        // Act
+        DisponibilidadInvalidaException ex = assertThrows(DisponibilidadInvalidaException.class,
+                () -> controller.consultarDisponibilidad(ID_SERVICIO, inicio, MANANA));
+
+        // Assert
+        assertEquals("El parámetro 'startDate' es obligatorio y debe tener formato ISO YYYY-MM-DD", ex.getMessage());
+        verifyNoInteractions(useCase);
+    }
+
+    @Test
+    @DisplayName("Rechaza endDate ausente")
+    void rechazaFinAusente() {
+        // Arrange
+        LocalDate fin = null;
+
+        // Act
+        DisponibilidadInvalidaException ex = assertThrows(DisponibilidadInvalidaException.class,
+                () -> controller.consultarDisponibilidad(ID_SERVICIO, HOY, fin));
+
+        // Assert
+        assertEquals("El parámetro 'endDate' es obligatorio y debe tener formato ISO YYYY-MM-DD", ex.getMessage());
         verifyNoInteractions(useCase);
     }
 
     @Test
     @DisplayName("Rechaza endDate anterior a startDate")
     void rechazaFinAnterior() {
-        assertThrows(DisponibilidadInvalidaException.class,
-                () -> controller.consultarDisponibilidad(ID_SERVICIO, MANANA, HOY));
+        // Arrange
+        LocalDate inicio = MANANA;
+        LocalDate fin = HOY;
+
+        // Act
+        DisponibilidadInvalidaException ex = assertThrows(DisponibilidadInvalidaException.class,
+                () -> controller.consultarDisponibilidad(ID_SERVICIO, inicio, fin));
+
+        // Assert
+        assertEquals("El parámetro 'endDate' no puede ser anterior a 'startDate'", ex.getMessage());
         verifyNoInteractions(useCase);
     }
 
     @Test
     @DisplayName("Sin espacios libres responde 200 con mensaje y sin bloques")
     void sinDisponibilidad() {
+        // Arrange
         when(useCase.ejecutar(ID_SERVICIO, HOY, MANANA)).thenReturn(List.of());
 
+        // Act
         ResponseEntity<DisponibilidadServicioResponseDTO> respuesta =
                 controller.consultarDisponibilidad(ID_SERVICIO, HOY, MANANA);
 
+        // Assert
         assertEquals(HttpStatus.OK, respuesta.getStatusCode());
-        DisponibilidadServicioResponseDTO body = respuesta.getBody();
-        assertNotNull(body);
-        assertEquals(ID_SERVICIO, body.servicioId());
-        assertEquals(0, body.totalEspaciosDisponibles());
-        assertTrue(body.disponibilidad().isEmpty());
-        assertEquals(DisponibilidadServicioResponseDTO.MENSAJE_SIN_ESPACIOS, body.mensaje());
+        assertEquals(new DisponibilidadServicioResponseDTO(
+                ID_SERVICIO, 0, List.of(), DisponibilidadServicioResponseDTO.MENSAJE_SIN_ESPACIOS), respuesta.getBody());
     }
 
     @Test
     @DisplayName("Agrupa las franjas por fecha y las ordena cronológicamente")
     void agrupaYOrdenaPorFecha() {
+        // Arrange
         when(useCase.ejecutar(ID_SERVICIO, HOY, MANANA)).thenReturn(List.of(
                 franja(MANANA, 9),
                 franja(HOY, 15),
                 franja(MANANA, 8),
                 franja(HOY, 11)));
+        List<BloqueDisponibilidadDTO> bloquesEsperados = List.of(
+                new BloqueDisponibilidadDTO(HOY, List.of(franjaDto(11), franjaDto(15))),
+                new BloqueDisponibilidadDTO(MANANA, List.of(franjaDto(8), franjaDto(9))));
 
+        // Act
         ResponseEntity<DisponibilidadServicioResponseDTO> respuesta =
                 controller.consultarDisponibilidad(ID_SERVICIO, HOY, MANANA);
 
-        DisponibilidadServicioResponseDTO body = respuesta.getBody();
-        assertNotNull(body);
-        assertEquals(4, body.totalEspaciosDisponibles());
-        assertNull(body.mensaje());
-        assertEquals(List.of(
-                new BloqueDisponibilidadDTO(HOY, List.of(franjaDto(11), franjaDto(15))),
-                new BloqueDisponibilidadDTO(MANANA, List.of(franjaDto(8), franjaDto(9)))), body.disponibilidad());
+        // Assert
+        assertEquals(HttpStatus.OK, respuesta.getStatusCode());
+        assertEquals(new DisponibilidadServicioResponseDTO(ID_SERVICIO, 4, bloquesEsperados, null), respuesta.getBody());
     }
 
     @Test
     @DisplayName("Acepta consultar un único día")
     void consultaUnSoloDia() {
+        // Arrange
         when(useCase.ejecutar(ID_SERVICIO, HOY, HOY)).thenReturn(List.of(franja(HOY, 11)));
 
-        DisponibilidadServicioResponseDTO body = controller.consultarDisponibilidad(ID_SERVICIO, HOY, HOY).getBody();
+        // Act
+        ResponseEntity<DisponibilidadServicioResponseDTO> respuesta =
+                controller.consultarDisponibilidad(ID_SERVICIO, HOY, HOY);
 
-        assertNotNull(body);
-        assertEquals(1, body.disponibilidad().size());
+        // Assert
+        assertEquals(new DisponibilidadServicioResponseDTO(ID_SERVICIO, 1,
+                List.of(new BloqueDisponibilidadDTO(HOY, List.of(franjaDto(11)))), null), respuesta.getBody());
         verify(useCase).ejecutar(ID_SERVICIO, HOY, HOY);
     }
 }

@@ -20,7 +20,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -61,45 +60,90 @@ class ConsultarDisponibilidadServicioServiceTest {
     @Test
     @DisplayName("Rechaza id de servicio nulo")
     void rechazaIdNulo() {
-        DisponibilidadInvalidaException ex = assertThrows(DisponibilidadInvalidaException.class,
-                () -> service.ejecutar(null, HOY, HOY));
+        // Arrange
+        Integer idServicio = null;
 
+        // Act
+        DisponibilidadInvalidaException ex = assertThrows(DisponibilidadInvalidaException.class,
+                () -> service.ejecutar(idServicio, HOY, HOY));
+
+        // Assert
         assertEquals("El id del servicio es obligatorio", ex.getMessage());
         verifyNoInteractions(availabilityRepository, disponibilidadCalculator);
     }
 
     @Test
-    @DisplayName("Rechaza fechas nulas")
-    void rechazaFechasNulas() {
-        assertThrows(DisponibilidadInvalidaException.class, () -> service.ejecutar(ID_SERVICIO, null, HOY));
-        assertThrows(DisponibilidadInvalidaException.class, () -> service.ejecutar(ID_SERVICIO, HOY, null));
+    @DisplayName("Rechaza startDate nulo")
+    void rechazaInicioNulo() {
+        // Arrange
+        LocalDate inicio = null;
+
+        // Act
+        DisponibilidadInvalidaException ex = assertThrows(DisponibilidadInvalidaException.class,
+                () -> service.ejecutar(ID_SERVICIO, inicio, HOY));
+
+        // Assert
+        assertEquals("Las fechas de inicio y fin son obligatorias", ex.getMessage());
+        verifyNoInteractions(availabilityRepository, disponibilidadCalculator);
+    }
+
+    @Test
+    @DisplayName("Rechaza endDate nulo")
+    void rechazaFinNulo() {
+        // Arrange
+        LocalDate fin = null;
+
+        // Act
+        DisponibilidadInvalidaException ex = assertThrows(DisponibilidadInvalidaException.class,
+                () -> service.ejecutar(ID_SERVICIO, HOY, fin));
+
+        // Assert
+        assertEquals("Las fechas de inicio y fin son obligatorias", ex.getMessage());
         verifyNoInteractions(availabilityRepository, disponibilidadCalculator);
     }
 
     @Test
     @DisplayName("Rechaza una fecha de inicio en el pasado")
     void rechazaInicioPasado() {
-        DisponibilidadInvalidaException ex = assertThrows(DisponibilidadInvalidaException.class,
-                () -> service.ejecutar(ID_SERVICIO, HOY.minusDays(1), HOY));
+        // Arrange
+        LocalDate ayer = HOY.minusDays(1);
 
-        assertTrue(ex.getMessage().contains("no puede ser una fecha pasada"));
+        // Act
+        DisponibilidadInvalidaException ex = assertThrows(DisponibilidadInvalidaException.class,
+                () -> service.ejecutar(ID_SERVICIO, ayer, HOY));
+
+        // Assert
+        assertEquals("La fecha de inicio (startDate) no puede ser una fecha pasada", ex.getMessage());
         verifyNoInteractions(availabilityRepository);
     }
 
     @Test
     @DisplayName("Rechaza endDate anterior a startDate")
     void rechazaFinAnteriorAInicio() {
-        assertThrows(DisponibilidadInvalidaException.class,
-                () -> service.ejecutar(ID_SERVICIO, HOY.plusDays(2), HOY.plusDays(1)));
+        // Arrange
+        LocalDate inicio = HOY.plusDays(2);
+        LocalDate fin = HOY.plusDays(1);
+
+        // Act
+        DisponibilidadInvalidaException ex = assertThrows(DisponibilidadInvalidaException.class,
+                () -> service.ejecutar(ID_SERVICIO, inicio, fin));
+
+        // Assert
+        assertEquals("endDate no puede ser anterior a startDate", ex.getMessage());
         verifyNoInteractions(availabilityRepository);
     }
 
     @Test
     @DisplayName("Rechaza rangos de más de 30 días")
     void rechazaRangoExcedido() {
-        RangoFechasExcedidoException ex = assertThrows(RangoFechasExcedidoException.class,
-                () -> service.ejecutar(ID_SERVICIO, HOY, HOY.plusDays(30)));
+        // Arrange
+        LocalDate fin = HOY.plusDays(30); // 31 días contando ambos extremos
 
+        // Act
+        RangoFechasExcedidoException ex = assertThrows(RangoFechasExcedidoException.class,
+                () -> service.ejecutar(ID_SERVICIO, HOY, fin));
+
+        // Assert
         assertEquals("El rango de consulta no puede superar los 30 días", ex.getMessage());
         verifyNoInteractions(availabilityRepository);
     }
@@ -107,19 +151,32 @@ class ConsultarDisponibilidadServicioServiceTest {
     @Test
     @DisplayName("Acepta un rango de exactamente 30 días")
     void aceptaRangoDeTreintaDias() {
+        // Arrange
+        LocalDate fin = HOY.plusDays(29);
         when(availabilityRepository.obtenerServicioInfo(ID_SERVICIO)).thenReturn(Optional.of(servicioInfo()));
         when(disponibilidadCalculator.calcularDisponibilidad(any(), any(), any(), anyInt())).thenReturn(List.of());
 
-        assertDoesNotThrow(() -> service.ejecutar(ID_SERVICIO, HOY, HOY.plusDays(29)));
+        // Act
+        List<TimeSlot> resultado = service.ejecutar(ID_SERVICIO, HOY, fin);
+
+        // Assert
+        assertTrue(resultado.isEmpty());
+        verify(disponibilidadCalculator).calcularDisponibilidad(eq(new DateRange(HOY, fin)), any(), any(), eq(DURACION));
     }
 
     @Test
     @DisplayName("Lanza excepción si el servicio no existe")
     void servicioNoEncontrado() {
+        // Arrange
         when(availabilityRepository.obtenerServicioInfo(ID_SERVICIO)).thenReturn(Optional.empty());
 
-        assertThrows(ServicioParaDisponibilidadNoEncontradoException.class,
+        // Act
+        ServicioParaDisponibilidadNoEncontradoException ex = assertThrows(
+                ServicioParaDisponibilidadNoEncontradoException.class,
                 () -> service.ejecutar(ID_SERVICIO, HOY, HOY));
+
+        // Assert
+        assertEquals("Servicio con ID 10 no fue encontrado o no está disponible", ex.getMessage());
         verify(availabilityRepository, never()).obtenerHorariosProveedor(any(), any());
         verifyNoInteractions(disponibilidadCalculator);
     }
@@ -127,12 +184,12 @@ class ConsultarDisponibilidadServicioServiceTest {
     @Test
     @DisplayName("Consulta horarios y reservas del proveedor y delega el cálculo")
     void delegaCalculoConDatosDelRepositorio() {
+        // Arrange
         LocalDate fin = HOY.plusDays(3);
         List<HorarioSemanal> horarios = List.of(
                 new HorarioSemanal(DiaSemana.MARTES, LocalTime.of(8, 0), LocalTime.of(12, 0)));
         List<TimeSlot> ocupadas = List.of(franja(fin, 8));
         List<TimeSlot> calculadas = List.of(franja(HOY.plusDays(1), 8));
-
         when(availabilityRepository.obtenerServicioInfo(ID_SERVICIO)).thenReturn(Optional.of(servicioInfo()));
         when(availabilityRepository.obtenerHorariosProveedor(ID_SERVICIO, ID_PROVEEDOR)).thenReturn(horarios);
         when(availabilityRepository.obtenerReservasActivas(
@@ -140,19 +197,21 @@ class ConsultarDisponibilidadServicioServiceTest {
         when(disponibilidadCalculator.calcularDisponibilidad(new DateRange(HOY, fin), horarios, ocupadas, DURACION))
                 .thenReturn(calculadas);
 
+        // Act
         List<TimeSlot> resultado = service.ejecutar(ID_SERVICIO, HOY, fin);
 
+        // Assert
         assertEquals(calculadas, resultado);
     }
 
     @Test
     @DisplayName("Descarta las franjas de hoy que ya pasaron o empiezan justo ahora")
     void descartaFranjasPasadas() {
+        // Arrange
         TimeSlot pasada = franja(HOY, 8);
         TimeSlot ahoraMismo = franja(HOY, 10);
         TimeSlot futuraHoy = franja(HOY, 11);
         TimeSlot manana = franja(HOY.plusDays(1), 8);
-
         when(availabilityRepository.obtenerServicioInfo(ID_SERVICIO)).thenReturn(Optional.of(servicioInfo()));
         when(availabilityRepository.obtenerHorariosProveedor(ID_SERVICIO, ID_PROVEEDOR)).thenReturn(List.of());
         when(availabilityRepository.obtenerReservasActivas(eq(ID_SERVICIO), eq(ID_PROVEEDOR), any(), any()))
@@ -160,28 +219,30 @@ class ConsultarDisponibilidadServicioServiceTest {
         when(disponibilidadCalculator.calcularDisponibilidad(any(), any(), any(), anyInt()))
                 .thenReturn(List.of(pasada, ahoraMismo, futuraHoy, manana));
 
+        // Act
         List<TimeSlot> resultado = service.ejecutar(ID_SERVICIO, HOY, HOY.plusDays(1));
 
+        // Assert
         assertEquals(List.of(futuraHoy, manana), resultado);
     }
 
     @Test
     @DisplayName("Integra con el calculador real y respeta reservas y hora actual")
     void integraConCalculadorReal() {
-        service = new ConsultarDisponibilidadServicioService(
+        // Arrange
+        ConsultarDisponibilidadServicioService serviceReal = new ConsultarDisponibilidadServicioService(
                 availabilityRepository, new DisponibilidadCalculator(), CLOCK);
         List<HorarioSemanal> horarios = List.of(
                 new HorarioSemanal(DiaSemana.LUNES, LocalTime.of(8, 0), LocalTime.of(14, 0)));
-
         when(availabilityRepository.obtenerServicioInfo(ID_SERVICIO)).thenReturn(Optional.of(servicioInfo()));
         when(availabilityRepository.obtenerHorariosProveedor(ID_SERVICIO, ID_PROVEEDOR)).thenReturn(horarios);
         when(availabilityRepository.obtenerReservasActivas(eq(ID_SERVICIO), eq(ID_PROVEEDOR), any(), any()))
                 .thenReturn(List.of(franja(HOY, 12)));
 
-        List<TimeSlot> resultado = service.ejecutar(ID_SERVICIO, HOY, HOY);
+        // Act
+        List<TimeSlot> resultado = serviceReal.ejecutar(ID_SERVICIO, HOY, HOY);
 
-        // 08-10 ya pasaron, 10:00 empieza ahora, 12-13 está reservado
+        // Assert: 08-10 ya pasaron, 10:00 empieza ahora, 12-13 está reservado
         assertEquals(List.of(franja(HOY, 11), franja(HOY, 13)), resultado);
-        assertTrue(resultado.stream().allMatch(s -> s.start().isAfter(LocalDateTime.now(CLOCK))));
     }
 }
