@@ -1,10 +1,12 @@
 package com.service_reservation.EAP03.modulos.servicios_catalogo.application.dto;
 
+import com.service_reservation.EAP03.config.RejectUnknownFields;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+@RejectUnknownFields
 public record ActualizarServicioRequest(
         @NotBlank(message = "El nombre del servicio no puede estar vacío")
         @Size(max = 150, message = "El nombre del servicio no puede superar los 150 caracteres")

@@ -1,10 +1,13 @@
 package com.service_reservation.EAP03.modulos.servicios_catalogo.application.dto;
 
+import com.service_reservation.EAP03.config.RejectUnknownFields;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+// HU04 E1: un campo que no existe en el alta (p. ej. capacidadMaxima) se rechaza, no se ignora.
+@RejectUnknownFields
 public record CrearServicioRequest(
         @NotNull(message = "El id del proveedor es obligatorio")
         Integer idProveedor,
