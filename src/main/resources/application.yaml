@@ -15,6 +15,18 @@ spring:
     outOfOrder: true
     cleanDisabled: true
     repair-on-migrate: true
+  web:
+    error:
+      # Nunca devolver la traza, el mensaje interno ni la clase de la excepción,
+      # aunque devtools esté activo.
+      include-stacktrace: never
+      include-message: never
+      include-exception: false
+
+logging:
+  pattern:
+    # Cada línea de log lleva el traceId de la petición (lo pone TraceIdFilter).
+    level: "%5p [traceId=%X{traceId:-}]"
 
 jwt:
   secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
