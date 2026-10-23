@@ -14,9 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDate;
-import java.util.Collections;
-import java.util.Comparator;
+import java.time.LocalDate;import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -73,7 +71,7 @@ public class AvailabilityController {
         DisponibilidadServicioResponseDTO respuesta = new DisponibilidadServicioResponseDTO(
                 id,
                 slotsLibres.size(),
-                bloques != null ? bloques : Collections.emptyList(),
+                bloques,
                 slotsLibres.isEmpty() ? DisponibilidadServicioResponseDTO.MENSAJE_SIN_ESPACIOS : null
         );
 
