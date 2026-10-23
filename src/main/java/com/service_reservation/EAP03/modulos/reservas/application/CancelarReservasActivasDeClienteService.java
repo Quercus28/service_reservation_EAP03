@@ -1,6 +1,7 @@
 package com.service_reservation.EAP03.modulos.reservas.application;
 
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.in.ConsultarClienteUseCase;
+import com.service_reservation.EAP03.modulos.recursos.domain.ports.in.LiberarRecursosDeReservaUseCase;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.Reserva;
 import com.service_reservation.EAP03.modulos.reservas.domain.ports.in.CancelarReservasActivasDeClienteUseCase;
 import com.service_reservation.EAP03.modulos.reservas.domain.ports.out.ReservaRepositoryPort;
@@ -19,14 +20,17 @@ public class CancelarReservasActivasDeClienteService implements CancelarReservas
 
     private final ConsultarClienteUseCase consultarClienteUseCase;
     private final ReservaRepositoryPort reservaRepositoryPort;
+    private final LiberarRecursosDeReservaUseCase liberarRecursosDeReservaUseCase;
     // El reloj ya está configurado en el módulo availability (AvailabilityConfig).
     private final Clock clock;
 
     public CancelarReservasActivasDeClienteService(ConsultarClienteUseCase consultarClienteUseCase,
                                                    ReservaRepositoryPort reservaRepositoryPort,
+                                                   LiberarRecursosDeReservaUseCase liberarRecursosDeReservaUseCase,
                                                    Clock clock) {
         this.consultarClienteUseCase = consultarClienteUseCase;
         this.reservaRepositoryPort = reservaRepositoryPort;
+        this.liberarRecursosDeReservaUseCase = liberarRecursosDeReservaUseCase;
         this.clock = clock;
     }
 
@@ -44,12 +48,13 @@ public class CancelarReservasActivasDeClienteService implements CancelarReservas
     }
 
     // Cada reserva se cancela con la regla del dominio (Reserva) y se guarda con la misma
-    // hora de cancelación para todas.
+    // hora de cancelación para todas. Después se devuelven los recursos que tenía apartados.
     private int cancelarTodas(List<Reserva> reservas, String motivo) {
         LocalDateTime ahora = LocalDateTime.now(clock);
         for (Reserva reserva : reservas) {
             reserva.cancelarPorAdministrador(ahora, motivo);
             reservaRepositoryPort.guardar(reserva);
+            liberarRecursosDeReservaUseCase.ejecutar(reserva.getId());
         }
         return reservas.size();
     }

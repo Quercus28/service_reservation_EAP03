@@ -7,4 +7,5 @@ import java.util.List;
 public interface RecursoPrestadoRepositoryPort {
     RecursoPrestado guardar(RecursoPrestado recursoPrestado);
     List<RecursoPrestado> buscarQueSeSolapan(Integer idRecurso, LocalDateTime desde, LocalDateTime hasta);
+    List<RecursoPrestado> buscarActivosDeReserva(Integer idServicioPrestado);
 }

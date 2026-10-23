@@ -16,6 +16,7 @@ public class RecursoPrestadoMapper {
         entidad.setFechaInicio(prestamo.getFechaInicio());
         entidad.setFechaFin(prestamo.getFechaFin());
         entidad.setPrecioTotal(prestamo.getPrecioTotal());
+        entidad.setLiberadoEn(prestamo.getLiberadoEn());
         return entidad;
     }
 
@@ -27,7 +28,8 @@ public class RecursoPrestadoMapper {
                 entidad.getCantidad(),
                 entidad.getFechaInicio(),
                 entidad.getFechaFin(),
-                entidad.getPrecioTotal()
+                entidad.getPrecioTotal(),
+                entidad.getLiberadoEn()
         );
     }
 }

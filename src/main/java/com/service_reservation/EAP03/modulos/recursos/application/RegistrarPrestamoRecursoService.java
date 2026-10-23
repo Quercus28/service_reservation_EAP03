@@ -1,9 +1,11 @@
 package com.service_reservation.EAP03.modulos.recursos.application;
 
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.DisponibilidadInsuficienteException;
+import com.service_reservation.EAP03.modulos.recursos.domain.exception.RecursoDesactivadoException;
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.RecursoNoEncontradoException;
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.RecursoNoOperativoException;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.DisponibilidadRecurso;
+import com.service_reservation.EAP03.modulos.recursos.domain.model.Recurso;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.RecursoPrestado;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.RegistrarPrestamoComando;
 import com.service_reservation.EAP03.modulos.recursos.domain.ports.in.ConsultarDisponibilidadUseCase;
@@ -33,8 +35,13 @@ public class RegistrarPrestamoRecursoService implements RegistrarPrestamoRecurso
     public RecursoPrestado ejecutar(RegistrarPrestamoComando comando) {
         // Bloqueo pesimista sobre la fila del recurso: serializa las peticiones
         // concurrentes sobre el mismo recurso para evitar sobre-reserva.
-        recursoRepositoryPort.buscarPorIdConBloqueo(comando.idRecurso())
+        Recurso recurso = recursoRepositoryPort.buscarPorIdConBloqueo(comando.idRecurso())
                 .orElseThrow(() -> new RecursoNoEncontradoException(comando.idRecurso()));
+
+        // Un recurso desactivado no se presta, ni a mano ni al reservar.
+        if (!recurso.estaActivo()) {
+            throw RecursoDesactivadoException.alPrestar(recurso.getNombre());
+        }
 
         DisponibilidadRecurso disponibilidad = consultarDisponibilidadUseCase.ejecutar(
                 comando.idRecurso(),

@@ -30,6 +30,9 @@ public class RecursoPrestadoJpaEntity {
     @Column(name = "precio_total", nullable = false, precision = 10, scale = 2)
     private BigDecimal precioTotal;
 
+    @Column(name = "liberado_en")
+    private LocalDateTime liberadoEn;
+
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
     public Integer getIdRecurso() { return idRecurso; }
@@ -44,4 +47,6 @@ public class RecursoPrestadoJpaEntity {
     public void setFechaFin(LocalDateTime fechaFin) { this.fechaFin = fechaFin; }
     public BigDecimal getPrecioTotal() { return precioTotal; }
     public void setPrecioTotal(BigDecimal precioTotal) { this.precioTotal = precioTotal; }
+    public LocalDateTime getLiberadoEn() { return liberadoEn; }
+    public void setLiberadoEn(LocalDateTime liberadoEn) { this.liberadoEn = liberadoEn; }
 }

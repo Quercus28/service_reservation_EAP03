@@ -4,7 +4,7 @@
 --   de cada uno. El cliente puede pedirlos al reservar; si no los pide, no se usan.
 --   Los recursos esenciales para prestar el servicio no se guardan aquí: de ellos
 --   responde el proveedor.
---   Por ahora solo se guarda la lista; las reservas todavía no la usan.
+--   Al reservar se apartan solo los que el cliente pidió.
 --
 -- id_servicio no lleva FOREIGN KEY porque el servicio es del módulo de catálogo (misma
 -- regla que id_proveedor en recurso). Que el servicio exista lo revisa la aplicación

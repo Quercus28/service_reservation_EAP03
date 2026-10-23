@@ -4,8 +4,13 @@ import com.service_reservation.EAP03.modulos.agendas_horarios.domain.exception.A
 import com.service_reservation.EAP03.modulos.agendas_horarios.domain.model.Horario;
 import com.service_reservation.EAP03.modulos.agendas_horarios.domain.ports.in.IDisponibilidad;
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.in.ConsultarClienteUseCase;
+import com.service_reservation.EAP03.modulos.recursos.domain.exception.RecursoDominioException;
+import com.service_reservation.EAP03.modulos.recursos.domain.exception.RecursoOpcionalNoValidoException;
+import com.service_reservation.EAP03.modulos.recursos.domain.ports.in.ApartarRecursosDeReservaUseCase;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.HoraFueraDeTurnoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.HorarioNoDisponibleException;
+import com.service_reservation.EAP03.modulos.reservas.domain.exception.RecursoNoDisponibleException;
+import com.service_reservation.EAP03.modulos.reservas.domain.exception.RecursoOpcionalInvalidoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.ServicioNoReservableException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.UsuarioNoEsClienteException;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.CrearReservaComando;
@@ -32,6 +37,7 @@ public class CrearReservaService implements CrearReservaUseCase {
     private final ObtenerServicioPorIdUseCase obtenerServicioPorIdUseCase;
     private final IDisponibilidad disponibilidadAgenda;
     private final ReservaRepositoryPort reservaRepositoryPort;
+    private final ApartarRecursosDeReservaUseCase apartarRecursosDeReservaUseCase;
     // El reloj ya está configurado en el módulo availability (AvailabilityConfig).
     // No se crea otro aquí: si hubiera dos relojes configurados, la aplicación no arrancaría.
     private final Clock clock;
@@ -40,11 +46,13 @@ public class CrearReservaService implements CrearReservaUseCase {
                                ObtenerServicioPorIdUseCase obtenerServicioPorIdUseCase,
                                IDisponibilidad disponibilidadAgenda,
                                ReservaRepositoryPort reservaRepositoryPort,
+                               ApartarRecursosDeReservaUseCase apartarRecursosDeReservaUseCase,
                                Clock clock) {
         this.consultarClienteUseCase = consultarClienteUseCase;
         this.obtenerServicioPorIdUseCase = obtenerServicioPorIdUseCase;
         this.disponibilidadAgenda = disponibilidadAgenda;
         this.reservaRepositoryPort = reservaRepositoryPort;
+        this.apartarRecursosDeReservaUseCase = apartarRecursosDeReservaUseCase;
         this.clock = clock;
     }
 
@@ -123,7 +131,23 @@ public class CrearReservaService implements CrearReservaUseCase {
         }
 
         // 7. Todo en orden: se guarda.
-        return reservaRepositoryPort.guardar(nueva);
+        Reserva guardada = reservaRepositoryPort.guardar(nueva);
+
+        // 8. Se apartan los recursos adicionales que pidió el cliente (si no pidió ninguno, no
+        //    se aparta nada). Va después de guardar porque cada recurso apartado queda ligado al
+        //    número de la reserva. Si alguno no se puede apartar, se lanza el error y, como
+        //    todo está en la misma transacción, la reserva tampoco queda guardada.
+        //    Los errores de recursos se pasan a errores de reservas para que la respuesta
+        //    tenga el mismo formato que las demás.
+        try {
+            apartarRecursosDeReservaUseCase.ejecutar(guardada.getId(), servicio.id(), fechaInicio, fechaFin,
+                    comando.recursosOpcionales());
+        } catch (RecursoOpcionalNoValidoException e) {
+            throw new RecursoOpcionalInvalidoException(e.getMessage());
+        } catch (RecursoDominioException e) {
+            throw new RecursoNoDisponibleException(e.getMessage());
+        }
+        return guardada;
     }
 
     // La reserva cabe en el horario si empieza y termina el mismo día, ese día de la semana

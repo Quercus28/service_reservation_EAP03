@@ -15,10 +15,11 @@ public class RecursoPrestado {
     private LocalDateTime fechaInicio;
     private LocalDateTime fechaFin;
     private BigDecimal precioTotal;
+    private LocalDateTime liberadoEn;
 
     private RecursoPrestado(Integer id, Integer idRecurso, Integer idServicioPrestado,
                              int cantidad, LocalDateTime fechaInicio, LocalDateTime fechaFin,
-                             BigDecimal precioTotal) {
+                             BigDecimal precioTotal, LocalDateTime liberadoEn) {
         validarCantidad(cantidad);
         validarFechas(fechaInicio, fechaFin);
         validarPrecio(precioTotal);
@@ -29,18 +30,33 @@ public class RecursoPrestado {
         this.fechaInicio = fechaInicio;
         this.fechaFin = fechaFin;
         this.precioTotal = precioTotal;
+        this.liberadoEn = liberadoEn;
     }
 
-    // Para crear un préstamo NUEVO (todavía sin id)
+    // Para crear un préstamo NUEVO (todavía sin id y activo)
     public static RecursoPrestado nuevo(Integer idRecurso, Integer idServicioPrestado, int cantidad,
                                          LocalDateTime fechaInicio, LocalDateTime fechaFin, BigDecimal precioTotal) {
-        return new RecursoPrestado(null, idRecurso, idServicioPrestado, cantidad, fechaInicio, fechaFin, precioTotal);
+        return new RecursoPrestado(null, idRecurso, idServicioPrestado, cantidad, fechaInicio, fechaFin, precioTotal, null);
     }
 
     // Para reconstruir un préstamo que YA existe en la base de datos
     public static RecursoPrestado reconstruir(Integer id, Integer idRecurso, Integer idServicioPrestado, int cantidad,
-                                               LocalDateTime fechaInicio, LocalDateTime fechaFin, BigDecimal precioTotal) {
-        return new RecursoPrestado(id, idRecurso, idServicioPrestado, cantidad, fechaInicio, fechaFin, precioTotal);
+                                               LocalDateTime fechaInicio, LocalDateTime fechaFin, BigDecimal precioTotal,
+                                               LocalDateTime liberadoEn) {
+        return new RecursoPrestado(id, idRecurso, idServicioPrestado, cantidad, fechaInicio, fechaFin, precioTotal,
+                liberadoEn);
+    }
+
+    // Devuelve las unidades: el préstamo deja de contar como ocupado, pero no se borra.
+    public void liberar(LocalDateTime ahora) {
+        if (estaLiberado()) {
+            return;
+        }
+        this.liberadoEn = Objects.requireNonNull(ahora, "ahora es obligatorio");
+    }
+
+    public boolean estaLiberado() {
+        return this.liberadoEn != null;
     }
 
     // ¿Este préstamo se solapa con el rango [inicio, fin) propuesto?
@@ -77,4 +93,5 @@ public class RecursoPrestado {
     public LocalDateTime getFechaInicio() { return fechaInicio; }
     public LocalDateTime getFechaFin() { return fechaFin; }
     public BigDecimal getPrecioTotal() { return precioTotal; }
+    public LocalDateTime getLiberadoEn() { return liberadoEn; }
 }
