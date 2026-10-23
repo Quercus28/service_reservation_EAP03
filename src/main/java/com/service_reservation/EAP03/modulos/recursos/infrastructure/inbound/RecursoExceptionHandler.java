@@ -1,5 +1,6 @@
 package com.service_reservation.EAP03.modulos.recursos.infrastructure.inbound;
 
+import com.service_reservation.EAP03.config.TraceIdFilter;
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.AsociacionNoEncontradaException;
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.BloqueoEnConflictoException;
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.BloqueoNoEncontradoException;
@@ -20,7 +21,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.UUID;
 
 @RestControllerAdvice(assignableTypes = {RecursoController.class, DisponibilidadRecursoController.class,
         ServicioRecursoController.class})
@@ -100,7 +100,7 @@ public class RecursoExceptionHandler {
         Map<String, Object> cuerpo = new LinkedHashMap<>();
         cuerpo.put("errorCode", errorCode);
         cuerpo.put("message", mensaje);
-        cuerpo.put("traceId", UUID.randomUUID().toString());
+        cuerpo.put("traceId", TraceIdFilter.traceIdActual());
         return ResponseEntity.status(status).body(cuerpo);
     }
 }

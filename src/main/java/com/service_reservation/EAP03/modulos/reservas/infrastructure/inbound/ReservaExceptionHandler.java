@@ -1,5 +1,6 @@
 package com.service_reservation.EAP03.modulos.reservas.infrastructure.inbound;
 
+import com.service_reservation.EAP03.config.TraceIdFilter;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.CancelacionFueraDeTiempoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.DatosReservaInvalidosException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.FechaEnElPasadoException;
@@ -20,7 +21,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.UUID;
 
 @RestControllerAdvice(assignableTypes = ReservaController.class)
 public class ReservaExceptionHandler {
@@ -98,7 +98,7 @@ public class ReservaExceptionHandler {
         Map<String, Object> cuerpo = new LinkedHashMap<>();
         cuerpo.put("errorCode", errorCode);
         cuerpo.put("message", mensaje);
-        cuerpo.put("traceId", UUID.randomUUID().toString());
+        cuerpo.put("traceId", TraceIdFilter.traceIdActual());
         return ResponseEntity.status(status).body(cuerpo);
     }
 }
