@@ -20,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDateTime;
 
@@ -72,6 +73,7 @@ public class SecurityConfig {
                 .authenticationEntryPoint((request, response, authException) -> {
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                    response.setCharacterEncoding(StandardCharsets.UTF_8.name());
                     response.getWriter().write(String.format(
                         "{\"timestamp\":\"%s\",\"status\":401,\"error\":\"No autenticado\"," +
                         "\"message\":\"Se requiere autenticación para acceder a este recurso.\",\"path\":\"%s\"}",
@@ -82,6 +84,7 @@ public class SecurityConfig {
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                    response.setCharacterEncoding(StandardCharsets.UTF_8.name());
                     response.getWriter().write(String.format(
                         "{\"timestamp\":\"%s\",\"status\":403,\"error\":\"Acceso denegado\"," +
                         "\"message\":\"No tiene los permisos necesarios para realizar esta acción.\",\"path\":\"%s\"}",
