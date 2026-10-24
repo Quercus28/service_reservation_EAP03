@@ -19,13 +19,13 @@ class RegistroUsuarioRequestDTOValidationTest {
     private static Validator validator;
 
     @BeforeAll
-    static void crearValidador() {
+    static void createValidator() {
         validator = Validation.buildDefaultValidatorFactory().getValidator();
     }
 
     @Test
     @DisplayName("TC-04: Rechaza una contrasena debil (sin mayuscula y con menos de 8 caracteres)")
-    void rechazaPasswordDebil() {
+    void rejectsWeakPassword() {
         RegistroUsuarioRequestDTO dto = new RegistroUsuarioRequestDTO(
                 "pendienteback@gmail.com", "abc123", "abc123", "CLIENTE",
                 "Nombre Apellido", "3001234567", "CC123456");
@@ -37,7 +37,7 @@ class RegistroUsuarioRequestDTOValidationTest {
 
     @Test
     @DisplayName("TC-05: Rechaza campos obligatorios vacios, con un mensaje especifico por cada uno")
-    void rechazaCamposObligatoriosVacios() {
+    void rejectsEmptyRequiredFields() {
         RegistroUsuarioRequestDTO dto = new RegistroUsuarioRequestDTO(
                 "", "", "", "", "", null, "");
 
@@ -56,7 +56,7 @@ class RegistroUsuarioRequestDTOValidationTest {
 
     @Test
     @DisplayName("TC-07: Rechaza el registro cuando no se selecciona un rol")
-    void rechazaRolNoSeleccionado() {
+    void rejectsMissingRole() {
         RegistroUsuarioRequestDTO dto = new RegistroUsuarioRequestDTO(
                 "pendienteback@gmail.com", "Segura123", "Segura123", "",
                 "Nombre Apellido", "3001234567", "CC123456");
@@ -68,7 +68,7 @@ class RegistroUsuarioRequestDTOValidationTest {
 
     @Test
     @DisplayName("TC-08: Rechaza el registro cuando la confirmacion de contrasena no coincide")
-    void rechazaConfirmacionNoCoincide() {
+    void rejectsMismatchedConfirmation() {
         RegistroUsuarioRequestDTO dto = new RegistroUsuarioRequestDTO(
                 "pendienteback@gmail.com", "Segura123", "Segura456", "CLIENTE",
                 "Nombre Apellido", "3001234567", "CC123456");
@@ -82,7 +82,7 @@ class RegistroUsuarioRequestDTOValidationTest {
     // "valida" usada como base en los demas casos no dispara ninguna violacion por si sola.
     @Test
     @DisplayName("Control: un registro con todos los datos validos no produce violaciones")
-    void aceptaDatosValidos() {
+    void acceptsValidData() {
         RegistroUsuarioRequestDTO dto = new RegistroUsuarioRequestDTO(
                 "pendienteback@gmail.com", "Segura123", "Segura123", "CLIENTE",
                 "Nombre Apellido", "3001234567", "CC123456");
@@ -93,7 +93,7 @@ class RegistroUsuarioRequestDTOValidationTest {
     @ParameterizedTest(name = "nombre = {0}")
     @ValueSource(strings = {"José Muñoz", "María Peña Güiza", "Sean O'Neill", "Ferretería El Clavo, S.A.S.", "Ana-María (Hogar)"})
     @DisplayName("TC-21: Acepta nombres legitimos en español con tilde, ñ, ü o apostrofe (BUG-07)")
-    void aceptaNombresEnEspanol(String nombre) {
+    void acceptsSpanishNames(String nombre) {
         // Arrange
         RegistroUsuarioRequestDTO dto = new RegistroUsuarioRequestDTO(
                 "pendienteback@gmail.com", "Segura123", "Segura123", "CLIENTE",
@@ -109,7 +109,7 @@ class RegistroUsuarioRequestDTOValidationTest {
     @ParameterizedTest(name = "nombre = {0}")
     @ValueSource(strings = {"<script>alert(1)</script>", "x'; DROP TABLE usuario;--", "Nombre\nApellido"})
     @DisplayName("Sigue rechazando HTML, comandos y saltos de linea en el nombre")
-    void rechazaNombresMaliciosos(String nombre) {
+    void rejectsMaliciousNames(String nombre) {
         // Arrange
         RegistroUsuarioRequestDTO dto = new RegistroUsuarioRequestDTO(
                 "pendienteback@gmail.com", "Segura123", "Segura123", "CLIENTE",
