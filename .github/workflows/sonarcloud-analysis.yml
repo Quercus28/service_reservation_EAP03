@@ -10,8 +10,6 @@ on:
 jobs:
   build:
     name: Build and analyze
-    # Dependabot no recibe SONAR_TOKEN; analizar un cambio de versión de una acción no aporta nada.
-    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
