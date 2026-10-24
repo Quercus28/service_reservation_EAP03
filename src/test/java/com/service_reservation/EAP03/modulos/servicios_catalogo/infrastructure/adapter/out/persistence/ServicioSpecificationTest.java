@@ -110,7 +110,6 @@ class ServicioSpecificationTest {
         ServicioSpecification.conFiltros(5, "corte").toPredicate(root, query, cb);
 
         // Assert
-        // Array explícito: con dos argumentos sueltos se resolvería a and(Expression, Expression)
         verify(cb).and(new Predicate[]{predicadoProveedor, predicadoNombre});
     }
 

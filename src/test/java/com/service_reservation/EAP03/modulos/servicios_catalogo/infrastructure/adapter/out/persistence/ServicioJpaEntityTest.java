@@ -73,7 +73,6 @@ class ServicioJpaEntityTest {
         assertEquals(a, b);
         assertEquals(a.hashCode(), b.hashCode());
         assertNotEquals(a, c);
-        // Se invoca a.equals(...) directamente: assertNotEquals(x, a) llamaría a x.equals(a)
         assertFalse(a.equals(null));
         assertFalse(a.equals("Corte"));
     }
