@@ -1,6 +1,7 @@
 package com.service_reservation.EAP03.modulos.identidad.application;
 
 import com.service_reservation.EAP03.modulos.identidad.application.exception.ReglaNegocioException;
+import com.service_reservation.EAP03.modulos.identidad.domain.events.UsuarioRegistradoEvent;
 import com.service_reservation.EAP03.modulos.identidad.domain.model.Usuario;
 import com.service_reservation.EAP03.modulos.identidad.domain.model.UsuarioNuevoComando;
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.out.PasswordEncoderPort;
@@ -29,21 +30,21 @@ class RegistrarUsuarioServiceTest {
 
     @InjectMocks private RegistrarUsuarioService service;
 
-    private UsuarioNuevoComando comando(String rol) {
+    private UsuarioNuevoComando command(String rol) {
         return new UsuarioNuevoComando("pendienteback@gmail.com", "pendienteback", rol,
                 "Nombre Apellido", "3001234567", "CC123456");
     }
 
     @Test
     @DisplayName("TC-01: Registro exitoso como Cliente crea el usuario con ROLE_CLIENTE y guarda su perfil de cliente")
-    void registraClienteExitoso() {
+    void registersClient() {
         when(usuarioRepository.existePorEmail("pendienteback@gmail.com")).thenReturn(false);
         when(passwordEncoder.codificar("pendienteback")).thenReturn("hash-simulado");
         Usuario usuarioGuardado = new Usuario(1L, "pendienteback@gmail.com", "hash-simulado");
         when(usuarioRepository.guardarUsuarioConRol(any(Usuario.class), eq("ROLE_CLIENTE")))
                 .thenReturn(usuarioGuardado);
 
-        service.ejecutar(comando("CLIENTE"));
+        service.ejecutar(command("CLIENTE"));
 
         verify(usuarioRepository).guardarUsuarioConRol(any(Usuario.class), eq("ROLE_CLIENTE"));
         verify(usuarioRepository).guardarPerfilCliente(1L, "Nombre Apellido", "3001234567", "CC123456");
@@ -52,14 +53,14 @@ class RegistrarUsuarioServiceTest {
 
     @Test
     @DisplayName("TC-02: Registro exitoso como Proveedor crea el usuario con ROLE_PROVEEDOR y guarda su perfil de proveedor")
-    void registraProveedorExitoso() {
+    void registersProvider() {
         when(usuarioRepository.existePorEmail("pendienteback@gmail.com")).thenReturn(false);
         when(passwordEncoder.codificar("pendienteback")).thenReturn("hash-simulado");
         Usuario usuarioGuardado = new Usuario(2L, "pendienteback@gmail.com", "hash-simulado");
         when(usuarioRepository.guardarUsuarioConRol(any(Usuario.class), eq("ROLE_PROVEEDOR")))
                 .thenReturn(usuarioGuardado);
 
-        service.ejecutar(comando("PROVEEDOR"));
+        service.ejecutar(command("PROVEEDOR"));
 
         verify(usuarioRepository).guardarUsuarioConRol(any(Usuario.class), eq("ROLE_PROVEEDOR"));
         verify(usuarioRepository).guardarPerfilProveedor(2L, "Nombre Apellido", "3001234567", "CC123456");
@@ -68,11 +69,11 @@ class RegistrarUsuarioServiceTest {
 
     @Test
     @DisplayName("TC-03: Rechaza el registro cuando el correo ya esta en uso, sin guardar nada")
-    void rechazaCorreoExistente() {
+    void rejectsExistingEmail() {
         when(usuarioRepository.existePorEmail("pendienteback@gmail.com")).thenReturn(true);
 
         ReglaNegocioException ex = assertThrows(ReglaNegocioException.class,
-                () -> service.ejecutar(comando("CLIENTE")));
+                () -> service.ejecutar(command("CLIENTE")));
 
         assertEquals("El correo ya está en uso", ex.getMessage());
         verify(usuarioRepository, never()).guardarUsuarioConRol(any(), any());
@@ -81,7 +82,7 @@ class RegistrarUsuarioServiceTest {
 
     @Test
     @DisplayName("TC-14: Guarda y compara el correo en minúsculas y sin espacios")
-    void normalizaCorreoAlRegistrar() {
+    void normalizesEmailOnRegistration() {
         // Arrange
         UsuarioNuevoComando comando = new UsuarioNuevoComando("  Test@X.com ", "pendienteback", "CLIENTE",
                 "Nombre Apellido", "3001234567", "CC123456");
@@ -101,7 +102,7 @@ class RegistrarUsuarioServiceTest {
 
     @Test
     @DisplayName("TC-14: Rechaza la variante con mayúsculas de un correo ya registrado")
-    void rechazaVarianteConMayusculas() {
+    void rejectsUppercaseVariant() {
         // Arrange
         UsuarioNuevoComando comando = new UsuarioNuevoComando("PendienteBack@Gmail.com", "pendienteback", "CLIENTE",
                 "Nombre Apellido", "3001234567", "CC123456");
@@ -113,5 +114,23 @@ class RegistrarUsuarioServiceTest {
         // Assert
         assertEquals("El correo ya está en uso", ex.getMessage());
         verify(usuarioRepository, never()).guardarUsuarioConRol(any(), any());
+    }
+
+    @Test
+    @DisplayName("Registro con un rol sin perfil asociado no guarda perfil de cliente ni de proveedor")
+    void registersRoleWithoutProfile() {
+        // Arrange
+        when(usuarioRepository.existePorEmail("pendienteback@gmail.com")).thenReturn(false);
+        when(passwordEncoder.codificar("pendienteback")).thenReturn("hash-simulado");
+        when(usuarioRepository.guardarUsuarioConRol(any(Usuario.class), eq("ROLE_ADMIN")))
+                .thenReturn(new Usuario(3L, "pendienteback@gmail.com", "hash-simulado"));
+
+        // Act
+        service.ejecutar(command("ADMIN"));
+
+        // Assert
+        verify(usuarioRepository, never()).guardarPerfilCliente(any(), any(), any(), any());
+        verify(usuarioRepository, never()).guardarPerfilProveedor(any(), any(), any(), any());
+        verify(eventPublisher).publishEvent(new UsuarioRegistradoEvent(3L, "ROLE_ADMIN"));
     }
 }
