@@ -90,14 +90,14 @@ public class ServicioController {
         return ResponseEntity.created(location).body(response);
     }
 
-    /** Consulta individual — pública (catálogo). */
+    /** Consulta individual del catálogo — requiere sesión (cualquier usuario autenticado). */
     @GetMapping("/{id}")
     public ResponseEntity<ServicioResponse> obtenerServicioPorId(@PathVariable Integer id) {
         ServicioResponse response = obtenerServicioPorIdUseCase.ejecutar(id);
         return ResponseEntity.ok(response);
     }
 
-    /** Listado paginado — público (catálogo). */
+    /** Listado paginado del catálogo — requiere sesión (cualquier usuario autenticado). */
     @GetMapping
     public ResponseEntity<PaginaResponse<ServicioResponse>> consultarServicios(
             @RequestParam(required = false) Integer idProveedor,
