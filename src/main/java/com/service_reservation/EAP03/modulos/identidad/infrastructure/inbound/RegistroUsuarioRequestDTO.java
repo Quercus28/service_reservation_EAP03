@@ -24,7 +24,8 @@ public record RegistroUsuarioRequestDTO(
     String rol,
 
     @NotBlank(message = "El nombre o razón social es obligatorio")
-    @Pattern(regexp = "^[a-zA-Z0-9\\s]+$", message = "Caracteres no permitidos")
+    @Pattern(regexp = "[A-Za-z\\u00C1\\u00C9\\u00CD\\u00D3\\u00DA\\u00DC\\u00D1\\u00E1\\u00E9\\u00ED\\u00F3\\u00FA\\u00FC\\u00F10-9 .,()'\\-]*",
+             message = "Caracteres no permitidos")
     String nombreIdentificacion,
 
     @Pattern(regexp = "^[0-9]{7,10}$", message = "El teléfono debe contener entre 7 y 10 dígitos")

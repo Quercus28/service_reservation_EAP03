@@ -6,6 +6,8 @@ import jakarta.validation.Validator;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -86,5 +88,37 @@ class RegistroUsuarioRequestDTOValidationTest {
                 "Nombre Apellido", "3001234567", "CC123456");
 
         assertTrue(validator.validate(dto).isEmpty());
+    }
+
+    @ParameterizedTest(name = "nombre = {0}")
+    @ValueSource(strings = {"José Muñoz", "María Peña Güiza", "Sean O'Neill", "Ferretería El Clavo, S.A.S.", "Ana-María (Hogar)"})
+    @DisplayName("TC-21: Acepta nombres legitimos en español con tilde, ñ, ü o apostrofe (BUG-07)")
+    void aceptaNombresEnEspanol(String nombre) {
+        // Arrange
+        RegistroUsuarioRequestDTO dto = new RegistroUsuarioRequestDTO(
+                "pendienteback@gmail.com", "Segura123", "Segura123", "CLIENTE",
+                nombre, "3001234567", "CC123456");
+
+        // Act
+        Set<ConstraintViolation<RegistroUsuarioRequestDTO>> violaciones = validator.validate(dto);
+
+        // Assert
+        assertTrue(violaciones.isEmpty());
+    }
+
+    @ParameterizedTest(name = "nombre = {0}")
+    @ValueSource(strings = {"<script>alert(1)</script>", "x'; DROP TABLE usuario;--", "Nombre\nApellido"})
+    @DisplayName("Sigue rechazando HTML, comandos y saltos de linea en el nombre")
+    void rechazaNombresMaliciosos(String nombre) {
+        // Arrange
+        RegistroUsuarioRequestDTO dto = new RegistroUsuarioRequestDTO(
+                "pendienteback@gmail.com", "Segura123", "Segura123", "CLIENTE",
+                nombre, "3001234567", "CC123456");
+
+        // Act
+        Set<ConstraintViolation<RegistroUsuarioRequestDTO>> violaciones = validator.validate(dto);
+
+        // Assert
+        assertTrue(violaciones.stream().anyMatch(v -> v.getPropertyPath().toString().equals("nombreIdentificacion")));
     }
 }
