@@ -5,11 +5,17 @@ import com.service_reservation.EAP03.modulos.servicios_catalogo.application.dto.
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import tools.jackson.core.JsonParser;
 import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ValueDeserializer;
 import tools.jackson.databind.exc.UnrecognizedPropertyException;
 import tools.jackson.databind.json.JsonMapper;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class UnknownFieldsConfigTest {
     record UnannotatedDto(String nombre) {
@@ -85,5 +91,74 @@ class UnknownFieldsConfigTest {
 
         // Assert
         assertEquals("Corte", dto.nombre());
+    }
+
+    @RejectUnknownFields
+    static class AnnotatedBean {
+    }
+
+    static class UnannotatedBean {
+    }
+
+    @Test
+    @DisplayName("Rechaza un campo desconocido cuando recibe la instancia de un DTO anotado")
+    void rejectsUnknownFieldOnAnnotatedInstance() {
+        // Arrange
+        UnknownFieldsConfig.RejectUnknownFieldsHandler handler = new UnknownFieldsConfig.RejectUnknownFieldsHandler();
+        JsonParser parser = mapper.createParser("{}");
+
+        // Act
+        UnrecognizedPropertyException ex = assertThrows(UnrecognizedPropertyException.class,
+                () -> handler.handleUnknownProperty(null, parser, null, new AnnotatedBean(), "extra"));
+
+        // Assert
+        assertEquals("extra", ex.getPropertyName());
+    }
+
+    @Test
+    @DisplayName("Informa los campos conocidos del deserializador al rechazar un campo desconocido")
+    void reportsKnownPropertiesFromDeserializer() {
+        // Arrange
+        UnknownFieldsConfig.RejectUnknownFieldsHandler handler = new UnknownFieldsConfig.RejectUnknownFieldsHandler();
+        JsonParser parser = mapper.createParser("{}");
+        ValueDeserializer<?> deserializer = mock(ValueDeserializer.class);
+        when(deserializer.getKnownPropertyNames()).thenReturn(List.of("nombre"));
+
+        // Act
+        UnrecognizedPropertyException ex = assertThrows(UnrecognizedPropertyException.class,
+                () -> handler.handleUnknownProperty(null, parser, deserializer, AnnotatedBean.class, "extra"));
+
+        // Assert
+        assertEquals(List.of("nombre"), List.copyOf(ex.getKnownPropertyIds()));
+    }
+
+    @Test
+    @DisplayName("Ignora un campo desconocido cuando recibe la instancia de un DTO sin anotar")
+    void ignoresUnknownFieldOnUnannotatedInstance() {
+        // Arrange
+        UnknownFieldsConfig.RejectUnknownFieldsHandler handler = new UnknownFieldsConfig.RejectUnknownFieldsHandler();
+        JsonParser parser = mapper.createParser("{}");
+
+        // Act
+        boolean manejado = handler.handleUnknownProperty(null, parser, null, new UnannotatedBean(), "extra");
+
+        // Assert
+        assertFalse(manejado);
+    }
+
+    @Test
+    @DisplayName("La configuración registra el handler en el constructor del JsonMapper")
+    void configurationRegistersHandler() {
+        // Arrange
+        JsonMapper.Builder builder = JsonMapper.builder().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        new UnknownFieldsConfig().rejectUnknownFields().customize(builder);
+        JsonMapper configurado = builder.build();
+        String json = """
+                {"nombre": "Corte", "duracionMinutos": 30, "capacidadMaxima": 10}
+                """;
+
+        // Act & Assert
+        assertThrows(UnrecognizedPropertyException.class,
+                () -> configurado.readValue(json, ActualizarServicioRequest.class));
     }
 }

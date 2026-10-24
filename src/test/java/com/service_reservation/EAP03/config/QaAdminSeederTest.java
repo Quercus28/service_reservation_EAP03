@@ -6,6 +6,7 @@ import com.service_reservation.EAP03.modulos.identidad.domain.ports.out.UsuarioR
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.DefaultApplicationArguments;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,7 +20,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 class QaAdminSeederTest {
 
@@ -88,5 +95,56 @@ class QaAdminSeederTest {
 
         // Assert
         assertTrue(ex.getMessage().contains("QA_ADMIN_PASSWORD"));
+    }
+
+    @Test
+    @DisplayName("Falla si la contraseña del admin de QA es nula")
+    void failsWithNullPassword() {
+        // Arrange
+        UsuarioRepositoryPort usuarioRepository = mock(UsuarioRepositoryPort.class);
+        QaAdminSeeder seeder = new QaAdminSeeder(usuarioRepository, mock(PasswordEncoderPort.class),
+                "qa.admin@qa.local", null);
+
+        // Act
+        assertThrows(IllegalStateException.class, () -> seeder.run(new DefaultApplicationArguments()));
+
+        // Assert
+        verifyNoInteractions(usuarioRepository);
+    }
+
+    @Test
+    @DisplayName("No vuelve a crear el admin de QA si ya existe")
+    void doesNotDuplicateExistingQaAdmin() {
+        // Arrange
+        UsuarioRepositoryPort usuarioRepository = mock(UsuarioRepositoryPort.class);
+        PasswordEncoderPort passwordEncoder = mock(PasswordEncoderPort.class);
+        when(usuarioRepository.existePorEmail("qa.admin@qa.local")).thenReturn(true);
+        QaAdminSeeder seeder = new QaAdminSeeder(usuarioRepository, passwordEncoder, "QA.Admin@qa.local", "QaAdmin123");
+
+        // Act
+        seeder.run(new DefaultApplicationArguments());
+
+        // Assert
+        verify(usuarioRepository, never()).guardarUsuarioConRol(any(), any());
+        verifyNoInteractions(passwordEncoder);
+    }
+
+    @Test
+    @DisplayName("Crea el admin de QA con el correo normalizado y la contraseña codificada")
+    void createsQaAdminWithNormalizedEmail() {
+        // Arrange
+        UsuarioRepositoryPort usuarioRepository = mock(UsuarioRepositoryPort.class);
+        PasswordEncoderPort passwordEncoder = mock(PasswordEncoderPort.class);
+        when(passwordEncoder.codificar("QaAdmin123")).thenReturn("hash");
+        QaAdminSeeder seeder = new QaAdminSeeder(usuarioRepository, passwordEncoder, " QA.Admin@qa.local ", "QaAdmin123");
+
+        // Act
+        seeder.run(new DefaultApplicationArguments());
+
+        // Assert
+        ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
+        verify(usuarioRepository).guardarUsuarioConRol(captor.capture(), eq("ROLE_ADMIN"));
+        assertEquals("qa.admin@qa.local", captor.getValue().getEmail());
+        assertEquals("hash", captor.getValue().getPasswordHash());
     }
 }
