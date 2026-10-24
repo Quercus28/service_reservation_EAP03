@@ -46,7 +46,7 @@ class RecursoRequestDTOValidationTest {
 
     @ParameterizedTest(name = "nombre = {0}")
     @ValueSource(strings = {"<img src=x onerror=alert(1)>", "<script>alert(1)</script>", "x'; DROP TABLE recurso;--"})
-    @DisplayName("Rechaza HTML/JS y comandos en el nombre al crear y al actualizar un recurso (BUG-03)")
+    @DisplayName("Rechaza HTML/JS y comandos en el nombre al crear y al actualizar un recurso")
     void rejectsMaliciousNames(String nombre) {
         // Arrange
         CrearRecursoRequestDTO crear = new CrearRecursoRequestDTO(nombre, new BigDecimal("50000"), 3);

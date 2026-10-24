@@ -31,13 +31,14 @@ public class RegistrarUsuarioService implements RegistrarUsuarioUseCase {
     @Override
     @Transactional
     public void ejecutar(UsuarioNuevoComando comando) {
-        if (usuarioRepository.existePorEmail(comando.email())) {
+        String email = EmailUtil.normalizarEmail(comando.email());
+        if (usuarioRepository.existePorEmail(email)) {
             throw new ReglaNegocioException("El correo ya está en uso");
         }
 
         String rolNormalizado = RolNombreUtil.normalizarRol(comando.rol());
         String passwordHash = passwordEncoder.codificar(comando.password());
-        Usuario nuevoUsuario = new Usuario(comando.email(), passwordHash);
+        Usuario nuevoUsuario = new Usuario(email, passwordHash);
 
         Usuario usuarioGuardado = usuarioRepository.guardarUsuarioConRol(nuevoUsuario, rolNormalizado);
 

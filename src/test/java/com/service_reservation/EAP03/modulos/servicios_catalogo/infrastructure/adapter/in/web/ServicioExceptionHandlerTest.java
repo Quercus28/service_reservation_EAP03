@@ -17,7 +17,7 @@ class ServicioExceptionHandlerTest {
     private final ServicioExceptionHandler handler = new ServicioExceptionHandler();
 
     @Test
-    @DisplayName("El 404 de servicio usa el esquema {errorCode, message, traceId} (BUG-05)")
+    @DisplayName("El 404 de servicio usa el esquema {errorCode, message, traceId}")
     void notFoundUsesCommonSchema() {
         // Arrange
         ServicioNoEncontradoException ex = new ServicioNoEncontradoException(999999);
