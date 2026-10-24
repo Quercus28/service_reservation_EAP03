@@ -39,7 +39,7 @@ public class IniciarSesionService implements IniciarSesionUseCase {
     @Override
     @Transactional(readOnly = true)
     public TokenRespuesta ejecutar(IniciarSesionComando comando) {
-        String email = comando.email() != null ? comando.email().trim().toLowerCase() : "";
+        String email = comando.email() != null ? EmailUtil.normalizarEmail(comando.email()) : "";
 
         // 1. Chequeo de prevención contra fuerza bruta (bloqueo de 15 minutos tras 5 intentos fallidos)
         if (bloqueoFuerzaBrutaPort.estaBloqueado(email)) {

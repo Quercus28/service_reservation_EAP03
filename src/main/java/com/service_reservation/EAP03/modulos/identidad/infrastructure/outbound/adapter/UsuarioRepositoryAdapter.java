@@ -36,12 +36,12 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
 
     @Override
     public boolean existePorEmail(String email) {
-        return usuarioJpaRepo.existsByEmail(email);
+        return usuarioJpaRepo.existsByEmailIgnoreCase(email);
     }
 
     @Override
     public Optional<Usuario> buscarPorEmail(String email) {
-        return usuarioJpaRepo.findByEmail(email)
+        return usuarioJpaRepo.findFirstByEmailIgnoreCaseOrderByIdAsc(email)
                 .map(this::mapearAUsuario);
     }
 

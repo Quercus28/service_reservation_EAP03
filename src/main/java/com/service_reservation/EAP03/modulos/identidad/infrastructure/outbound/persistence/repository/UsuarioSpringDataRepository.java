@@ -7,8 +7,11 @@ import java.util.Optional;
 
 public interface UsuarioSpringDataRepository extends JpaRepository<UsuarioJpaEntity, Long> {
     boolean existsByEmail(String email);
+    boolean existsByEmailIgnoreCase(String email);
     @EntityGraph(attributePaths = "roles")
     Optional<UsuarioJpaEntity> findByEmail(String email);
+    @EntityGraph(attributePaths = "roles")
+    Optional<UsuarioJpaEntity> findFirstByEmailIgnoreCaseOrderByIdAsc(String email);
 
     @EntityGraph(attributePaths = "roles")
     Optional<UsuarioJpaEntity> findById(Long id);

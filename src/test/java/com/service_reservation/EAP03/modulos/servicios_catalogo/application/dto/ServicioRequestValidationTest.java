@@ -45,7 +45,7 @@ class ServicioRequestValidationTest {
 
     @ParameterizedTest(name = "nombre = {0}")
     @ValueSource(strings = {"<script>alert(1)</script>", "x'; DROP TABLE servicio;--", "<img src=x onerror=alert(1)>"})
-    @DisplayName("Rechaza HTML/JS y comandos en el nombre al crear y al actualizar un servicio (BUG-02)")
+    @DisplayName("Rechaza HTML/JS y comandos en el nombre al crear y al actualizar un servicio")
     void rejectsMaliciousNames(String nombre) {
         // Arrange
         CrearServicioRequest crear = new CrearServicioRequest(1, nombre, 30);
