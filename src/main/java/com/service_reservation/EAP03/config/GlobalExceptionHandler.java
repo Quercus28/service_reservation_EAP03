@@ -25,6 +25,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -34,8 +35,10 @@ import org.springframework.security.access.AccessDeniedException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 @Slf4j
 @RestControllerAdvice
@@ -178,6 +181,12 @@ public class GlobalExceptionHandler {
                 .body(error);
     }
 
+    private static final Set<String> CODIGOS_CAMPO_OBLIGATORIO = Set.of("NotBlank", "NotNull", "NotEmpty");
+
+    private static final Comparator<FieldError> PRIORIDAD_ERROR_CAMPO = Comparator
+            .comparing((FieldError e) -> !CODIGOS_CAMPO_OBLIGATORIO.contains(e.getCode()))
+            .thenComparing(e -> String.valueOf(e.getCode()));
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidations(MethodArgumentNotValidException ex) {
         Map<String, Object> error = new HashMap<>();
@@ -185,7 +194,14 @@ public class GlobalExceptionHandler {
         error.put("message", "Error en los datos enviados");
         
         Map<String, String> details = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(e -> details.put(e.getField(), e.getDefaultMessage()));
+        // Un campo puede romper varias reglas a la vez (p. ej. rol "" rompe @NotBlank y @Pattern) y
+        // Bean Validation no garantiza el orden. Se elige siempre el mismo error para que el mensaje
+        // no cambie entre peticiones: primero el de campo obligatorio, si no el de código menor.
+        Map<String, FieldError> errorPorCampo = new HashMap<>();
+        ex.getBindingResult().getFieldErrors().forEach(e ->
+                errorPorCampo.merge(e.getField(), e, (actual, nuevo) ->
+                        PRIORIDAD_ERROR_CAMPO.compare(nuevo, actual) < 0 ? nuevo : actual));
+        errorPorCampo.forEach((campo, e) -> details.put(campo, e.getDefaultMessage()));
         if (ex.getBindingResult().getGlobalErrors().size() > 0) {
             ex.getBindingResult().getGlobalErrors().forEach(e -> details.put(e.getObjectName(), e.getDefaultMessage()));
         }
