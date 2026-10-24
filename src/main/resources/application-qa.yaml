@@ -1,0 +1,7 @@
+# Perfil solo para las pruebas de QA en local: ./gradlew bootRun --args='--spring.profiles.active=qa'
+# Producción (Render) arranca sin perfil, así que esto nunca se aplica allí.
+qa:
+  admin:
+    email: ${QA_ADMIN_EMAIL:qa.admin@qa.local}
+    # Sin valor por defecto a propósito: la contraseña no se guarda en el repositorio.
+    password: ${QA_ADMIN_PASSWORD:}
