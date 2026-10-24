@@ -30,6 +30,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -149,6 +150,12 @@ class ServicioControllerTest {
     @DisplayName("El constructor debe rechazar un CrearServicioUseCase nulo")
     void constructorRechazaCrearServicioUseCaseNulo() {
         assertThrows(NullPointerException.class, () -> new ServicioController(null));
+    }
+
+    @Test
+    @DisplayName("El constructor de compatibilidad debe crear el controlador solo con CrearServicioUseCase")
+    void constructorDeCompatibilidadCreaControlador() {
+        assertNotNull(new ServicioController(crearServicioUseCase));
     }
 
     @Test

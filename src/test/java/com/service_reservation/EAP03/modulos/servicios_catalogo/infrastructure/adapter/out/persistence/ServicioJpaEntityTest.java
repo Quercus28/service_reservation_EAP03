@@ -73,7 +73,7 @@ class ServicioJpaEntityTest {
         assertEquals(a, b);
         assertEquals(a.hashCode(), b.hashCode());
         assertNotEquals(a, c);
-        assertNotEquals(null, a);
-        assertNotEquals("Corte", a);
+        assertFalse(a.equals(null));
+        assertFalse(a.equals("Corte"));
     }
 }

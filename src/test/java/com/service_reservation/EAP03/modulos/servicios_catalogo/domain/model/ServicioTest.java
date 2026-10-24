@@ -242,8 +242,8 @@ class ServicioTest {
         // Assert
         assertEquals(a, a);
         assertNotEquals(a, b);
-        assertNotEquals(null, a);
-        assertNotEquals("Corte", a);
+        assertFalse(a.equals(null));
+        assertFalse(a.equals("Corte"));
     }
 
     @Test
