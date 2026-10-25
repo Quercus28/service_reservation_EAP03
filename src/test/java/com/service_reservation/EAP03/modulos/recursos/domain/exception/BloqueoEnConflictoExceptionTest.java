@@ -1,6 +1,7 @@
 package com.service_reservation.EAP03.modulos.recursos.domain.exception;
 
 import com.service_reservation.EAP03.modulos.recursos.domain.model.BloqueoRecurso;
+import com.service_reservation.EAP03.modulos.recursos.domain.model.PeriodoPrestamo;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.RecursoPrestado;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,7 +20,8 @@ class BloqueoEnConflictoExceptionTest {
     @DisplayName("Describe el préstamo con el que choca el bloqueo")
     void conflictWithLoan() {
         // Arrange
-        RecursoPrestado prestamo = RecursoPrestado.reconstruir(4, 1, 100, 2, INICIO, FIN, BigDecimal.TEN, null);
+        RecursoPrestado prestamo = RecursoPrestado.reconstruir(4, 1, 100,
+                2, new PeriodoPrestamo(INICIO, FIN), BigDecimal.TEN, null);
 
         // Act
         BloqueoEnConflictoException ex = BloqueoEnConflictoException.conPrestamo(prestamo);

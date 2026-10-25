@@ -9,6 +9,8 @@ import com.service_reservation.EAP03.modulos.reservas.domain.exception.ReservaNo
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.UsuarioNoEsClienteException;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.CancelarReservaComando;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.EstadoReserva;
+import com.service_reservation.EAP03.modulos.reservas.domain.model.IntervaloReservado;
+import com.service_reservation.EAP03.modulos.reservas.domain.model.PartesReserva;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.Reserva;
 import com.service_reservation.EAP03.modulos.reservas.domain.ports.out.ReservaRepositoryPort;
 import com.service_reservation.EAP03.modulos.reservas.infrastructure.config.ReservaProperties;
@@ -49,8 +51,8 @@ class CancelarReservaServiceTest {
     }
 
     private static Reserva reservationOf(Long idCliente, LocalDateTime inicio) {
-        return Reserva.reconstruir(8, idCliente, 10, 7, inicio, inicio.plusHours(1), EstadoReserva.RESERVADO,
-                null, AHORA.minusDays(1), null, null);
+        return Reserva.reconstruir(8, new PartesReserva(idCliente, 10, 7), new IntervaloReservado(inicio, inicio.plusHours(1)),
+                EstadoReserva.RESERVADO, null, AHORA.minusDays(1), null);
     }
 
     @Test

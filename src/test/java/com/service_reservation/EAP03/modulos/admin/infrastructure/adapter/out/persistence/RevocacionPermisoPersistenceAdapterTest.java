@@ -3,6 +3,7 @@ package com.service_reservation.EAP03.modulos.admin.infrastructure.adapter.out.p
 import com.service_reservation.EAP03.modulos.admin.domain.model.EstadoRevocacion;
 import com.service_reservation.EAP03.modulos.admin.domain.model.RevocacionPermiso;
 import com.service_reservation.EAP03.modulos.admin.domain.model.RolOperativo;
+import com.service_reservation.EAP03.modulos.admin.domain.model.SolicitudRevocacion;
 import com.service_reservation.EAP03.modulos.admin.infrastructure.adapter.out.persistence.entity.RevocacionPermisoEntity;
 import com.service_reservation.EAP03.modulos.admin.infrastructure.adapter.out.persistence.repository.RevocacionPermisoJpaRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -52,8 +53,8 @@ class RevocacionPermisoPersistenceAdapterTest {
     void savesRevocation() {
         // Arrange
         when(repository.save(any())).thenReturn(entity(7L, "COMPLETADA"));
-        RevocacionPermiso revocacion = new RevocacionPermiso(null, 42L, RolOperativo.PROVEEDOR, EstadoRevocacion.COMPLETADA,
-                "Fraude", 1L, SOLICITUD, LIMITE, CIERRE, 2);
+        RevocacionPermiso revocacion = new RevocacionPermiso(null, new SolicitudRevocacion(42L, RolOperativo.PROVEEDOR, "Fraude", 1L, SOLICITUD), EstadoRevocacion.COMPLETADA,
+                LIMITE, CIERRE, 2);
 
         // Act
         RevocacionPermiso guardada = adapter.guardar(revocacion);

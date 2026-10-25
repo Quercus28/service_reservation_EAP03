@@ -22,7 +22,8 @@ class RecursoPrestadoTest {
         LocalDateTime liberado = inicio.minusDays(1);
 
         // Act
-        RecursoPrestado prestamo = RecursoPrestado.reconstruir(4, 1, 100, 2, inicio, fin, PRECIO, liberado);
+        RecursoPrestado prestamo = RecursoPrestado.reconstruir(4, 1, 100,
+                2, new PeriodoPrestamo(inicio, fin), PRECIO, liberado);
 
         // Assert
         assertEquals(4, prestamo.getId());
@@ -70,6 +71,7 @@ class RecursoPrestadoTest {
         assertThrows(DatosInvalidosException.class, () -> RecursoPrestado.nuevo(1, 100, 2, null, fin, PRECIO));
         assertThrows(DatosInvalidosException.class, () -> RecursoPrestado.nuevo(1, 100, 2, inicio, null, PRECIO));
         assertThrows(DatosInvalidosException.class, () -> RecursoPrestado.nuevo(1, 100, 2, inicio, fin, null));
+        assertThrows(DatosInvalidosException.class, () -> RecursoPrestado.reconstruir(4, 1, 100, 2, null, PRECIO, null));
         assertThrows(NullPointerException.class, () -> RecursoPrestado.nuevo(null, 100, 2, inicio, fin, PRECIO));
         assertThrows(NullPointerException.class, () -> RecursoPrestado.nuevo(1, null, 2, inicio, fin, PRECIO));
     }

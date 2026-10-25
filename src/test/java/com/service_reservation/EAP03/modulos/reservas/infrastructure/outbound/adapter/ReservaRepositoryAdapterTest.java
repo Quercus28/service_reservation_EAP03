@@ -1,6 +1,9 @@
 package com.service_reservation.EAP03.modulos.reservas.infrastructure.outbound.adapter;
 
+import com.service_reservation.EAP03.modulos.reservas.domain.model.Cancelacion;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.EstadoReserva;
+import com.service_reservation.EAP03.modulos.reservas.domain.model.IntervaloReservado;
+import com.service_reservation.EAP03.modulos.reservas.domain.model.PartesReserva;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.Reserva;
 import com.service_reservation.EAP03.modulos.reservas.infrastructure.outbound.persistence.ReservaMapper;
 import com.service_reservation.EAP03.modulos.reservas.infrastructure.outbound.persistence.entity.ReservaJpaEntity;
@@ -60,7 +63,8 @@ class ReservaRepositoryAdapterTest {
     void savesReservation() {
         // Arrange
         when(repositorio.save(any())).thenReturn(entity(50));
-        Reserva reserva = Reserva.reconstruir(null, 3L, 10, 7, INICIO, FIN, EstadoReserva.CANCELADO, "Nota", CREADA, CANCELADA, "Viaje");
+        Reserva reserva = Reserva.reconstruir(null, new PartesReserva(3L, 10, 7), new IntervaloReservado(INICIO, FIN),
+                EstadoReserva.CANCELADO, "Nota", CREADA, new Cancelacion(CANCELADA, "Viaje"));
 
         // Act
         Reserva guardada = adapter.guardar(reserva);

@@ -1,9 +1,12 @@
 package com.service_reservation.EAP03.modulos.reservas.infrastructure.inbound;
 
 import com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound.security.UsuarioAutenticadoPrincipal;
+import com.service_reservation.EAP03.modulos.reservas.domain.model.Cancelacion;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.CancelarReservaComando;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.CrearReservaComando;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.EstadoReserva;
+import com.service_reservation.EAP03.modulos.reservas.domain.model.IntervaloReservado;
+import com.service_reservation.EAP03.modulos.reservas.domain.model.PartesReserva;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.Reserva;
 import com.service_reservation.EAP03.modulos.reservas.domain.ports.in.CancelarReservaUseCase;
 import com.service_reservation.EAP03.modulos.reservas.domain.ports.in.CrearReservaUseCase;
@@ -38,11 +41,13 @@ class ReservaControllerTest {
     @InjectMocks private ReservaController controller;
 
     private static Reserva reserved() {
-        return Reserva.reconstruir(50, 3L, 10, 7, INICIO, INICIO.plusHours(1), EstadoReserva.RESERVADO, "Nota", CANCELADA, null, null);
+        return Reserva.reconstruir(50, new PartesReserva(3L, 10, 7), new IntervaloReservado(INICIO, INICIO.plusHours(1)),
+                EstadoReserva.RESERVADO, "Nota", CANCELADA, null);
     }
 
     private static Reserva cancelled() {
-        return Reserva.reconstruir(50, 3L, 10, 7, INICIO, INICIO.plusHours(1), EstadoReserva.CANCELADO, null, CANCELADA, CANCELADA, "Viaje");
+        return Reserva.reconstruir(50, new PartesReserva(3L, 10, 7), new IntervaloReservado(INICIO, INICIO.plusHours(1)),
+                EstadoReserva.CANCELADO, null, CANCELADA, new Cancelacion(CANCELADA, "Viaje"));
     }
 
     @Test

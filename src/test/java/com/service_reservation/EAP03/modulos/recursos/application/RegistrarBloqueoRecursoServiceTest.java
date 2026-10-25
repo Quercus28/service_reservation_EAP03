@@ -3,6 +3,7 @@ package com.service_reservation.EAP03.modulos.recursos.application;
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.BloqueoEnConflictoException;
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.RecursoNoEncontradoException;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.BloqueoRecurso;
+import com.service_reservation.EAP03.modulos.recursos.domain.model.PeriodoPrestamo;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.Recurso;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.RecursoPrestado;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.RegistrarBloqueoComando;
@@ -47,7 +48,8 @@ class RegistrarBloqueoRecursoServiceTest {
     }
 
     private static RecursoPrestado loan(LocalDateTime inicio, LocalDateTime fin) {
-        return RecursoPrestado.reconstruir(4, 1, 100, 1, inicio, fin, BigDecimal.TEN, null);
+        return RecursoPrestado.reconstruir(4, 1, 100,
+                1, new PeriodoPrestamo(inicio, fin), BigDecimal.TEN, null);
     }
 
     @Test

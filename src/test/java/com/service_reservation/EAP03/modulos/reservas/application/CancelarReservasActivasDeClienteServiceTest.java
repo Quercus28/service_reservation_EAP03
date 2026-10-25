@@ -3,6 +3,8 @@ package com.service_reservation.EAP03.modulos.reservas.application;
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.in.ConsultarClienteUseCase;
 import com.service_reservation.EAP03.modulos.recursos.domain.ports.in.LiberarRecursosDeReservaUseCase;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.EstadoReserva;
+import com.service_reservation.EAP03.modulos.reservas.domain.model.IntervaloReservado;
+import com.service_reservation.EAP03.modulos.reservas.domain.model.PartesReserva;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.Reserva;
 import com.service_reservation.EAP03.modulos.reservas.domain.ports.out.ReservaRepositoryPort;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,7 +43,8 @@ class CancelarReservasActivasDeClienteServiceTest {
     }
 
     private static Reserva active(int id, EstadoReserva estado) {
-        return Reserva.reconstruir(id, 3L, 10, 7, AHORA.plusMinutes(30), AHORA.plusMinutes(90), estado, null, AHORA, null, null);
+        return Reserva.reconstruir(id, new PartesReserva(3L, 10, 7), new IntervaloReservado(AHORA.plusMinutes(30), AHORA.plusMinutes(90)),
+                estado, null, AHORA, null);
     }
 
     @Test

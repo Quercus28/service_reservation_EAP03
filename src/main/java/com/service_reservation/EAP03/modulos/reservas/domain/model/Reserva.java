@@ -27,21 +27,22 @@ public class Reserva {
     private LocalDateTime canceladaEn;
     private String motivoCancelacion;
 
-    private Reserva(Integer id, Long idCliente, Integer idServicio, Integer idProveedor,
-                    LocalDateTime fechaInicio, LocalDateTime fechaFin, EstadoReserva estado,
-                    String notas, LocalDateTime createdAt,
-                    LocalDateTime canceladaEn, String motivoCancelacion) {
+    // "cancelacion" puede venir en null cuando la reserva nunca se canceló.
+    private Reserva(Integer id, PartesReserva partes, IntervaloReservado intervalo, EstadoReserva estado,
+                    String notas, LocalDateTime createdAt, Cancelacion cancelacion) {
+        Objects.requireNonNull(partes, "partes es obligatorio");
+        Objects.requireNonNull(intervalo, "intervalo es obligatorio");
         this.id = id;
-        this.idCliente = Objects.requireNonNull(idCliente, "idCliente es obligatorio");
-        this.idServicio = Objects.requireNonNull(idServicio, "idServicio es obligatorio");
-        this.idProveedor = Objects.requireNonNull(idProveedor, "idProveedor es obligatorio");
-        this.fechaInicio = Objects.requireNonNull(fechaInicio, "fechaInicio es obligatoria");
-        this.fechaFin = Objects.requireNonNull(fechaFin, "fechaFin es obligatoria");
+        this.idCliente = Objects.requireNonNull(partes.idCliente(), "idCliente es obligatorio");
+        this.idServicio = Objects.requireNonNull(partes.idServicio(), "idServicio es obligatorio");
+        this.idProveedor = Objects.requireNonNull(partes.idProveedor(), "idProveedor es obligatorio");
+        this.fechaInicio = Objects.requireNonNull(intervalo.inicio(), "fechaInicio es obligatoria");
+        this.fechaFin = Objects.requireNonNull(intervalo.fin(), "fechaFin es obligatoria");
         this.estado = Objects.requireNonNull(estado, "estado es obligatorio");
         this.notas = notas;
         this.createdAt = createdAt;
-        this.canceladaEn = canceladaEn;
-        this.motivoCancelacion = motivoCancelacion;
+        this.canceladaEn = cancelacion != null ? cancelacion.canceladaEn() : null;
+        this.motivoCancelacion = cancelacion != null ? cancelacion.motivo() : null;
     }
 
     // Para crear una reserva NUEVA (todavía sin id). La hora actual ("ahora") se recibe como
@@ -60,18 +61,17 @@ public class Reserva {
         if (!fechaFin.isAfter(fechaInicio)) {
             throw new DatosReservaInvalidosException("fechaFin debe ser posterior a fechaInicio");
         }
-        return new Reserva(null, idCliente, idServicio, idProveedor, fechaInicio, fechaFin,
-                EstadoReserva.RESERVADO, limpiarTexto(notas, NOTAS_MAX,
-                        "Las notas no pueden superar los " + NOTAS_MAX + " caracteres"), ahora, null, null);
+        return new Reserva(null, new PartesReserva(idCliente, idServicio, idProveedor),
+                new IntervaloReservado(fechaInicio, fechaFin), EstadoReserva.RESERVADO,
+                limpiarTexto(notas, NOTAS_MAX, "Las notas no pueden superar los " + NOTAS_MAX + " caracteres"),
+                ahora, null);
     }
 
     // Para reconstruir una reserva que YA existe en la base de datos (puede estar en el pasado).
-    public static Reserva reconstruir(Integer id, Long idCliente, Integer idServicio, Integer idProveedor,
-                                      LocalDateTime fechaInicio, LocalDateTime fechaFin, EstadoReserva estado,
-                                      String notas, LocalDateTime createdAt,
-                                      LocalDateTime canceladaEn, String motivoCancelacion) {
-        return new Reserva(id, idCliente, idServicio, idProveedor, fechaInicio, fechaFin,
-                estado, notas, createdAt, canceladaEn, motivoCancelacion);
+    public static Reserva reconstruir(Integer id, PartesReserva partes, IntervaloReservado intervalo,
+                                      EstadoReserva estado, String notas, LocalDateTime createdAt,
+                                      Cancelacion cancelacion) {
+        return new Reserva(id, partes, intervalo, estado, notas, createdAt, cancelacion);
     }
 
     // Cancela la reserva. Solo se puede si todavía está en estado RESERVADO y si faltan al

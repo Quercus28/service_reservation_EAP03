@@ -3,6 +3,8 @@ package com.service_reservation.EAP03.modulos.reservas.application;
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.in.ConsultarProveedorUseCase;
 import com.service_reservation.EAP03.modulos.recursos.domain.ports.in.LiberarRecursosDeReservaUseCase;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.EstadoReserva;
+import com.service_reservation.EAP03.modulos.reservas.domain.model.IntervaloReservado;
+import com.service_reservation.EAP03.modulos.reservas.domain.model.PartesReserva;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.Reserva;
 import com.service_reservation.EAP03.modulos.reservas.domain.ports.out.ReservaRepositoryPort;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,8 +46,8 @@ class CancelarReservasActivasDeProveedorServiceTest {
     @DisplayName("Cancela todas las reservas activas del proveedor y libera sus recursos")
     void cancelsAllActiveReservations() {
         // Arrange
-        Reserva reserva = Reserva.reconstruir(1, 3L, 10, 7, AHORA.plusDays(1), AHORA.plusDays(1).plusHours(1),
-                EstadoReserva.RESERVADO, null, AHORA, null, null);
+        Reserva reserva = Reserva.reconstruir(1, new PartesReserva(3L, 10, 7), new IntervaloReservado(AHORA.plusDays(1), AHORA.plusDays(1).plusHours(1)),
+                EstadoReserva.RESERVADO, null, AHORA, null);
         when(consultarProveedorUseCase.buscarIdProveedorPorUsuario(30L)).thenReturn(Optional.of(7));
         when(reservaRepositoryPort.buscarActivasDeProveedor(7)).thenReturn(List.of(reserva));
 

@@ -23,7 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestControllerAdvice(assignableTypes = {RecursoController.class, DisponibilidadRecursoController.class,
-        ServicioRecursoController.class})
+        BloqueoRecursoController.class, PrestamoRecursoController.class, ServicioRecursoController.class})
 public class RecursoExceptionHandler {
 
     @ExceptionHandler(ServicioNoExisteException.class)
