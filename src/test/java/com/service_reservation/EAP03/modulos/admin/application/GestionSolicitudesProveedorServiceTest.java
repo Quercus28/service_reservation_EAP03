@@ -1,8 +1,13 @@
 package com.service_reservation.EAP03.modulos.admin.application;
 
+import com.service_reservation.EAP03.modulos.admin.domain.exception.DatosAdminInvalidosException;
 import com.service_reservation.EAP03.modulos.admin.domain.exception.OperacionAdminInvalidaException;
+import com.service_reservation.EAP03.modulos.admin.domain.exception.RecursoAdminNoEncontradoException;
 import com.service_reservation.EAP03.modulos.admin.domain.model.AccionAdmin;
+import com.service_reservation.EAP03.modulos.admin.domain.model.ActualizarProveedorPerfilComando;
 import com.service_reservation.EAP03.modulos.admin.domain.model.EstadoSolicitud;
+import com.service_reservation.EAP03.modulos.admin.domain.model.ProveedorPerfilDTO;
+import com.service_reservation.EAP03.modulos.admin.domain.model.RegistroAuditoria;
 import com.service_reservation.EAP03.modulos.admin.domain.model.RolOperativo;
 import com.service_reservation.EAP03.modulos.admin.domain.model.SolicitudAprobacionProveedor;
 import com.service_reservation.EAP03.modulos.admin.domain.ports.out.AuditoriaPort;
@@ -13,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -20,6 +26,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -195,5 +202,167 @@ class GestionSolicitudesProveedorServiceTest {
         assertEquals("Falta documentación legal", rechazada.getMotivoRechazo());
         verify(permisoOperativoPort, never()).actualizarEstado(anyLong(), any(), eq(true));
         verify(auditoriaPort).registrar(any());
+    }
+
+    private void hasProviderRole() {
+        when(permisoOperativoPort.estadoPermiso(ID_USUARIO, RolOperativo.PROVEEDOR)).thenReturn(Optional.of(false));
+    }
+
+    private static ProveedorPerfilDTO profile(String razonSocial) {
+        return new ProveedorPerfilDTO(ID_USUARIO, razonSocial, "900123-1", "3001234567");
+    }
+
+    @Test
+    @DisplayName("Reenviar sin solicitudes previas crea una solicitud nueva")
+    void resubmitWithoutPreviousRequestCreatesOne() {
+        // Arrange
+        hasProviderRole();
+        when(solicitudRepository.buscarUltimaPorUsuario(ID_USUARIO)).thenReturn(Optional.empty());
+        when(solicitudRepository.guardar(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        SolicitudAprobacionProveedor solicitud = service.reenviarSolicitud(ID_USUARIO);
+
+        // Assert
+        assertEquals(EstadoSolicitud.PENDIENTE, solicitud.getEstado());
+        ArgumentCaptor<RegistroAuditoria> captor = ArgumentCaptor.forClass(RegistroAuditoria.class);
+        verify(auditoriaPort).registrar(captor.capture());
+        assertEquals(AccionAdmin.SOLICITUD_PROVEEDOR_REENVIADA, captor.getValue().accion());
+    }
+
+    @Test
+    @DisplayName("Reenviar solo se permite tras un rechazo")
+    void resubmitOnlyAfterRejection() {
+        hasProviderRole();
+        when(solicitudRepository.buscarUltimaPorUsuario(ID_USUARIO))
+                .thenReturn(Optional.of(SolicitudAprobacionProveedor.nueva(ID_USUARIO, AHORA)));
+
+        OperacionAdminInvalidaException ex = assertThrows(OperacionAdminInvalidaException.class,
+                () -> service.reenviarSolicitud(ID_USUARIO));
+
+        assertEquals("Solo se puede volver a solicitar aprobación tras un rechazo. Estado actual: PENDIENTE", ex.getMessage());
+        verify(solicitudRepository, never()).guardar(any());
+    }
+
+    @Test
+    @DisplayName("Reenviar falla si el usuario no tiene el rol de proveedor")
+    void resubmitRequiresProviderRole() {
+        when(permisoOperativoPort.estadoPermiso(ID_USUARIO, RolOperativo.PROVEEDOR)).thenReturn(Optional.empty());
+
+        RecursoAdminNoEncontradoException ex = assertThrows(RecursoAdminNoEncontradoException.class,
+                () -> service.reenviarSolicitud(ID_USUARIO));
+
+        assertEquals("El usuario 42 no tiene el rol PROVEEDOR", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("Consulta la última solicitud del usuario")
+    void queriesLastRequest() {
+        SolicitudAprobacionProveedor ultima = SolicitudAprobacionProveedor.nueva(ID_USUARIO, AHORA);
+        when(solicitudRepository.buscarUltimaPorUsuario(ID_USUARIO)).thenReturn(Optional.of(ultima));
+
+        assertSame(ultima, service.consultarUltimaSolicitud(ID_USUARIO));
+    }
+
+    @Test
+    @DisplayName("Consultar la última solicitud falla si el usuario no tiene ninguna")
+    void queryLastRequestWithoutRequests() {
+        when(solicitudRepository.buscarUltimaPorUsuario(ID_USUARIO)).thenReturn(Optional.empty());
+
+        assertThrows(RecursoAdminNoEncontradoException.class, () -> service.consultarUltimaSolicitud(ID_USUARIO));
+    }
+
+    @Test
+    @DisplayName("Aprobar falla si la solicitud no existe")
+    void approveUnknownRequest() {
+        when(solicitudRepository.buscarPorId(50L)).thenReturn(Optional.empty());
+
+        RecursoAdminNoEncontradoException ex = assertThrows(RecursoAdminNoEncontradoException.class,
+                () -> service.aprobar(ID_ADMIN, 50L));
+
+        assertEquals("Solicitud de aprobación no encontrada: 50", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("Listar delega en el repositorio con el filtro de estado")
+    void listsRequests() {
+        List<SolicitudAprobacionProveedor> solicitudes = List.of(SolicitudAprobacionProveedor.nueva(ID_USUARIO, AHORA));
+        when(solicitudRepository.listar(EstadoSolicitud.PENDIENTE)).thenReturn(solicitudes);
+
+        assertEquals(solicitudes, service.listar(EstadoSolicitud.PENDIENTE));
+    }
+
+    @Test
+    @DisplayName("Consulta el perfil del proveedor")
+    void queriesProviderProfile() {
+        when(proveedorPerfilPort.buscarPorIdUsuario(ID_USUARIO)).thenReturn(Optional.of(profile("Empresa SAS")));
+
+        assertEquals(profile("Empresa SAS"), service.consultarPerfilProveedor(ID_USUARIO));
+    }
+
+    @Test
+    @DisplayName("Consultar el perfil exige el usuario y que el perfil exista")
+    void queryProfileRequiresExistingUser() {
+        when(proveedorPerfilPort.buscarPorIdUsuario(ID_USUARIO)).thenReturn(Optional.empty());
+
+        assertThrows(DatosAdminInvalidosException.class, () -> service.consultarPerfilProveedor(null));
+        RecursoAdminNoEncontradoException ex = assertThrows(RecursoAdminNoEncontradoException.class,
+                () -> service.consultarPerfilProveedor(ID_USUARIO));
+        assertEquals("No se encontró el perfil de proveedor para el usuario 42", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("Actualiza el perfil con los datos recortados y lo audita")
+    void updatesProfileWithTrimmedData() {
+        // Arrange
+        when(proveedorPerfilPort.buscarPorIdUsuario(ID_USUARIO))
+                .thenReturn(Optional.of(profile("Empresa")), Optional.of(profile("Empresa SAS")));
+
+        // Act
+        ProveedorPerfilDTO actualizado = service.actualizarPerfilProveedor(
+                new ActualizarProveedorPerfilComando(ID_ADMIN, ID_USUARIO, " Empresa SAS ", " 900123-1 ", " 3001234567 "));
+
+        // Assert
+        assertEquals(profile("Empresa SAS"), actualizado);
+        verify(proveedorPerfilPort).actualizarPerfil(ID_USUARIO, "Empresa SAS", "900123-1", "3001234567");
+        ArgumentCaptor<RegistroAuditoria> captor = ArgumentCaptor.forClass(RegistroAuditoria.class);
+        verify(auditoriaPort).registrar(captor.capture());
+        assertEquals(AccionAdmin.PERFIL_PROVEEDOR_ACTUALIZADO, captor.getValue().accion());
+        assertEquals("perfil actualizado por admin", captor.getValue().detalle());
+    }
+
+    @Test
+    @DisplayName("Actualiza el perfil dejando nulos el NIT y el teléfono si no se envían")
+    void updatesProfileWithoutOptionalData() {
+        when(proveedorPerfilPort.buscarPorIdUsuario(ID_USUARIO)).thenReturn(Optional.of(profile("Empresa")));
+
+        service.actualizarPerfilProveedor(new ActualizarProveedorPerfilComando(ID_ADMIN, ID_USUARIO, "Empresa", null, null));
+
+        verify(proveedorPerfilPort).actualizarPerfil(ID_USUARIO, "Empresa", null, null);
+    }
+
+    @Test
+    @DisplayName("Actualizar el perfil exige comando, administrador, usuario y razón social")
+    void updateProfileRequiresData() {
+        assertThrows(DatosAdminInvalidosException.class, () -> service.actualizarPerfilProveedor(null));
+        assertThrows(DatosAdminInvalidosException.class, () -> service.actualizarPerfilProveedor(
+                new ActualizarProveedorPerfilComando(null, ID_USUARIO, "Empresa", null, null)));
+        assertThrows(DatosAdminInvalidosException.class, () -> service.actualizarPerfilProveedor(
+                new ActualizarProveedorPerfilComando(ID_ADMIN, null, "Empresa", null, null)));
+        assertThrows(DatosAdminInvalidosException.class, () -> service.actualizarPerfilProveedor(
+                new ActualizarProveedorPerfilComando(ID_ADMIN, ID_USUARIO, null, null, null)));
+        assertThrows(DatosAdminInvalidosException.class, () -> service.actualizarPerfilProveedor(
+                new ActualizarProveedorPerfilComando(ID_ADMIN, ID_USUARIO, "  ", null, null)));
+        verifyNoInteractions(proveedorPerfilPort);
+    }
+
+    @Test
+    @DisplayName("Actualizar el perfil falla si el proveedor no tiene perfil")
+    void updateProfileOfUnknownProvider() {
+        when(proveedorPerfilPort.buscarPorIdUsuario(ID_USUARIO)).thenReturn(Optional.empty());
+        ActualizarProveedorPerfilComando comando = new ActualizarProveedorPerfilComando(ID_ADMIN, ID_USUARIO, "Empresa", null, null);
+
+        assertThrows(RecursoAdminNoEncontradoException.class, () -> service.actualizarPerfilProveedor(comando));
+        verify(proveedorPerfilPort, never()).actualizarPerfil(any(), any(), any(), any());
     }
 }

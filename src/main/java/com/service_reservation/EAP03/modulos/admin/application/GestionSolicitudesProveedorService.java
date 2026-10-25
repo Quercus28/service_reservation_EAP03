@@ -49,10 +49,9 @@ public class GestionSolicitudesProveedorService implements GestionarSolicitudesP
         Optional<SolicitudAprobacionProveedor> ultimaOpt = solicitudRepository.buscarUltimaPorUsuario(idUsuario);
         if (ultimaOpt.isPresent()) {
             SolicitudAprobacionProveedor ultima = ultimaOpt.get();
-            switch (ultima.getEstado()) {
-                case PENDIENTE:
-                    return ultima;
-                case APROBADA:
+            return switch (ultima.getEstado()) {
+                case PENDIENTE -> ultima;
+                case APROBADA -> {
                     boolean activo = permisoOperativoPort.estadoPermiso(idUsuario, RolOperativo.PROVEEDOR).orElse(false);
                     if (activo) {
                         throw new OperacionAdminInvalidaException(
@@ -61,10 +60,10 @@ public class GestionSolicitudesProveedorService implements GestionarSolicitudesP
                         throw new OperacionAdminInvalidaException(
                                 "Los permisos operativos de la cuenta fueron revocados. Para volver a operar, debe solicitar la restauración de permisos a un administrador");
                     }
-                case RECHAZADA:
-                    throw new OperacionAdminInvalidaException(
-                            "Su solicitud anterior fue rechazada. Debe reenviar la solicitud de aprobación a través del endpoint correspondiente");
-            }
+                }
+                case RECHAZADA -> throw new OperacionAdminInvalidaException(
+                        "Su solicitud anterior fue rechazada. Debe reenviar la solicitud de aprobación a través del endpoint correspondiente");
+            };
         }
         return crearSolicitud(idUsuario, AccionAdmin.SOLICITUD_PROVEEDOR_CREADA);
     }
