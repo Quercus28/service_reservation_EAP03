@@ -55,12 +55,18 @@ class RevocacionPermisoTest {
     @Test
     @DisplayName("Rechaza una revocación sin usuario, rol o administrador")
     void rejectsMissingRequiredData() {
-        assertThrows(DatosAdminInvalidosException.class, () -> new RevocacionPermiso(null, null, RolOperativo.CLIENTE,
-                EstadoRevocacion.COMPLETADA, "m", 1L, AHORA, null, AHORA, 0));
-        assertThrows(DatosAdminInvalidosException.class, () -> new RevocacionPermiso(null, 42L, null,
-                EstadoRevocacion.COMPLETADA, "m", 1L, AHORA, null, AHORA, 0));
-        assertThrows(DatosAdminInvalidosException.class, () -> new RevocacionPermiso(null, 42L, RolOperativo.CLIENTE,
-                EstadoRevocacion.COMPLETADA, "m", null, AHORA, null, AHORA, 0));
+        SolicitudRevocacion sinUsuario = new SolicitudRevocacion(null, RolOperativo.CLIENTE, "m", 1L, AHORA);
+        SolicitudRevocacion sinRol = new SolicitudRevocacion(42L, null, "m", 1L, AHORA);
+        SolicitudRevocacion sinAdmin = new SolicitudRevocacion(42L, RolOperativo.CLIENTE, "m", null, AHORA);
+
+        assertThrows(DatosAdminInvalidosException.class,
+                () -> new RevocacionPermiso(null, null, EstadoRevocacion.COMPLETADA, null, AHORA, 0));
+        assertThrows(DatosAdminInvalidosException.class,
+                () -> new RevocacionPermiso(null, sinUsuario, EstadoRevocacion.COMPLETADA, null, AHORA, 0));
+        assertThrows(DatosAdminInvalidosException.class,
+                () -> new RevocacionPermiso(null, sinRol, EstadoRevocacion.COMPLETADA, null, AHORA, 0));
+        assertThrows(DatosAdminInvalidosException.class,
+                () -> new RevocacionPermiso(null, sinAdmin, EstadoRevocacion.COMPLETADA, null, AHORA, 0));
     }
 
     @Test
@@ -122,8 +128,8 @@ class RevocacionPermisoTest {
     @DisplayName("No permite completar ni anular una revocación ya cerrada")
     void rejectsClosingAClosedRevocation() {
         // Arrange
-        RevocacionPermiso cerrada = new RevocacionPermiso(9L, 42L, RolOperativo.PROVEEDOR, EstadoRevocacion.ANULADA,
-                "Fraude", 1L, AHORA, AHORA.plusDays(5), AHORA.plusDays(1), 0);
+        RevocacionPermiso cerrada = new RevocacionPermiso(9L, new SolicitudRevocacion(42L, RolOperativo.PROVEEDOR, "Fraude", 1L, AHORA), EstadoRevocacion.ANULADA,
+                AHORA.plusDays(5), AHORA.plusDays(1), 0);
 
         // Act
         OperacionAdminInvalidaException ex = assertThrows(OperacionAdminInvalidaException.class,

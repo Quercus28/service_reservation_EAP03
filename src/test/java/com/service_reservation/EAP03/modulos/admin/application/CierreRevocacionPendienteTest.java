@@ -5,6 +5,7 @@ import com.service_reservation.EAP03.modulos.admin.domain.model.EstadoRevocacion
 import com.service_reservation.EAP03.modulos.admin.domain.model.RegistroAuditoria;
 import com.service_reservation.EAP03.modulos.admin.domain.model.RevocacionPermiso;
 import com.service_reservation.EAP03.modulos.admin.domain.model.RolOperativo;
+import com.service_reservation.EAP03.modulos.admin.domain.model.SolicitudRevocacion;
 import com.service_reservation.EAP03.modulos.admin.domain.ports.out.AuditoriaPort;
 import com.service_reservation.EAP03.modulos.admin.domain.ports.out.ReservasPort;
 import com.service_reservation.EAP03.modulos.admin.domain.ports.out.RevocacionPermisoRepositoryPort;
@@ -37,8 +38,8 @@ class CierreRevocacionPendienteTest {
     @BeforeEach
     void setUp() {
         cierre = new CierreRevocacionPendiente(revocacionRepository, reservasPort, auditoriaPort);
-        revocacion = new RevocacionPermiso(7L, 42L, RolOperativo.PROVEEDOR,
-                EstadoRevocacion.PENDIENTE_CANCELACION, "Fraude", 1L, INICIO, INICIO.plusDays(5), null, 0);
+        revocacion = new RevocacionPermiso(7L, new SolicitudRevocacion(42L, RolOperativo.PROVEEDOR, "Fraude", 1L, INICIO), EstadoRevocacion.PENDIENTE_CANCELACION,
+                INICIO.plusDays(5), null, 0);
     }
 
     private RegistroAuditoria auditEntry() {

@@ -2,6 +2,7 @@ package com.service_reservation.EAP03.modulos.reservas.application;
 
 import com.service_reservation.EAP03.modulos.reservas.domain.model.EstadoReserva;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.IntervaloReservado;
+import com.service_reservation.EAP03.modulos.reservas.domain.model.PartesReserva;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.Reserva;
 import com.service_reservation.EAP03.modulos.reservas.domain.ports.out.ReservaRepositoryPort;
 import org.junit.jupiter.api.DisplayName;
@@ -28,7 +29,8 @@ class ConsultarReservasActivasServiceTest {
     @InjectMocks private ConsultarReservasActivasService service;
 
     private static Reserva reservation(int id, LocalDateTime inicio) {
-        return Reserva.reconstruir(id, 3L, 10, 7, inicio, inicio.plusHours(1), EstadoReserva.RESERVADO, null, null, null, null);
+        return Reserva.reconstruir(id, new PartesReserva(3L, 10, 7), new IntervaloReservado(inicio, inicio.plusHours(1)),
+                EstadoReserva.RESERVADO, null, null, null);
     }
 
     @Test

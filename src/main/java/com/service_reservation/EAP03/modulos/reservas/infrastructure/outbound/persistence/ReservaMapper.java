@@ -1,5 +1,8 @@
 package com.service_reservation.EAP03.modulos.reservas.infrastructure.outbound.persistence;
 
+import com.service_reservation.EAP03.modulos.reservas.domain.model.Cancelacion;
+import com.service_reservation.EAP03.modulos.reservas.domain.model.IntervaloReservado;
+import com.service_reservation.EAP03.modulos.reservas.domain.model.PartesReserva;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.Reserva;
 import com.service_reservation.EAP03.modulos.reservas.infrastructure.outbound.persistence.entity.ReservaJpaEntity;
 import org.springframework.stereotype.Component;
@@ -26,16 +29,12 @@ public class ReservaMapper {
     public Reserva aDominio(ReservaJpaEntity entidad) {
         return Reserva.reconstruir(
                 entidad.getId(),
-                entidad.getIdCliente(),
-                entidad.getIdServicio(),
-                entidad.getIdProveedor(),
-                entidad.getFechaInicio(),
-                entidad.getFechaFin(),
+                new PartesReserva(entidad.getIdCliente(), entidad.getIdServicio(), entidad.getIdProveedor()),
+                new IntervaloReservado(entidad.getFechaInicio(), entidad.getFechaFin()),
                 entidad.getEstado(),
                 entidad.getNotas(),
                 entidad.getCreatedAt(),
-                entidad.getCanceladaEn(),
-                entidad.getMotivoCancelacion()
+                new Cancelacion(entidad.getCanceladaEn(), entidad.getMotivoCancelacion())
         );
     }
 }

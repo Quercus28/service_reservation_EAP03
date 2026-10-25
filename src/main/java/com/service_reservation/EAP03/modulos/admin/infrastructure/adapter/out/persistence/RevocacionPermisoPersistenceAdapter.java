@@ -3,6 +3,7 @@ package com.service_reservation.EAP03.modulos.admin.infrastructure.adapter.out.p
 import com.service_reservation.EAP03.modulos.admin.domain.model.EstadoRevocacion;
 import com.service_reservation.EAP03.modulos.admin.domain.model.RevocacionPermiso;
 import com.service_reservation.EAP03.modulos.admin.domain.model.RolOperativo;
+import com.service_reservation.EAP03.modulos.admin.domain.model.SolicitudRevocacion;
 import com.service_reservation.EAP03.modulos.admin.domain.ports.out.RevocacionPermisoRepositoryPort;
 import com.service_reservation.EAP03.modulos.admin.infrastructure.adapter.out.persistence.entity.RevocacionPermisoEntity;
 import com.service_reservation.EAP03.modulos.admin.infrastructure.adapter.out.persistence.repository.RevocacionPermisoJpaRepository;
@@ -45,12 +46,9 @@ public class RevocacionPermisoPersistenceAdapter implements RevocacionPermisoRep
     private RevocacionPermiso mapToDomain(RevocacionPermisoEntity entity) {
         return new RevocacionPermiso(
                 entity.getId(),
-                entity.getIdUsuario(),
-                RolOperativo.valueOf(entity.getRol()),
+                new SolicitudRevocacion(entity.getIdUsuario(), RolOperativo.valueOf(entity.getRol()),
+                        entity.getMotivo(), entity.getIdAdmin(), entity.getFechaSolicitud()),
                 EstadoRevocacion.valueOf(entity.getEstado()),
-                entity.getMotivo(),
-                entity.getIdAdmin(),
-                entity.getFechaSolicitud(),
                 entity.getFechaLimite(),
                 entity.getFechaCierre(),
                 entity.getReservasCanceladas()

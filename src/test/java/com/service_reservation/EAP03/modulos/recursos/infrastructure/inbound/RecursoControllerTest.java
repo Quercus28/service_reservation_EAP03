@@ -3,18 +3,13 @@ package com.service_reservation.EAP03.modulos.recursos.infrastructure.inbound;
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.DatosInvalidosException;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.ActualizarRecursoComando;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.CrearRecursoComando;
-import com.service_reservation.EAP03.modulos.recursos.domain.model.DisponibilidadRecurso;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.Recurso;
-import com.service_reservation.EAP03.modulos.recursos.domain.model.RecursoPrestado;
-import com.service_reservation.EAP03.modulos.recursos.domain.model.RegistrarPrestamoComando;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.ResultadoPaginado;
 import com.service_reservation.EAP03.modulos.recursos.domain.ports.in.ActualizarRecursoUseCase;
-import com.service_reservation.EAP03.modulos.recursos.domain.ports.in.ConsultarDisponibilidadUseCase;
 import com.service_reservation.EAP03.modulos.recursos.domain.ports.in.ConsultarRecursosUseCase;
 import com.service_reservation.EAP03.modulos.recursos.domain.ports.in.CrearRecursoUseCase;
 import com.service_reservation.EAP03.modulos.recursos.domain.ports.in.DesactivarRecursoUseCase;
 import com.service_reservation.EAP03.modulos.recursos.domain.ports.in.ObtenerRecursoPorIdUseCase;
-import com.service_reservation.EAP03.modulos.recursos.domain.ports.in.RegistrarPrestamoRecursoUseCase;
 import com.service_reservation.EAP03.modulos.recursos.infrastructure.config.RecursoSecurity;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,16 +32,12 @@ class RecursoControllerTest {
 
     private static final BigDecimal PRECIO = new BigDecimal("50000.00");
     private static final LocalDateTime CREADO = LocalDateTime.of(2026, 9, 1, 8, 0);
-    private static final LocalDateTime DESDE = LocalDateTime.of(2026, 11, 1, 10, 0);
-    private static final LocalDateTime HASTA = DESDE.plusHours(2);
 
     @Mock private CrearRecursoUseCase crearRecursoUseCase;
     @Mock private ActualizarRecursoUseCase actualizarRecursoUseCase;
     @Mock private ConsultarRecursosUseCase consultarRecursosUseCase;
     @Mock private ObtenerRecursoPorIdUseCase obtenerRecursoPorIdUseCase;
     @Mock private DesactivarRecursoUseCase desactivarRecursoUseCase;
-    @Mock private ConsultarDisponibilidadUseCase consultarDisponibilidadUseCase;
-    @Mock private RegistrarPrestamoRecursoUseCase registrarPrestamoRecursoUseCase;
     @Mock private RecursoSecurity recursoSecurity;
     @Mock private Authentication authentication;
 
@@ -138,35 +129,5 @@ class RecursoControllerTest {
         controller.desactivar(1);
 
         verify(desactivarRecursoUseCase).ejecutar(1);
-    }
-
-    @Test
-    @DisplayName("Consultar disponibilidad devuelve el cálculo del caso de uso")
-    void queriesAvailability() {
-        // Arrange
-        when(consultarDisponibilidadUseCase.ejecutar(1, DESDE, HASTA))
-                .thenReturn(new DisponibilidadRecurso(1, DESDE, HASTA, 5, 2, 3, true));
-
-        // Act
-        DisponibilidadResponseDTO response = controller.consultarDisponibilidad(1, DESDE, HASTA);
-
-        // Assert
-        assertEquals(new DisponibilidadResponseDTO(1, DESDE, HASTA, 5, 2, 3, true), response);
-    }
-
-    @Test
-    @DisplayName("Registrar préstamo devuelve el préstamo guardado")
-    void registersLoan() {
-        // Arrange
-        RegistrarPrestamoComando comando = new RegistrarPrestamoComando(1, 100, 2, DESDE, HASTA, PRECIO);
-        when(registrarPrestamoRecursoUseCase.ejecutar(comando))
-                .thenReturn(RecursoPrestado.reconstruir(4, 1, 100, 2, DESDE, HASTA, PRECIO, null));
-
-        // Act
-        RecursoPrestadoResponseDTO response = controller.registrarPrestamo(1,
-                new RegistrarPrestamoRequestDTO(100, 2, DESDE, HASTA, PRECIO));
-
-        // Assert
-        assertEquals(new RecursoPrestadoResponseDTO(4, 1, 100, 2, DESDE, HASTA, PRECIO), response);
     }
 }

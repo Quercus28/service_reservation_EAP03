@@ -5,13 +5,11 @@ import com.service_reservation.EAP03.modulos.recursos.domain.model.*;
 import com.service_reservation.EAP03.modulos.recursos.domain.ports.in.*;
 import com.service_reservation.EAP03.modulos.recursos.infrastructure.config.RecursoSecurity;
 import jakarta.validation.Valid;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -23,8 +21,6 @@ public class RecursoController {
     private final ConsultarRecursosUseCase consultarRecursosUseCase;
     private final ObtenerRecursoPorIdUseCase obtenerRecursoPorIdUseCase;
     private final DesactivarRecursoUseCase desactivarRecursoUseCase;
-    private final ConsultarDisponibilidadUseCase consultarDisponibilidadUseCase;
-    private final RegistrarPrestamoRecursoUseCase registrarPrestamoRecursoUseCase;
     private final RecursoSecurity recursoSecurity;
 
     public RecursoController(CrearRecursoUseCase crearRecursoUseCase,
@@ -32,16 +28,12 @@ public class RecursoController {
                              ConsultarRecursosUseCase consultarRecursosUseCase,
                              ObtenerRecursoPorIdUseCase obtenerRecursoPorIdUseCase,
                              DesactivarRecursoUseCase desactivarRecursoUseCase,
-                             ConsultarDisponibilidadUseCase consultarDisponibilidadUseCase,
-                             RegistrarPrestamoRecursoUseCase registrarPrestamoRecursoUseCase,
                              RecursoSecurity recursoSecurity) {
         this.crearRecursoUseCase = crearRecursoUseCase;
         this.actualizarRecursoUseCase = actualizarRecursoUseCase;
         this.consultarRecursosUseCase = consultarRecursosUseCase;
         this.obtenerRecursoPorIdUseCase = obtenerRecursoPorIdUseCase;
         this.desactivarRecursoUseCase = desactivarRecursoUseCase;
-        this.consultarDisponibilidadUseCase = consultarDisponibilidadUseCase;
-        this.registrarPrestamoRecursoUseCase = registrarPrestamoRecursoUseCase;
         this.recursoSecurity = recursoSecurity;
     }
 
@@ -111,34 +103,5 @@ public class RecursoController {
     @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVEEDOR') and @permisoOperativo.activo(authentication, 'PROVEEDOR') and @recursoSecurity.esPropietario(authentication, #id))")
     public void desactivar(@PathVariable Integer id) {
         desactivarRecursoUseCase.ejecutar(id);
-    }
-
-    @GetMapping("/{id}/disponibilidad")
-    @PreAuthorize("isAuthenticated()")
-    public DisponibilidadResponseDTO consultarDisponibilidad(
-            @PathVariable Integer id,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime desde,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime hasta) {
-
-        return DisponibilidadResponseDTO.desde(
-                consultarDisponibilidadUseCase.ejecutar(id, desde, hasta));
-    }
-
-    @PostMapping("/{id}/prestamos")
-    @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('PROVEEDOR') and @permisoOperativo.activo(authentication, 'PROVEEDOR') and @recursoSecurity.esPropietario(authentication, #id))")
-    public RecursoPrestadoResponseDTO registrarPrestamo(
-            @PathVariable Integer id,
-            @Valid @RequestBody RegistrarPrestamoRequestDTO request) {
-
-        RecursoPrestado prestamo = registrarPrestamoRecursoUseCase.ejecutar(new RegistrarPrestamoComando(
-                id,
-                request.idServicioPrestado(),
-                request.cantidad(),
-                request.fechaInicio(),
-                request.fechaFin(),
-                request.precioTotal()
-        ));
-        return RecursoPrestadoResponseDTO.desde(prestamo);
     }
 }

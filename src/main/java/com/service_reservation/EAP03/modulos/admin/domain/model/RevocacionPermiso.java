@@ -32,19 +32,19 @@ public class RevocacionPermiso {
     private LocalDateTime fechaCierre;
     private int reservasCanceladas;
 
-    public RevocacionPermiso(Long id, Long idUsuario, RolOperativo rol, EstadoRevocacion estado,
-                             String motivo, Long idAdmin, LocalDateTime fechaSolicitud,
+    public RevocacionPermiso(Long id, SolicitudRevocacion solicitud, EstadoRevocacion estado,
                              LocalDateTime fechaLimite, LocalDateTime fechaCierre, int reservasCanceladas) {
-        if (idUsuario == null || rol == null || idAdmin == null) {
+        if (solicitud == null || solicitud.idUsuario() == null || solicitud.rol() == null
+                || solicitud.idAdmin() == null) {
             throw new DatosAdminInvalidosException("Usuario, rol y administrador son obligatorios en una revocación");
         }
         this.id = id;
-        this.idUsuario = idUsuario;
-        this.rol = rol;
+        this.idUsuario = solicitud.idUsuario();
+        this.rol = solicitud.rol();
         this.estado = estado;
-        this.motivo = motivo;
-        this.idAdmin = idAdmin;
-        this.fechaSolicitud = fechaSolicitud;
+        this.motivo = solicitud.motivo();
+        this.idAdmin = solicitud.idAdmin();
+        this.fechaSolicitud = solicitud.fechaSolicitud();
         this.fechaLimite = fechaLimite;
         this.fechaCierre = fechaCierre;
         this.reservasCanceladas = reservasCanceladas;
@@ -53,16 +53,16 @@ public class RevocacionPermiso {
     /** Revocación que se cierra en el mismo instante en que se solicita. */
     public static RevocacionPermiso inmediata(Long idUsuario, RolOperativo rol, String motivo, Long idAdmin,
                                               LocalDateTime ahora, int reservasCanceladas) {
-        return new RevocacionPermiso(null, idUsuario, rol, EstadoRevocacion.COMPLETADA,
-                SolicitudAprobacionProveedor.validarMotivo(motivo), idAdmin,
-                ahora, null, ahora, reservasCanceladas);
+        return new RevocacionPermiso(null, new SolicitudRevocacion(idUsuario, rol,
+                SolicitudAprobacionProveedor.validarMotivo(motivo), idAdmin, ahora),
+                EstadoRevocacion.COMPLETADA, null, ahora, reservasCanceladas);
     }
 
     /** Revocación de proveedor con reservas activas: abre el plazo de gracia. */
     public static RevocacionPermiso conPlazoDeGracia(Long idUsuario, String motivo, Long idAdmin, LocalDateTime ahora) {
-        return new RevocacionPermiso(null, idUsuario, RolOperativo.PROVEEDOR, EstadoRevocacion.PENDIENTE_CANCELACION,
-                SolicitudAprobacionProveedor.validarMotivo(motivo), idAdmin,
-                ahora, ahora.plus(PLAZO_GRACIA), null, 0);
+        return new RevocacionPermiso(null, new SolicitudRevocacion(idUsuario, RolOperativo.PROVEEDOR,
+                SolicitudAprobacionProveedor.validarMotivo(motivo), idAdmin, ahora),
+                EstadoRevocacion.PENDIENTE_CANCELACION, ahora.plus(PLAZO_GRACIA), null, 0);
     }
 
     public boolean estaPendiente() {

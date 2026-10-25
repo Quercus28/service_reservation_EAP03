@@ -1,5 +1,6 @@
 package com.service_reservation.EAP03.modulos.recursos.infrastructure.outbound.persistence;
 
+import com.service_reservation.EAP03.modulos.recursos.domain.model.PeriodoPrestamo;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.RecursoPrestado;
 import com.service_reservation.EAP03.modulos.recursos.infrastructure.outbound.persistence.entity.RecursoPrestadoJpaEntity;
 import org.springframework.stereotype.Component;
@@ -26,8 +27,7 @@ public class RecursoPrestadoMapper {
                 entidad.getIdRecurso(),
                 entidad.getIdServicioPrestado(),
                 entidad.getCantidad(),
-                entidad.getFechaInicio(),
-                entidad.getFechaFin(),
+                new PeriodoPrestamo(entidad.getFechaInicio(), entidad.getFechaFin()),
                 entidad.getPrecioTotal(),
                 entidad.getLiberadoEn()
         );

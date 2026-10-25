@@ -1,5 +1,6 @@
 package com.service_reservation.EAP03.modulos.recursos.infrastructure.outbound.adapter;
 
+import com.service_reservation.EAP03.modulos.recursos.domain.model.PeriodoPrestamo;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.RecursoPrestado;
 import com.service_reservation.EAP03.modulos.recursos.infrastructure.outbound.persistence.RecursoPrestadoMapper;
 import com.service_reservation.EAP03.modulos.recursos.infrastructure.outbound.persistence.entity.RecursoPrestadoJpaEntity;
@@ -56,7 +57,8 @@ class RecursoPrestadoRepositoryAdapterTest {
         when(repositorio.save(any())).thenReturn(entity(4));
 
         // Act
-        RecursoPrestado guardado = adapter.guardar(RecursoPrestado.reconstruir(null, 1, 100, 2, INICIO, FIN, BigDecimal.TEN, LIBERADO));
+        RecursoPrestado guardado = adapter.guardar(RecursoPrestado.reconstruir(null, 1, 100,
+                2, new PeriodoPrestamo(INICIO, FIN), BigDecimal.TEN, LIBERADO));
 
         // Assert
         ArgumentCaptor<RecursoPrestadoJpaEntity> captor = ArgumentCaptor.forClass(RecursoPrestadoJpaEntity.class);

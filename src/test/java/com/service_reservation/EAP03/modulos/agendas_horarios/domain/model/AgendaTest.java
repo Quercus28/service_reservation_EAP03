@@ -63,7 +63,7 @@ class AgendaTest {
         Agenda agenda = agendaWith(schedule(1L, DiaSemana.LUNES, 8, 12));
 
         List<Horario> horarios = agenda.getHorarios();
-        assertThrows(UnsupportedOperationException.class, () -> horarios.clear());
+        assertThrows(UnsupportedOperationException.class, horarios::clear);
     }
 
     @Test

@@ -17,6 +17,8 @@ import com.service_reservation.EAP03.modulos.reservas.domain.exception.ServicioN
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.UsuarioNoEsClienteException;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.CrearReservaComando;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.EstadoReserva;
+import com.service_reservation.EAP03.modulos.reservas.domain.model.IntervaloReservado;
+import com.service_reservation.EAP03.modulos.reservas.domain.model.PartesReserva;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.Reserva;
 import com.service_reservation.EAP03.modulos.reservas.domain.ports.out.ReservaRepositoryPort;
 import com.service_reservation.EAP03.modulos.servicios_catalogo.application.dto.ServicioResponse;
@@ -87,8 +89,8 @@ class CrearReservaServiceTest {
         when(reservaRepositoryPort.buscarActivasQueSeSolapan(any(), any(), any())).thenReturn(List.of());
         when(reservaRepositoryPort.guardar(any())).thenAnswer(inv -> {
             Reserva r = inv.getArgument(0);
-            return Reserva.reconstruir(50, r.getIdCliente(), r.getIdServicio(), r.getIdProveedor(), r.getFechaInicio(),
-                    r.getFechaFin(), r.getEstado(), r.getNotas(), r.getCreatedAt(), null, null);
+            return Reserva.reconstruir(50, new PartesReserva(r.getIdCliente(), r.getIdServicio(), r.getIdProveedor()), new IntervaloReservado(r.getFechaInicio(), r.getFechaFin()),
+                    r.getEstado(), r.getNotas(), r.getCreatedAt(), null);
         });
     }
 
@@ -243,10 +245,10 @@ class CrearReservaServiceTest {
         // Arrange
         clientAndService();
         agendaWith(LUNES_DE_OCHO_A_DOCE);
-        Reserva enElBorde = Reserva.reconstruir(1, 9L, ID_SERVICIO, ID_PROVEEDOR, LUNES_NUEVE.minusHours(1), LUNES_NUEVE,
-                EstadoReserva.RESERVADO, null, null, null, null);
-        Reserva cruzada = Reserva.reconstruir(2, 9L, ID_SERVICIO, ID_PROVEEDOR, LUNES_NUEVE.plusMinutes(30), LUNES_NUEVE.plusMinutes(90),
-                EstadoReserva.RESERVADO, null, null, null, null);
+        Reserva enElBorde = Reserva.reconstruir(1, new PartesReserva(9L, ID_SERVICIO, ID_PROVEEDOR), new IntervaloReservado(LUNES_NUEVE.minusHours(1), LUNES_NUEVE),
+                EstadoReserva.RESERVADO, null, null, null);
+        Reserva cruzada = Reserva.reconstruir(2, new PartesReserva(9L, ID_SERVICIO, ID_PROVEEDOR), new IntervaloReservado(LUNES_NUEVE.plusMinutes(30), LUNES_NUEVE.plusMinutes(90)),
+                EstadoReserva.RESERVADO, null, null, null);
         when(reservaRepositoryPort.buscarActivasQueSeSolapan(ID_SERVICIO, LUNES_NUEVE, LUNES_NUEVE.plusMinutes(60)))
                 .thenReturn(List.of(enElBorde, cruzada));
         CrearReservaComando peticion = command(LUNES_NUEVE);
