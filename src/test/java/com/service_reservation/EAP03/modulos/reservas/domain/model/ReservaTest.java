@@ -94,18 +94,26 @@ class ReservaTest {
     @Test
     @DisplayName("Rechaza una reserva sin cliente, servicio, proveedor, fechas o estado")
     void rejectsMissingRequiredData() {
-        assertThrows(NullPointerException.class, () -> Reserva.reconstruir(1, new PartesReserva(null, 10, 7), new IntervaloReservado(INICIO, FIN),
-                EstadoReserva.RESERVADO, null, AHORA, null));
-        assertThrows(NullPointerException.class, () -> Reserva.reconstruir(1, new PartesReserva(3L, null, 7), new IntervaloReservado(INICIO, FIN),
-                EstadoReserva.RESERVADO, null, AHORA, null));
-        assertThrows(NullPointerException.class, () -> Reserva.reconstruir(1, new PartesReserva(3L, 10, null), new IntervaloReservado(INICIO, FIN),
-                EstadoReserva.RESERVADO, null, AHORA, null));
-        assertThrows(NullPointerException.class, () -> Reserva.reconstruir(1, new PartesReserva(3L, 10, 7), new IntervaloReservado(null, FIN),
-                EstadoReserva.RESERVADO, null, AHORA, null));
-        assertThrows(NullPointerException.class, () -> Reserva.reconstruir(1, new PartesReserva(3L, 10, 7), new IntervaloReservado(INICIO, null),
-                EstadoReserva.RESERVADO, null, AHORA, null));
-        assertThrows(NullPointerException.class, () -> Reserva.reconstruir(1, new PartesReserva(3L, 10, 7), new IntervaloReservado(INICIO, FIN),
-                null, null, AHORA, null));
+        PartesReserva partes = new PartesReserva(3L, 10, 7);
+        PartesReserva sinCliente = new PartesReserva(null, 10, 7);
+        PartesReserva sinServicio = new PartesReserva(3L, null, 7);
+        PartesReserva sinProveedor = new PartesReserva(3L, 10, null);
+        IntervaloReservado intervalo = new IntervaloReservado(INICIO, FIN);
+        IntervaloReservado sinInicio = new IntervaloReservado(null, FIN);
+        IntervaloReservado sinFin = new IntervaloReservado(INICIO, null);
+
+        assertThrows(NullPointerException.class,
+                () -> Reserva.reconstruir(1, sinCliente, intervalo, EstadoReserva.RESERVADO, null, AHORA, null));
+        assertThrows(NullPointerException.class,
+                () -> Reserva.reconstruir(1, sinServicio, intervalo, EstadoReserva.RESERVADO, null, AHORA, null));
+        assertThrows(NullPointerException.class,
+                () -> Reserva.reconstruir(1, sinProveedor, intervalo, EstadoReserva.RESERVADO, null, AHORA, null));
+        assertThrows(NullPointerException.class,
+                () -> Reserva.reconstruir(1, partes, sinInicio, EstadoReserva.RESERVADO, null, AHORA, null));
+        assertThrows(NullPointerException.class,
+                () -> Reserva.reconstruir(1, partes, sinFin, EstadoReserva.RESERVADO, null, AHORA, null));
+        assertThrows(NullPointerException.class,
+                () -> Reserva.reconstruir(1, partes, intervalo, null, null, AHORA, null));
     }
 
     @Test
