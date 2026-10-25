@@ -240,7 +240,7 @@ class ServicioTest {
         Servicio b = Servicio.reconstituir(6, 1, "Corte", 30, null);
 
         // Assert
-        assertEquals(a, a);
+        assertTrue(a.equals(a));
         assertNotEquals(a, b);
         assertFalse(a.equals(null));
         assertFalse(a.equals("Corte"));

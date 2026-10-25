@@ -69,7 +69,7 @@ class ServicioJpaEntityTest {
         ServicioJpaEntity c = new ServicioJpaEntity(2, 2, 30, "Corte", null);
 
         // Assert
-        assertEquals(a, a);
+        assertTrue(a.equals(a));
         assertEquals(a, b);
         assertEquals(a.hashCode(), b.hashCode());
         assertNotEquals(a, c);
