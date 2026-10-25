@@ -3,6 +3,7 @@ package com.service_reservation.EAP03.modulos.recursos.application;
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.DatosInvalidosException;
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.RecursoDeOtroProveedorException;
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.RecursoDesactivadoException;
+import com.service_reservation.EAP03.modulos.recursos.domain.exception.RecursoNoEncontradoException;
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.RecursoYaAsociadoException;
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.ServicioNoExisteException;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.AsociarRecursoComando;
@@ -52,6 +53,16 @@ class AsociarRecursoAServicioServiceTest {
     private Recurso recurso(LocalDateTime eliminadoEn) {
         return Recurso.reconstruir(ID_RECURSO, ID_PROVEEDOR, "Camilla", new BigDecimal("1000.00"), 3,
                 LocalDateTime.of(2026, 9, 1, 8, 0), eliminadoEn);
+    }
+
+    @Test
+    @DisplayName("Rechaza cuando el recurso no existe")
+    void rejectsUnknownResource() {
+        when(obtenerServicioPorIdUseCase.ejecutar(ID_SERVICIO)).thenReturn(servicioDe(ID_PROVEEDOR));
+        when(recursoRepositoryPort.buscarPorId(ID_RECURSO)).thenReturn(Optional.empty());
+
+        assertThrows(RecursoNoEncontradoException.class, () -> service.ejecutar(comando(1)));
+        verify(servicioRecursoRepositoryPort, never()).guardar(any());
     }
 
     @Test

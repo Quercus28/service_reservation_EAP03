@@ -14,6 +14,46 @@ class RecursoTest {
     private static final BigDecimal PRECIO = new BigDecimal("50000.00");
 
     @Test
+    @DisplayName("Rechaza nombre o precio nulos")
+    void rejectsNullNameOrPrice() {
+        assertThrows(DatosInvalidosException.class, () -> Recurso.nuevo(1, null, PRECIO, 3));
+        assertThrows(DatosInvalidosException.class, () -> Recurso.nuevo(1, "Camilla", null, 3));
+    }
+
+    @Test
+    @DisplayName("Un recurso nuevo tiene fecha de creación y conserva su precio")
+    void newResourceHasCreationDateAndPrice() {
+        Recurso recurso = Recurso.nuevo(1, "Camilla", PRECIO, 3);
+
+        assertNotNull(recurso.getCreatedAt());
+        assertNull(recurso.getEliminadoEn());
+        assertEquals(PRECIO, recurso.getPrecioUnitario());
+    }
+
+    @Test
+    @DisplayName("actualizarDatos cambia nombre, precio y stock")
+    void updatesData() {
+        // Arrange
+        Recurso recurso = Recurso.nuevo(1, "Camilla", PRECIO, 3);
+
+        // Act
+        recurso.actualizarDatos("Camilla grande", BigDecimal.ONE, 7);
+
+        // Assert
+        assertEquals("Camilla grande", recurso.getNombre());
+        assertEquals(BigDecimal.ONE, recurso.getPrecioUnitario());
+        assertEquals(7, recurso.getStock());
+    }
+
+    @Test
+    @DisplayName("actualizarDatos rechaza un precio negativo")
+    void updateRejectsNegativePrice() {
+        Recurso recurso = Recurso.nuevo(1, "Camilla", PRECIO, 3);
+
+        assertThrows(DatosInvalidosException.class, () -> recurso.actualizarDatos("Camilla", new BigDecimal("-1"), 3));
+    }
+
+    @Test
     @DisplayName("Crea un recurso valido y queda activo")
     void creaRecursoValido() {
         Recurso recurso = Recurso.nuevo(1, "Camilla 1", PRECIO, 3);
