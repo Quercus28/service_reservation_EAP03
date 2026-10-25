@@ -164,10 +164,13 @@ class ServicioTest {
     @Test
     @DisplayName("Debe fallar al reconstituir un servicio sin id")
     void debeFallarAlReconstituirSinId() {
+        // Arrange
+        OffsetDateTime creado = OffsetDateTime.now();
+
         // Act
         ServicioInvalidoException ex = assertThrows(
                 ServicioInvalidoException.class,
-                () -> Servicio.reconstituir(null, 3, "Masaje", 60, OffsetDateTime.now())
+                () -> Servicio.reconstituir(null, 3, "Masaje", 60, creado)
         );
 
         // Assert
@@ -177,10 +180,13 @@ class ServicioTest {
     @Test
     @DisplayName("Debe validar las invariantes también al reconstituir")
     void debeValidarInvariantesAlReconstituir() {
+        // Arrange
+        OffsetDateTime creado = OffsetDateTime.now();
+
         // Act
         ServicioInvalidoException ex = assertThrows(
                 ServicioInvalidoException.class,
-                () -> Servicio.reconstituir(7, 3, "Masaje", 0, OffsetDateTime.now())
+                () -> Servicio.reconstituir(7, 3, "Masaje", 0, creado)
         );
 
         // Assert
@@ -239,11 +245,16 @@ class ServicioTest {
         Servicio a = Servicio.reconstituir(5, 1, "Corte", 30, null);
         Servicio b = Servicio.reconstituir(6, 1, "Corte", 30, null);
 
+        // Act
+        boolean igualASiMismo = a.equals(a);
+        boolean igualANulo = a.equals(null);
+        boolean igualAOtroTipo = a.equals("Corte");
+
         // Assert
-        assertTrue(a.equals(a));
+        assertTrue(igualASiMismo);
         assertNotEquals(a, b);
-        assertFalse(a.equals(null));
-        assertFalse(a.equals("Corte"));
+        assertFalse(igualANulo);
+        assertFalse(igualAOtroTipo);
     }
 
     @Test

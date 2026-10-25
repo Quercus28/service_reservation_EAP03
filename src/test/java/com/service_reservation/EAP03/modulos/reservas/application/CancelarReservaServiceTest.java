@@ -85,8 +85,9 @@ class CancelarReservaServiceTest {
     @Test
     @DisplayName("Exige el identificador de la reserva")
     void requiresReservationId() {
+        CancelarReservaComando sinReserva = new CancelarReservaComando(20L, null, null);
         DatosReservaInvalidosException ex = assertThrows(DatosReservaInvalidosException.class,
-                () -> service.ejecutar(new CancelarReservaComando(20L, null, null)));
+                () -> service.ejecutar(sinReserva));
 
         assertEquals("El identificador de la reserva es obligatorio", ex.getMessage());
         verifyNoInteractions(consultarClienteUseCase, reservaRepositoryPort);

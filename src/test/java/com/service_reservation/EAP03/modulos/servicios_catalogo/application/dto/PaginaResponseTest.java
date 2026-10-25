@@ -68,6 +68,7 @@ class PaginaResponseTest {
 
         // Assert
         assertEquals(List.of("a"), response.contenido());
-        assertThrows(UnsupportedOperationException.class, () -> response.contenido().add("c"));
+        List<String> contenido = response.contenido();
+        assertThrows(UnsupportedOperationException.class, () -> contenido.add("c"));
     }
 }

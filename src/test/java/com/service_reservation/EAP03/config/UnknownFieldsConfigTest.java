@@ -106,10 +106,11 @@ class UnknownFieldsConfigTest {
         // Arrange
         UnknownFieldsConfig.RejectUnknownFieldsHandler handler = new UnknownFieldsConfig.RejectUnknownFieldsHandler();
         JsonParser parser = mapper.createParser("{}");
+        AnnotatedBean bean = new AnnotatedBean();
 
         // Act
         UnrecognizedPropertyException ex = assertThrows(UnrecognizedPropertyException.class,
-                () -> handler.handleUnknownProperty(null, parser, null, new AnnotatedBean(), "extra"));
+                () -> handler.handleUnknownProperty(null, parser, null, bean, "extra"));
 
         // Assert
         assertEquals("extra", ex.getPropertyName());

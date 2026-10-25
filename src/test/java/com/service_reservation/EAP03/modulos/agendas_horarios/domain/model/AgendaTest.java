@@ -62,7 +62,8 @@ class AgendaTest {
     void schedulesAreUnmodifiable() {
         Agenda agenda = agendaWith(schedule(1L, DiaSemana.LUNES, 8, 12));
 
-        assertThrows(UnsupportedOperationException.class, () -> agenda.getHorarios().clear());
+        List<Horario> horarios = agenda.getHorarios();
+        assertThrows(UnsupportedOperationException.class, () -> horarios.clear());
     }
 
     @Test
@@ -81,16 +82,18 @@ class AgendaTest {
         Agenda agenda = agendaWith(schedule(1L, DiaSemana.LUNES, 8, 12));
 
         assertThrows(NullPointerException.class, () -> agenda.agregarHorario(null));
+        Horario solapado = schedule(null, DiaSemana.LUNES, 11, 13);
         HorarioSolapadoException ex = assertThrows(HorarioSolapadoException.class,
-                () -> agenda.agregarHorario(schedule(null, DiaSemana.LUNES, 11, 13)));
+                () -> agenda.agregarHorario(solapado));
         assertEquals("El horario se superpone con un horario previamente registrado en la agenda", ex.getMessage());
     }
 
     @Test
     @DisplayName("Reconstruir una agenda con horarios superpuestos falla")
     void rejectsRebuildingWithOverlaps() {
-        assertThrows(HorarioSolapadoException.class, () -> agendaWith(
-                schedule(1L, DiaSemana.LUNES, 8, 12), schedule(2L, DiaSemana.LUNES, 10, 14)));
+        Horario lunes = schedule(1L, DiaSemana.LUNES, 8, 12);
+        Horario solapado = schedule(2L, DiaSemana.LUNES, 10, 14);
+        assertThrows(HorarioSolapadoException.class, () -> agendaWith(lunes, solapado));
     }
 
     @Test
@@ -112,8 +115,9 @@ class AgendaTest {
     void rejectsReplacementOverlappingAnother() {
         Agenda agenda = agendaWith(schedule(1L, DiaSemana.LUNES, 8, 12), schedule(2L, DiaSemana.LUNES, 14, 16));
 
+        Horario solapado = schedule(null, DiaSemana.LUNES, 11, 15);
         HorarioSolapadoException ex = assertThrows(HorarioSolapadoException.class,
-                () -> agenda.reemplazarHorario(2L, schedule(null, DiaSemana.LUNES, 11, 15)));
+                () -> agenda.reemplazarHorario(2L, solapado));
 
         assertEquals("El nuevo horario se superpone con otro horario previamente registrado para el mismo día.", ex.getMessage());
     }
@@ -123,8 +127,9 @@ class AgendaTest {
     void rejectsReplacingUnknownSchedule() {
         Agenda agenda = agendaWith(schedule(1L, DiaSemana.LUNES, 8, 12));
 
+        Horario lunes = schedule(null, DiaSemana.LUNES, 8, 12);
         DatosAgendaInvalidosException ex = assertThrows(DatosAgendaInvalidosException.class,
-                () -> agenda.reemplazarHorario(9L, schedule(null, DiaSemana.LUNES, 8, 12)));
+                () -> agenda.reemplazarHorario(9L, lunes));
 
         assertEquals("El horario indicado no existe en la agenda", ex.getMessage());
     }
@@ -134,7 +139,8 @@ class AgendaTest {
     void replaceRequiresIdAndSchedule() {
         Agenda agenda = agendaWith(schedule(1L, DiaSemana.LUNES, 8, 12));
 
-        assertThrows(NullPointerException.class, () -> agenda.reemplazarHorario(null, schedule(null, DiaSemana.LUNES, 8, 12)));
+        Horario lunes = schedule(null, DiaSemana.LUNES, 8, 12);
+        assertThrows(NullPointerException.class, () -> agenda.reemplazarHorario(null, lunes));
         assertThrows(NullPointerException.class, () -> agenda.reemplazarHorario(1L, null));
     }
 }

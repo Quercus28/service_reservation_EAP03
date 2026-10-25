@@ -107,10 +107,11 @@ class ApartarRecursosDeReservaServiceTest {
         serviceOffers(ServicioRecurso.reconstruir(1, ID_SERVICIO, 3, 1));
         when(obtenerServicioPorIdUseCase.ejecutar(ID_SERVICIO)).thenReturn(new ServicioResponse(ID_SERVICIO, 7, "Masaje", 60, null));
         when(recursoRepositoryPort.buscarPorId(8)).thenReturn(Optional.of(resource(8, "Toalla")));
+        List<Integer> elegidos = List.of(8);
 
         // Act
         RecursoOpcionalNoValidoException ex = assertThrows(RecursoOpcionalNoValidoException.class,
-                () -> service.ejecutar(ID_RESERVA, ID_SERVICIO, INICIO, FIN, List.of(8)));
+                () -> service.ejecutar(ID_RESERVA, ID_SERVICIO, INICIO, FIN, elegidos));
 
         // Assert
         assertEquals("No se puede pedir el recurso 'Toalla' con el servicio 'Masaje': no está entre sus recursos opcionales.",
@@ -126,10 +127,11 @@ class ApartarRecursosDeReservaServiceTest {
         when(obtenerServicioPorIdUseCase.ejecutar(ID_SERVICIO)).thenThrow(new ServicioNoEncontradoException(ID_SERVICIO));
         when(recursoRepositoryPort.buscarPorId(8)).thenReturn(Optional.empty());
         when(recursoRepositoryPort.buscarPorId(9)).thenReturn(Optional.empty());
+        List<Integer> elegidos = List.of(9, 8);
 
         // Act
         RecursoOpcionalNoValidoException ex = assertThrows(RecursoOpcionalNoValidoException.class,
-                () -> service.ejecutar(ID_RESERVA, ID_SERVICIO, INICIO, FIN, List.of(9, 8)));
+                () -> service.ejecutar(ID_RESERVA, ID_SERVICIO, INICIO, FIN, elegidos));
 
         // Assert
         assertEquals("No se pueden pedir los recursos 8, 9 con el servicio 10: no están entre sus recursos opcionales.",
@@ -142,8 +144,9 @@ class ApartarRecursosDeReservaServiceTest {
         serviceOffers(ServicioRecurso.reconstruir(1, ID_SERVICIO, 3, 1));
         when(recursoRepositoryPort.buscarPorIdConBloqueo(3)).thenReturn(Optional.empty());
 
+        List<Integer> elegidos = List.of(3);
         assertThrows(RecursoNoEncontradoException.class,
-                () -> service.ejecutar(ID_RESERVA, ID_SERVICIO, INICIO, FIN, List.of(3)));
+                () -> service.ejecutar(ID_RESERVA, ID_SERVICIO, INICIO, FIN, elegidos));
     }
 
     @Test
@@ -153,10 +156,11 @@ class ApartarRecursosDeReservaServiceTest {
         serviceOffers(ServicioRecurso.reconstruir(1, ID_SERVICIO, 3, 1));
         lockedResource(resource(3, "Aceite"));
         when(registrarPrestamoRecursoUseCase.ejecutar(any())).thenThrow(RecursoDesactivadoException.alPrestar("Aceite"));
+        List<Integer> elegidos = List.of(3);
 
         // Act
         RecursoDesactivadoException ex = assertThrows(RecursoDesactivadoException.class,
-                () -> service.ejecutar(ID_RESERVA, ID_SERVICIO, INICIO, FIN, List.of(3)));
+                () -> service.ejecutar(ID_RESERVA, ID_SERVICIO, INICIO, FIN, elegidos));
 
         // Assert
         assertEquals(RecursoDesactivadoException.alReservar("Aceite").getMessage(), ex.getMessage());
@@ -169,10 +173,11 @@ class ApartarRecursosDeReservaServiceTest {
         serviceOffers(ServicioRecurso.reconstruir(1, ID_SERVICIO, 3, 2));
         lockedResource(resource(3, "Aceite"));
         when(registrarPrestamoRecursoUseCase.ejecutar(any())).thenThrow(new DisponibilidadInsuficienteException(3, 2, 1));
+        List<Integer> elegidos = List.of(3);
 
         // Act
         RecursoNoDisponibleParaReservaException ex = assertThrows(RecursoNoDisponibleParaReservaException.class,
-                () -> service.ejecutar(ID_RESERVA, ID_SERVICIO, INICIO, FIN, List.of(3)));
+                () -> service.ejecutar(ID_RESERVA, ID_SERVICIO, INICIO, FIN, elegidos));
 
         // Assert
         assertEquals(RecursoNoDisponibleParaReservaException.sinUnidades("Aceite", 2, 1).getMessage(), ex.getMessage());
@@ -185,10 +190,11 @@ class ApartarRecursosDeReservaServiceTest {
         serviceOffers(ServicioRecurso.reconstruir(1, ID_SERVICIO, 3, 1));
         lockedResource(resource(3, "Aceite"));
         when(registrarPrestamoRecursoUseCase.ejecutar(any())).thenThrow(new RecursoNoOperativoException(3, INICIO, FIN));
+        List<Integer> elegidos = List.of(3);
 
         // Act
         RecursoNoDisponibleParaReservaException ex = assertThrows(RecursoNoDisponibleParaReservaException.class,
-                () -> service.ejecutar(ID_RESERVA, ID_SERVICIO, INICIO, FIN, List.of(3)));
+                () -> service.ejecutar(ID_RESERVA, ID_SERVICIO, INICIO, FIN, elegidos));
 
         // Assert
         assertEquals(RecursoNoDisponibleParaReservaException.noOperativo("Aceite").getMessage(), ex.getMessage());

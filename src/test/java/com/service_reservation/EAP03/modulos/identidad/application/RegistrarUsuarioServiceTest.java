@@ -72,8 +72,9 @@ class RegistrarUsuarioServiceTest {
     void rejectsExistingEmail() {
         when(usuarioRepository.existePorEmail("pendienteback@gmail.com")).thenReturn(true);
 
+        UsuarioNuevoComando peticion = command("CLIENTE");
         ReglaNegocioException ex = assertThrows(ReglaNegocioException.class,
-                () -> service.ejecutar(command("CLIENTE")));
+                () -> service.ejecutar(peticion));
 
         assertEquals("El correo ya está en uso", ex.getMessage());
         verify(usuarioRepository, never()).guardarUsuarioConRol(any(), any());

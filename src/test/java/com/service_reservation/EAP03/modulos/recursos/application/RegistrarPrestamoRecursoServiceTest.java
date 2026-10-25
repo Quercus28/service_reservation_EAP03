@@ -55,9 +55,10 @@ class RegistrarPrestamoRecursoServiceTest {
         Recurso desactivado = Recurso.reconstruir(1, 7, "Camilla", PRECIO, 5,
                 LocalDateTime.of(2026, 9, 1, 8, 0), LocalDateTime.of(2026, 9, 2, 8, 0));
         when(recursoRepositoryPort.buscarPorIdConBloqueo(1)).thenReturn(Optional.of(desactivado));
+        RegistrarPrestamoComando peticion = comando(1);
 
         // Act
-        RecursoDesactivadoException ex = assertThrows(RecursoDesactivadoException.class, () -> service.ejecutar(comando(1)));
+        RecursoDesactivadoException ex = assertThrows(RecursoDesactivadoException.class, () -> service.ejecutar(peticion));
 
         // Assert
         assertEquals(RecursoDesactivadoException.alPrestar("Camilla").getMessage(), ex.getMessage());
@@ -71,9 +72,10 @@ class RegistrarPrestamoRecursoServiceTest {
         when(recursoRepositoryPort.buscarPorIdConBloqueo(1)).thenReturn(Optional.of(recurso()));
         when(consultarDisponibilidadUseCase.ejecutar(1, DESDE, HASTA))
                 .thenReturn(new DisponibilidadRecurso(1, DESDE, HASTA, 5, 0, 0, false));
+        RegistrarPrestamoComando peticion = comando(1);
 
         // Act & Assert
-        assertThrows(RecursoNoOperativoException.class, () -> service.ejecutar(comando(1)));
+        assertThrows(RecursoNoOperativoException.class, () -> service.ejecutar(peticion));
         verify(recursoPrestadoRepositoryPort, never()).guardar(any());
     }
 
@@ -115,7 +117,8 @@ class RegistrarPrestamoRecursoServiceTest {
         when(consultarDisponibilidadUseCase.ejecutar(1, DESDE, HASTA))
                 .thenReturn(new DisponibilidadRecurso(1, DESDE, HASTA, 5, 4, 1));
 
-        assertThrows(DisponibilidadInsuficienteException.class, () -> service.ejecutar(comando(3)));
+        RegistrarPrestamoComando peticion = comando(3);
+        assertThrows(DisponibilidadInsuficienteException.class, () -> service.ejecutar(peticion));
         verify(recursoPrestadoRepositoryPort, never()).guardar(any());
     }
 
@@ -124,7 +127,8 @@ class RegistrarPrestamoRecursoServiceTest {
     void fallaSiNoExisteElRecurso() {
         when(recursoRepositoryPort.buscarPorIdConBloqueo(1)).thenReturn(Optional.empty());
 
-        assertThrows(RecursoNoEncontradoException.class, () -> service.ejecutar(comando(1)));
+        RegistrarPrestamoComando peticion = comando(1);
+        assertThrows(RecursoNoEncontradoException.class, () -> service.ejecutar(peticion));
         verify(recursoPrestadoRepositoryPort, never()).guardar(any());
     }
 }

@@ -68,12 +68,17 @@ class ServicioJpaEntityTest {
         ServicioJpaEntity b = new ServicioJpaEntity(1, 9, 60, "Tinte", null);
         ServicioJpaEntity c = new ServicioJpaEntity(2, 2, 30, "Corte", null);
 
+        // Act
+        boolean igualASiMisma = a.equals(a);
+        boolean igualANulo = a.equals(null);
+        boolean igualAOtroTipo = a.equals("Corte");
+
         // Assert
-        assertTrue(a.equals(a));
+        assertTrue(igualASiMisma);
         assertEquals(a, b);
         assertEquals(a.hashCode(), b.hashCode());
         assertNotEquals(a, c);
-        assertFalse(a.equals(null));
-        assertFalse(a.equals("Corte"));
+        assertFalse(igualANulo);
+        assertFalse(igualAOtroTipo);
     }
 }

@@ -88,10 +88,11 @@ class QaAdminSeederTest {
         // Arrange
         QaAdminSeeder seeder = new QaAdminSeeder(mock(UsuarioRepositoryPort.class), mock(PasswordEncoderPort.class),
                 "qa.admin@qa.local", "");
+        DefaultApplicationArguments argumentos = new DefaultApplicationArguments();
 
         // Act
         IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> seeder.run(new DefaultApplicationArguments()));
+                () -> seeder.run(argumentos));
 
         // Assert
         assertTrue(ex.getMessage().contains("QA_ADMIN_PASSWORD"));
@@ -104,9 +105,10 @@ class QaAdminSeederTest {
         UsuarioRepositoryPort usuarioRepository = mock(UsuarioRepositoryPort.class);
         QaAdminSeeder seeder = new QaAdminSeeder(usuarioRepository, mock(PasswordEncoderPort.class),
                 "qa.admin@qa.local", null);
+        DefaultApplicationArguments argumentos = new DefaultApplicationArguments();
 
         // Act
-        assertThrows(IllegalStateException.class, () -> seeder.run(new DefaultApplicationArguments()));
+        assertThrows(IllegalStateException.class, () -> seeder.run(argumentos));
 
         // Assert
         verifyNoInteractions(usuarioRepository);

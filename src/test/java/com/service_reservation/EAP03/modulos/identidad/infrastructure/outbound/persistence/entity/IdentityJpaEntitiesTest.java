@@ -145,14 +145,19 @@ class IdentityJpaEntitiesTest {
         // Arrange
         UsuarioRolJpaEntity.Id clave = new UsuarioRolJpaEntity.Id(10L, 2L);
 
+        // Act
+        boolean igualASiMisma = clave.equals(clave);
+        boolean igualANulo = clave.equals(null);
+        boolean igualAOtroTipo = clave.equals("10-2");
+
         // Assert
-        assertTrue(clave.equals(clave));
-        assertTrue(clave.equals(new UsuarioRolJpaEntity.Id(10L, 2L)));
+        assertTrue(igualASiMisma);
+        assertEquals(clave, new UsuarioRolJpaEntity.Id(10L, 2L));
         assertEquals(clave.hashCode(), new UsuarioRolJpaEntity.Id(10L, 2L).hashCode());
-        assertFalse(clave.equals(new UsuarioRolJpaEntity.Id(11L, 2L)));
-        assertFalse(clave.equals(new UsuarioRolJpaEntity.Id(10L, 3L)));
-        assertFalse(clave.equals(null));
-        assertFalse(clave.equals("10-2"));
+        assertNotEquals(clave, new UsuarioRolJpaEntity.Id(11L, 2L));
+        assertNotEquals(clave, new UsuarioRolJpaEntity.Id(10L, 3L));
+        assertFalse(igualANulo);
+        assertFalse(igualAOtroTipo);
     }
 
     @Test

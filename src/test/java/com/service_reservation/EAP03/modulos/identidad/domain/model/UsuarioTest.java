@@ -68,9 +68,10 @@ class UsuarioTest {
     void rolesAreUnmodifiable() {
         // Arrange
         Usuario usuario = new Usuario(4L, "ana@test.com", "hash", true, Set.of("ROLE_CLIENTE"));
+        Set<String> roles = usuario.getRoles();
 
         // Act & Assert
-        assertThrows(UnsupportedOperationException.class, () -> usuario.getRoles().add("ROLE_ADMIN"));
+        assertThrows(UnsupportedOperationException.class, () -> roles.add("ROLE_ADMIN"));
     }
 
     @Test

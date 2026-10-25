@@ -101,8 +101,9 @@ class SolicitudAprobacionProveedorTest {
     void reasonLengthLimit() {
         assertEquals(500, SolicitudAprobacionProveedor.validarMotivo("a".repeat(500)).length());
 
+        String motivoLargo = "a".repeat(501);
         DatosAdminInvalidosException ex = assertThrows(DatosAdminInvalidosException.class,
-                () -> SolicitudAprobacionProveedor.validarMotivo("a".repeat(501)));
+                () -> SolicitudAprobacionProveedor.validarMotivo(motivoLargo));
         assertEquals("El motivo no puede superar 500 caracteres", ex.getMessage());
     }
 

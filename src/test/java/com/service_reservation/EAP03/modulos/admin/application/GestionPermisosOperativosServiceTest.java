@@ -138,12 +138,15 @@ class GestionPermisosOperativosServiceTest {
     @Test
     @DisplayName("Revocar exige administrador, usuario y rol")
     void revokeRequiresAllData() {
+        RevocarPermisoComando sinAdmin = new RevocarPermisoComando(null, ID_USUARIO, RolOperativo.CLIENTE, MOTIVO);
         assertThrows(DatosAdminInvalidosException.class,
-                () -> service.revocar(new RevocarPermisoComando(null, ID_USUARIO, RolOperativo.CLIENTE, MOTIVO)));
+                () -> service.revocar(sinAdmin));
+        RevocarPermisoComando sinUsuario = new RevocarPermisoComando(ID_ADMIN, null, RolOperativo.CLIENTE, MOTIVO);
         assertThrows(DatosAdminInvalidosException.class,
-                () -> service.revocar(new RevocarPermisoComando(ID_ADMIN, null, RolOperativo.CLIENTE, MOTIVO)));
+                () -> service.revocar(sinUsuario));
+        RevocarPermisoComando sinRol = new RevocarPermisoComando(ID_ADMIN, ID_USUARIO, null, MOTIVO);
         assertThrows(DatosAdminInvalidosException.class,
-                () -> service.revocar(new RevocarPermisoComando(ID_ADMIN, ID_USUARIO, null, MOTIVO)));
+                () -> service.revocar(sinRol));
         verifyNoInteractions(permisoOperativoPort);
     }
 
@@ -161,8 +164,9 @@ class GestionPermisosOperativosServiceTest {
     void userWithoutRole() {
         permissionState(RolOperativo.CLIENTE, null);
 
+        RevocarPermisoComando peticion = revoke(RolOperativo.CLIENTE);
         RecursoAdminNoEncontradoException ex = assertThrows(RecursoAdminNoEncontradoException.class,
-                () -> service.revocar(revoke(RolOperativo.CLIENTE)));
+                () -> service.revocar(peticion));
 
         assertEquals("El usuario 42 no tiene el rol CLIENTE", ex.getMessage());
     }
@@ -173,8 +177,9 @@ class GestionPermisosOperativosServiceTest {
         permissionState(RolOperativo.PROVEEDOR, false);
         when(solicitudRepository.existePendienteParaUsuario(ID_USUARIO)).thenReturn(true);
 
+        RevocarPermisoComando peticion = revoke(RolOperativo.PROVEEDOR);
         OperacionAdminInvalidaException ex = assertThrows(OperacionAdminInvalidaException.class,
-                () -> service.revocar(revoke(RolOperativo.PROVEEDOR)));
+                () -> service.revocar(peticion));
 
         assertEquals("El proveedor aún está pendiente de aprobación; rechace la solicitud en lugar de revocar", ex.getMessage());
     }
@@ -185,8 +190,9 @@ class GestionPermisosOperativosServiceTest {
         permissionState(RolOperativo.PROVEEDOR, false);
         when(solicitudRepository.existePendienteParaUsuario(ID_USUARIO)).thenReturn(false);
 
+        RevocarPermisoComando peticion = revoke(RolOperativo.PROVEEDOR);
         OperacionAdminInvalidaException ex = assertThrows(OperacionAdminInvalidaException.class,
-                () -> service.revocar(revoke(RolOperativo.PROVEEDOR)));
+                () -> service.revocar(peticion));
 
         assertEquals("Los permisos operativos de PROVEEDOR ya se encuentran revocados para el usuario 42", ex.getMessage());
         verify(revocacionRepository, never()).guardar(any());
@@ -197,7 +203,8 @@ class GestionPermisosOperativosServiceTest {
     void clientAlreadyRevoked() {
         permissionState(RolOperativo.CLIENTE, false);
 
-        assertThrows(OperacionAdminInvalidaException.class, () -> service.revocar(revoke(RolOperativo.CLIENTE)));
+        RevocarPermisoComando peticion = revoke(RolOperativo.CLIENTE);
+        assertThrows(OperacionAdminInvalidaException.class, () -> service.revocar(peticion));
         verifyNoInteractions(solicitudRepository);
     }
 
@@ -254,8 +261,9 @@ class GestionPermisosOperativosServiceTest {
     @Test
     @DisplayName("Restaurar exige administrador, usuario y rol")
     void restoreRequiresAllData() {
+        RestaurarPermisoComando sinRol = new RestaurarPermisoComando(ID_ADMIN, ID_USUARIO, null, null);
         assertThrows(DatosAdminInvalidosException.class,
-                () -> service.restaurar(new RestaurarPermisoComando(ID_ADMIN, ID_USUARIO, null, null)));
+                () -> service.restaurar(sinRol));
         verifyNoInteractions(permisoOperativoPort);
     }
 
@@ -264,8 +272,9 @@ class GestionPermisosOperativosServiceTest {
     void rejectsRestoringActivePermissions() {
         permissionState(RolOperativo.CLIENTE, true);
 
+        RestaurarPermisoComando peticion = new RestaurarPermisoComando(ID_ADMIN, ID_USUARIO, RolOperativo.CLIENTE, null);
         OperacionAdminInvalidaException ex = assertThrows(OperacionAdminInvalidaException.class,
-                () -> service.restaurar(new RestaurarPermisoComando(ID_ADMIN, ID_USUARIO, RolOperativo.CLIENTE, null)));
+                () -> service.restaurar(peticion));
 
         assertEquals("El usuario 42 ya tiene permisos operativos de CLIENTE", ex.getMessage());
     }
@@ -276,8 +285,9 @@ class GestionPermisosOperativosServiceTest {
         permissionState(RolOperativo.PROVEEDOR, false);
         when(solicitudRepository.existeAprobadaParaUsuario(ID_USUARIO)).thenReturn(false);
 
+        RestaurarPermisoComando peticion = new RestaurarPermisoComando(ID_ADMIN, ID_USUARIO, RolOperativo.PROVEEDOR, null);
         assertThrows(OperacionAdminInvalidaException.class,
-                () -> service.restaurar(new RestaurarPermisoComando(ID_ADMIN, ID_USUARIO, RolOperativo.PROVEEDOR, null)));
+                () -> service.restaurar(peticion));
         verify(permisoOperativoPort, never()).actualizarEstado(any(), any(), anyBoolean());
     }
 
