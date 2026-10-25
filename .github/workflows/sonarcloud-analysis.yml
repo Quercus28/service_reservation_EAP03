@@ -39,6 +39,8 @@ jobs:
       - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        # sonar.qualitygate.wait=true hace que este job falle si el Quality Gate falla,
+        # de modo que la proteccion de main puede bloquear el merge.
         run: |
           chmod +x gradlew
-          ./gradlew build jacocoTestReport sonar --info
+          ./gradlew build jacocoTestReport sonar --info -Dsonar.qualitygate.wait=true
