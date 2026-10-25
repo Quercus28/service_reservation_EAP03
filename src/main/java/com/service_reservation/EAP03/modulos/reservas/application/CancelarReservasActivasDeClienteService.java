@@ -34,7 +34,7 @@ public class CancelarReservasActivasDeClienteService implements CancelarReservas
         this.clock = clock;
     }
 
-    // Todo pasa en una sola transacción: si falla una, no se cancela ninguna. Si quien llama
+    // Las cancelaciones van en una sola transacción: si falla una, no se cancela ninguna. Si quien llama
     // ya tiene una transacción abierta (por ejemplo la revocación del admin), se usa esa misma.
     @Override
     @Transactional

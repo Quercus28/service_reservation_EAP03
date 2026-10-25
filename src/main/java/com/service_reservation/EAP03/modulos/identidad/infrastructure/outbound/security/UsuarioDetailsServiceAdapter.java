@@ -30,7 +30,7 @@ public class UsuarioDetailsServiceAdapter implements UserDetailsService {
                 .disabled(!usuario.isEnabled())
                 .authorities(usuario.getRoles().stream()
                         .map(RolJpaEntity::getNombre)
-                        .map(nombre -> new SimpleGrantedAuthority(nombre))
+                        .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toSet()))
                 .build();
     }

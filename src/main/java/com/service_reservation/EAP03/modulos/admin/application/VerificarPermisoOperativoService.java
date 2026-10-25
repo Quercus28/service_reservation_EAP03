@@ -22,17 +22,20 @@ public class VerificarPermisoOperativoService implements VerificarPermisoOperati
     @Override
     @Transactional(readOnly = true)
     public boolean tienePermisoOperativo(Long idUsuario, RolOperativo rol) {
-        if (idUsuario == null || rol == null) {
-            return false;
-        }
-        return permisoOperativoPort.estadoPermiso(idUsuario, rol).orElse(false);
+        return idUsuario != null && rol != null && permisoActivo(idUsuario, rol);
     }
 
     @Override
     @Transactional(readOnly = true)
     public boolean puedeCancelarReservas(Long idUsuario, RolOperativo rol) {
-        return tienePermisoOperativo(idUsuario, rol)
-                || (idUsuario != null && rol != null
-                    && revocacionRepository.buscarPendiente(idUsuario, rol).isPresent());
+        if (idUsuario == null || rol == null) {
+            return false;
+        }
+        return permisoActivo(idUsuario, rol)
+                || revocacionRepository.buscarPendiente(idUsuario, rol).isPresent();
+    }
+
+    private boolean permisoActivo(Long idUsuario, RolOperativo rol) {
+        return permisoOperativoPort.estadoPermiso(idUsuario, rol).orElse(false);
     }
 }

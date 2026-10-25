@@ -130,13 +130,13 @@ public class CrearReservaService implements CrearReservaUseCase {
             throw HorarioNoDisponibleException.yaReservado(servicio.id(), fechaInicio, fechaFin);
         }
 
-        // 7. Todo en orden: se guarda.
+        // 7. Pasó las validaciones: se guarda.
         Reserva guardada = reservaRepositoryPort.guardar(nueva);
 
         // 8. Se apartan los recursos adicionales que pidió el cliente (si no pidió ninguno, no
         //    se aparta nada). Va después de guardar porque cada recurso apartado queda ligado al
         //    número de la reserva. Si alguno no se puede apartar, se lanza el error y, como
-        //    todo está en la misma transacción, la reserva tampoco queda guardada.
+        //    la reserva y los recursos van en la misma transacción, la reserva tampoco queda guardada.
         //    Los errores de recursos se pasan a errores de reservas para que la respuesta
         //    tenga el mismo formato que las demás.
         try {

@@ -9,6 +9,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.Objects;
 
 @Entity
@@ -46,7 +47,7 @@ public class ServicioJpaEntity {
     @PrePersist
     public void prePersist() {
         if (this.createdAt == null) {
-            this.createdAt = OffsetDateTime.now();
+            this.createdAt = OffsetDateTime.now(ZoneId.systemDefault());
         }
     }
 

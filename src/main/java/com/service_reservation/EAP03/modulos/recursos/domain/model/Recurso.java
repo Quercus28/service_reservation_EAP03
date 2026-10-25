@@ -4,6 +4,7 @@ import com.service_reservation.EAP03.modulos.recursos.domain.exception.DatosInva
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Objects;
 
 public class Recurso {
@@ -33,7 +34,7 @@ public class Recurso {
 
     // Para crear un recurso NUEVO (todavía sin id, activo por definición)
     public static Recurso nuevo(Integer idProveedor, String nombre, BigDecimal precioUnitario, int stock) {
-        return new Recurso(null, idProveedor, nombre, precioUnitario, stock, LocalDateTime.now(), null);
+        return new Recurso(null, idProveedor, nombre, precioUnitario, stock, LocalDateTime.now(ZoneId.systemDefault()), null);
     }
 
     // Para reconstruir un recurso que YA existe en la base de datos
@@ -65,7 +66,7 @@ public class Recurso {
         if (!estaActivo()) {
             throw new DatosInvalidosException("El recurso ya está desactivado");
         }
-        this.eliminadoEn = LocalDateTime.now();
+        this.eliminadoEn = LocalDateTime.now(ZoneId.systemDefault());
     }
 
     private static void validarNombre(String nombre) {

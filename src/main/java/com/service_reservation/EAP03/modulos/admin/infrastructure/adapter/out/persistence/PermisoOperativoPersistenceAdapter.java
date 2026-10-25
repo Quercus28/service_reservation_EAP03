@@ -5,7 +5,7 @@ import com.service_reservation.EAP03.modulos.admin.domain.ports.out.PermisoOpera
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,7 +27,7 @@ public class PermisoOperativoPersistenceAdapter implements PermisoOperativoPort 
                 JOIN ROL r ON r.id = ur.id_rol
                 WHERE ur.id_usuario = ? AND r.nombre = ?
                 """;
-        List<Boolean> resultados = jdbcTemplate.queryForList(sql, Boolean.class, idUsuario, "ROLE_" + rol.name());
+        List<Boolean> resultados = jdbcTemplate.queryForList(sql, Boolean.class, idUsuario, rol.authority());
         if (resultados.isEmpty()) {
             return Optional.empty();
         }
@@ -42,7 +42,7 @@ public class PermisoOperativoPersistenceAdapter implements PermisoOperativoPort 
                 WHERE ur.id_usuario = ? 
                   AND ur.id_rol = (SELECT r.id FROM ROL r WHERE r.nombre = ?)
                 """;
-        jdbcTemplate.update(sql, activo, idUsuario, "ROLE_" + rol.name());
+        jdbcTemplate.update(sql, activo, idUsuario, rol.authority());
     }
 
     @Override
@@ -54,11 +54,10 @@ public class PermisoOperativoPersistenceAdapter implements PermisoOperativoPort 
                 WHERE ur.id_usuario = ? AND r.nombre IN ('ROLE_CLIENTE', 'ROLE_PROVEEDOR')
                 """;
         
-        Map<RolOperativo, Boolean> permisos = new HashMap<>();
-        jdbcTemplate.query(sql, (rs) -> {
-            String rolNombre = rs.getString("nombre").replace("ROLE_", "");
+        Map<RolOperativo, Boolean> permisos = new EnumMap<>(RolOperativo.class);
+        jdbcTemplate.query(sql, rs -> {
             boolean activo = rs.getBoolean("activo");
-            permisos.put(RolOperativo.valueOf(rolNombre), activo);
+            permisos.put(RolOperativo.desde(rs.getString("nombre")), activo);
         }, idUsuario);
         
         return permisos;

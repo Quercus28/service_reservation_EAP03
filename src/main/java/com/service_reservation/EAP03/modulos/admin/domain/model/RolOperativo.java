@@ -12,9 +12,11 @@ public enum RolOperativo {
     CLIENTE,
     PROVEEDOR;
 
+    private static final String PREFIJO = "ROLE_";
+
     /** Nombre del rol tal como está persistido en la tabla ROL. */
     public String authority() {
-        return "ROLE_" + name();
+        return PREFIJO + name();
     }
 
     public static RolOperativo desde(String valor) {
@@ -22,8 +24,8 @@ public enum RolOperativo {
             throw new DatosAdminInvalidosException("El rol es obligatorio");
         }
         String normalizado = valor.trim().toUpperCase(Locale.ROOT);
-        if (normalizado.startsWith("ROLE_")) {
-            normalizado = normalizado.substring("ROLE_".length());
+        if (normalizado.startsWith(PREFIJO)) {
+            normalizado = normalizado.substring(PREFIJO.length());
         }
         try {
             return RolOperativo.valueOf(normalizado);

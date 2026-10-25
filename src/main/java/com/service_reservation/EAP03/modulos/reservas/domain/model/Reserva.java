@@ -10,6 +10,8 @@ import java.util.Objects;
 
 public class Reserva {
 
+    private static final String AHORA_OBLIGATORIO = "ahora es obligatorio";
+
     public static final int NOTAS_MAX = 500;
     public static final int MOTIVO_CANCELACION_MAX = 255;
 
@@ -48,7 +50,7 @@ public class Reserva {
     public static Reserva nueva(Long idCliente, Integer idServicio, Integer idProveedor,
                                 LocalDateTime fechaInicio, LocalDateTime fechaFin,
                                 String notas, LocalDateTime ahora) {
-        Objects.requireNonNull(ahora, "ahora es obligatorio");
+        Objects.requireNonNull(ahora, AHORA_OBLIGATORIO);
         if (fechaInicio == null || fechaFin == null) {
             throw new DatosReservaInvalidosException("fechaInicio y fechaFin son obligatorias");
         }
@@ -78,7 +80,7 @@ public class Reserva {
     // empezó o ya pasó, el mensaje lo dice así, para que el cliente entienda el motivo.
     // Al quedar CANCELADO, la reserva deja de ocupar el horario y otro cliente puede tomarlo.
     public void cancelar(LocalDateTime ahora, int anticipacionMinimaHoras, String motivo) {
-        Objects.requireNonNull(ahora, "ahora es obligatorio");
+        Objects.requireNonNull(ahora, AHORA_OBLIGATORIO);
         if (estado != EstadoReserva.RESERVADO) {
             throw estado == EstadoReserva.CANCELADO
                     ? ReservaNoCancelableException.yaCancelada(id)
@@ -98,7 +100,7 @@ public class Reserva {
     // anticipación: se puede cancelar aunque falte poco o ya haya empezado. Solo se rechaza
     // si la reserva ya no está activa (por ejemplo, si ya estaba cancelada o terminó).
     public void cancelarPorAdministrador(LocalDateTime ahora, String motivo) {
-        Objects.requireNonNull(ahora, "ahora es obligatorio");
+        Objects.requireNonNull(ahora, AHORA_OBLIGATORIO);
         if (!estaActiva()) {
             throw estado == EstadoReserva.CANCELADO
                     ? ReservaNoCancelableException.yaCancelada(id)

@@ -74,7 +74,7 @@ public class DisponibilidadCalculator {
             fechaActual = fechaActual.plusDays(1);
         }
 
-        Collections.sort(franjasDisponibles);
+        franjasDisponibles.sort(null);
         return franjasDisponibles;
     }
 

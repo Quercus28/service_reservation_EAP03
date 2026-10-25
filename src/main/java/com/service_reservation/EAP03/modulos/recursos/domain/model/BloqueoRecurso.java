@@ -3,6 +3,7 @@ package com.service_reservation.EAP03.modulos.recursos.domain.model;
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.DatosInvalidosException;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Objects;
 
 public class BloqueoRecurso {
@@ -31,7 +32,7 @@ public class BloqueoRecurso {
     // pasado: un bloqueo ya vencido que se lee de la base de datos sigue siendo válido.
     public static BloqueoRecurso nuevo(Integer idRecurso, LocalDateTime fechaInicio,
                                        LocalDateTime fechaFin, String motivo) {
-        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime ahora = LocalDateTime.now(ZoneId.systemDefault());
         BloqueoRecurso bloqueo = new BloqueoRecurso(null, idRecurso, fechaInicio, fechaFin, motivo, ahora);
         if (!fechaFin.isAfter(ahora)) {
             throw new DatosInvalidosException("fechaFin no puede estar en el pasado");

@@ -43,14 +43,14 @@ public class RegistrarUsuarioService implements RegistrarUsuarioUseCase {
         Usuario usuarioGuardado = usuarioRepository.guardarUsuarioConRol(nuevoUsuario, rolNormalizado);
 
         if (Set.of("ROLE_CLIENTE", "CLIENTE").contains(rolNormalizado)) {
-            guardarPerfilCliente(
+            usuarioRepository.guardarPerfilCliente(
                 usuarioGuardado.getId(),
                 comando.nombreIdentificacion(),
                 comando.telefono(),
                 comando.documentoIdentidad()
             );
         } else if (Set.of("ROLE_PROVEEDOR", "PROVEEDOR").contains(rolNormalizado)) {
-            guardarPerfilProveedor(
+            usuarioRepository.guardarPerfilProveedor(
                 usuarioGuardado.getId(),
                 comando.nombreIdentificacion(),
                 comando.telefono(),

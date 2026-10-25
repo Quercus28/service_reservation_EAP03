@@ -35,6 +35,7 @@ import org.springframework.security.access.AccessDeniedException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -43,6 +44,10 @@ import java.util.Set;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final String ERROR_CODE = "errorCode";
+    private static final String MESSAGE = "message";
+    private static final String TRACE_ID = "traceId";
 
     private final ObjectProvider<RegistrarAccesoDenegadoUseCase> registrarAccesoDenegadoUseCaseProvider;
 
@@ -53,27 +58,27 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CredencialesInvalidasException.class)
     public ResponseEntity<Map<String, Object>> handleCredencialesInvalidas(CredencialesInvalidasException ex) {
         Map<String, Object> error = new HashMap<>();
-        error.put("errorCode", "CREDENCIALES_INVALIDAS");
-        error.put("message", ex.getMessage());
-        error.put("traceId", TraceIdFilter.traceIdActual());
+        error.put(ERROR_CODE,"CREDENCIALES_INVALIDAS");
+        error.put(MESSAGE,ex.getMessage());
+        error.put(TRACE_ID,TraceIdFilter.traceIdActual());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
     @ExceptionHandler(CuentaBloqueadaException.class)
     public ResponseEntity<Map<String, Object>> handleCuentaBloqueada(CuentaBloqueadaException ex) {
         Map<String, Object> error = new HashMap<>();
-        error.put("errorCode", "CUENTA_BLOQUEADA");
-        error.put("message", ex.getMessage());
-        error.put("traceId", TraceIdFilter.traceIdActual());
+        error.put(ERROR_CODE,"CUENTA_BLOQUEADA");
+        error.put(MESSAGE,ex.getMessage());
+        error.put(TRACE_ID,TraceIdFilter.traceIdActual());
         return ResponseEntity.status(HttpStatus.LOCKED).body(error);
     }
 
     @ExceptionHandler(ReglaNegocioException.class)
     public ResponseEntity<Map<String, Object>> handleReglaNegocio(ReglaNegocioException ex) {
         Map<String, Object> error = new HashMap<>();
-        error.put("errorCode", "REGLA_NEGOCIO");
-        error.put("message", ex.getMessage());
-        error.put("traceId", TraceIdFilter.traceIdActual());
+        error.put(ERROR_CODE,"REGLA_NEGOCIO");
+        error.put(MESSAGE,ex.getMessage());
+        error.put(TRACE_ID,TraceIdFilter.traceIdActual());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
@@ -82,9 +87,9 @@ public class GlobalExceptionHandler {
             HorarioSolapadoException ex) {
 
         Map<String, Object> error = new HashMap<>();
-        error.put("errorCode", "REGLA_NEGOCIO");
-        error.put("message", ex.getMessage());
-        error.put("traceId", TraceIdFilter.traceIdActual());
+        error.put(ERROR_CODE,"REGLA_NEGOCIO");
+        error.put(MESSAGE,ex.getMessage());
+        error.put(TRACE_ID,TraceIdFilter.traceIdActual());
 
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
@@ -94,36 +99,36 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AgendaNoEncontradaException.class)
     public ResponseEntity<Map<String, Object>> handleAgendaNoEncontrada(AgendaNoEncontradaException ex) {
         Map<String, Object> error = new HashMap<>();
-        error.put("errorCode", "AGENDA_NO_ENCONTRADA");
-        error.put("message", ex.getMessage());
-        error.put("traceId", TraceIdFilter.traceIdActual());
+        error.put(ERROR_CODE,"AGENDA_NO_ENCONTRADA");
+        error.put(MESSAGE,ex.getMessage());
+        error.put(TRACE_ID,TraceIdFilter.traceIdActual());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
     @ExceptionHandler(AgendaDuplicadaException.class)
     public ResponseEntity<Map<String, Object>> handleAgendaDuplicada(AgendaDuplicadaException ex) {
         Map<String, Object> error = new HashMap<>();
-        error.put("errorCode", "AGENDA_DUPLICADA");
-        error.put("message", ex.getMessage());
-        error.put("traceId", TraceIdFilter.traceIdActual());
+        error.put(ERROR_CODE,"AGENDA_DUPLICADA");
+        error.put(MESSAGE,ex.getMessage());
+        error.put(TRACE_ID,TraceIdFilter.traceIdActual());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
     @ExceptionHandler(ServicioNoPerteneceAlProveedorException.class)
     public ResponseEntity<Map<String, Object>> handleServicioNoPerteneceAlProveedor(ServicioNoPerteneceAlProveedorException ex) {
         Map<String, Object> error = new HashMap<>();
-        error.put("errorCode", "SERVICIO_NO_PERTENECE_AL_PROVEEDOR");
-        error.put("message", ex.getMessage());
-        error.put("traceId", TraceIdFilter.traceIdActual());
+        error.put(ERROR_CODE,"SERVICIO_NO_PERTENECE_AL_PROVEEDOR");
+        error.put(MESSAGE,ex.getMessage());
+        error.put(TRACE_ID,TraceIdFilter.traceIdActual());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
     }
 
     @ExceptionHandler(DatosAgendaInvalidosException.class)
     public ResponseEntity<Map<String, Object>> handleDatosAgendaInvalidos(DatosAgendaInvalidosException ex) {
         Map<String, Object> error = new HashMap<>();
-        error.put("errorCode", "DATOS_AGENDA_INVALIDOS");
-        error.put("message", ex.getMessage());
-        error.put("traceId", TraceIdFilter.traceIdActual());
+        error.put(ERROR_CODE,"DATOS_AGENDA_INVALIDOS");
+        error.put(MESSAGE,ex.getMessage());
+        error.put(TRACE_ID,TraceIdFilter.traceIdActual());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
@@ -132,9 +137,9 @@ public class GlobalExceptionHandler {
             PersistenciaAgendasHorariosNoDisponibleException ex) {
 
         Map<String, Object> error = new HashMap<>();
-        error.put("errorCode", "PERSISTENCIA_NO_DISPONIBLE");
-        error.put("message", ex.getMessage());
-        error.put("traceId", TraceIdFilter.traceIdActual());
+        error.put(ERROR_CODE,"PERSISTENCIA_NO_DISPONIBLE");
+        error.put(MESSAGE,ex.getMessage());
+        error.put(TRACE_ID,TraceIdFilter.traceIdActual());
 
         return ResponseEntity
                 .status(HttpStatus.SERVICE_UNAVAILABLE)
@@ -163,7 +168,7 @@ public class GlobalExceptionHandler {
                         ? principal.getIdUsuario()
                         : null;
                 auditUseCase.registrar(new IntentoAccesoDenegado(
-                        LocalDateTime.now(),
+                        LocalDateTime.now(ZoneId.systemDefault()),
                         idUsuario,
                         request.getMethod(),
                         request.getRequestURI()
@@ -172,9 +177,9 @@ public class GlobalExceptionHandler {
         }
 
         Map<String, Object> error = new HashMap<>();
-        error.put("errorCode", "ACCESO_NO_AUTORIZADO");
-        error.put("message", "No tiene privilegios para realizar esta operación");
-        error.put("traceId", TraceIdFilter.traceIdActual());
+        error.put(ERROR_CODE,"ACCESO_NO_AUTORIZADO");
+        error.put(MESSAGE,"No tiene privilegios para realizar esta operación");
+        error.put(TRACE_ID,TraceIdFilter.traceIdActual());
 
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
@@ -190,8 +195,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidations(MethodArgumentNotValidException ex) {
         Map<String, Object> error = new HashMap<>();
-        error.put("errorCode", "VALIDACION_ENTRADA");
-        error.put("message", "Error en los datos enviados");
+        error.put(ERROR_CODE,"VALIDACION_ENTRADA");
+        error.put(MESSAGE,"Error en los datos enviados");
         
         Map<String, String> details = new HashMap<>();
         // Un campo puede romper varias reglas a la vez (p. ej. rol "" rompe @NotBlank y @Pattern) y
@@ -202,12 +207,12 @@ public class GlobalExceptionHandler {
                 errorPorCampo.merge(e.getField(), e, (actual, nuevo) ->
                         PRIORIDAD_ERROR_CAMPO.compare(nuevo, actual) < 0 ? nuevo : actual));
         errorPorCampo.forEach((campo, e) -> details.put(campo, e.getDefaultMessage()));
-        if (ex.getBindingResult().getGlobalErrors().size() > 0) {
+        if (!ex.getBindingResult().getGlobalErrors().isEmpty()) {
             ex.getBindingResult().getGlobalErrors().forEach(e -> details.put(e.getObjectName(), e.getDefaultMessage()));
         }
         
         error.put("details", details);
-        error.put("traceId", TraceIdFilter.traceIdActual());
+        error.put(TRACE_ID,TraceIdFilter.traceIdActual());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
@@ -215,9 +220,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleDisponibilidadInvalida(
             com.service_reservation.EAP03.modulos.availability.domain.exception.DisponibilidadInvalidaException ex) {
         Map<String, Object> error = new HashMap<>();
-        error.put("errorCode", "PARAMETROS_INVALIDOS");
-        error.put("message", ex.getMessage());
-        error.put("traceId", TraceIdFilter.traceIdActual());
+        error.put(ERROR_CODE,"PARAMETROS_INVALIDOS");
+        error.put(MESSAGE,ex.getMessage());
+        error.put(TRACE_ID,TraceIdFilter.traceIdActual());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
@@ -225,9 +230,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleRangoFechasExcedido(
             com.service_reservation.EAP03.modulos.availability.domain.exception.RangoFechasExcedidoException ex) {
         Map<String, Object> error = new HashMap<>();
-        error.put("errorCode", "RANGO_FECHAS_EXCEDIDO");
-        error.put("message", ex.getMessage());
-        error.put("traceId", TraceIdFilter.traceIdActual());
+        error.put(ERROR_CODE,"RANGO_FECHAS_EXCEDIDO");
+        error.put(MESSAGE,ex.getMessage());
+        error.put(TRACE_ID,TraceIdFilter.traceIdActual());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
@@ -235,9 +240,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleServicioNoEncontrado(
             com.service_reservation.EAP03.modulos.availability.domain.exception.ServicioParaDisponibilidadNoEncontradoException ex) {
         Map<String, Object> error = new HashMap<>();
-        error.put("errorCode", "SERVICIO_NO_ENCONTRADO");
-        error.put("message", ex.getMessage());
-        error.put("traceId", TraceIdFilter.traceIdActual());
+        error.put(ERROR_CODE,"SERVICIO_NO_ENCONTRADO");
+        error.put(MESSAGE,ex.getMessage());
+        error.put(TRACE_ID,TraceIdFilter.traceIdActual());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
@@ -245,45 +250,45 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleTypeMismatch(
             org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex) {
         Map<String, Object> error = new HashMap<>();
-        error.put("errorCode", "FORMATO_PARAMETRO_INVALIDO");
-        error.put("message", "El parámetro '" + ex.getName() + "' tiene un formato o valor inválido");
-        error.put("traceId", TraceIdFilter.traceIdActual());
+        error.put(ERROR_CODE,"FORMATO_PARAMETRO_INVALIDO");
+        error.put(MESSAGE,"El parámetro '" + ex.getName() + "' tiene un formato o valor inválido");
+        error.put(TRACE_ID,TraceIdFilter.traceIdActual());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
     @ExceptionHandler(DatosAdminInvalidosException.class)
     public ResponseEntity<Map<String, Object>> handleDatosAdminInvalidos(DatosAdminInvalidosException ex) {
         Map<String, Object> error = new HashMap<>();
-        error.put("errorCode", "DATOS_ADMIN_INVALIDOS");
-        error.put("message", ex.getMessage());
-        error.put("traceId", TraceIdFilter.traceIdActual());
+        error.put(ERROR_CODE,"DATOS_ADMIN_INVALIDOS");
+        error.put(MESSAGE,ex.getMessage());
+        error.put(TRACE_ID,TraceIdFilter.traceIdActual());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
     @ExceptionHandler(OperacionAdminInvalidaException.class)
     public ResponseEntity<Map<String, Object>> handleOperacionAdminInvalida(OperacionAdminInvalidaException ex) {
         Map<String, Object> error = new HashMap<>();
-        error.put("errorCode", "OPERACION_ADMIN_INVALIDA");
-        error.put("message", ex.getMessage());
-        error.put("traceId", TraceIdFilter.traceIdActual());
+        error.put(ERROR_CODE,"OPERACION_ADMIN_INVALIDA");
+        error.put(MESSAGE,ex.getMessage());
+        error.put(TRACE_ID,TraceIdFilter.traceIdActual());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
     @ExceptionHandler(RecursoAdminNoEncontradoException.class)
     public ResponseEntity<Map<String, Object>> handleRecursoAdminNoEncontrado(RecursoAdminNoEncontradoException ex) {
         Map<String, Object> error = new HashMap<>();
-        error.put("errorCode", "RECURSO_ADMIN_NO_ENCONTRADO");
-        error.put("message", ex.getMessage());
-        error.put("traceId", TraceIdFilter.traceIdActual());
+        error.put(ERROR_CODE,"RECURSO_ADMIN_NO_ENCONTRADO");
+        error.put(MESSAGE,ex.getMessage());
+        error.put(TRACE_ID,TraceIdFilter.traceIdActual());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
     @ExceptionHandler(AdminDominioException.class)
     public ResponseEntity<Map<String, Object>> handleAdminDominio(AdminDominioException ex) {
         Map<String, Object> error = new HashMap<>();
-        error.put("errorCode", "ERROR_DOMINIO_ADMIN");
-        error.put("message", ex.getMessage());
-        error.put("traceId", TraceIdFilter.traceIdActual());
+        error.put(ERROR_CODE,"ERROR_DOMINIO_ADMIN");
+        error.put(MESSAGE,ex.getMessage());
+        error.put(TRACE_ID,TraceIdFilter.traceIdActual());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
@@ -295,9 +300,9 @@ public class GlobalExceptionHandler {
             HttpServletRequest request) {
         log.warn("Cuerpo de la petición no válido: metodo={}, ruta={}", request.getMethod(), request.getRequestURI());
         Map<String, Object> error = new HashMap<>();
-        error.put("errorCode", "CUERPO_NO_VALIDO");
-        error.put("message", "El cuerpo de la petición no es válido");
-        error.put("traceId", TraceIdFilter.traceIdActual());
+        error.put(ERROR_CODE,"CUERPO_NO_VALIDO");
+        error.put(MESSAGE,"El cuerpo de la petición no es válido");
+        error.put(TRACE_ID,TraceIdFilter.traceIdActual());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
@@ -307,9 +312,9 @@ public class GlobalExceptionHandler {
             HttpServletRequest request) {
         log.warn("Tipo de contenido no soportado: metodo={}, ruta={}", request.getMethod(), request.getRequestURI());
         Map<String, Object> error = new HashMap<>();
-        error.put("errorCode", "TIPO_CONTENIDO_NO_SOPORTADO");
-        error.put("message", "El tipo de contenido no es soportado, usa application/json");
-        error.put("traceId", TraceIdFilter.traceIdActual());
+        error.put(ERROR_CODE,"TIPO_CONTENIDO_NO_SOPORTADO");
+        error.put(MESSAGE,"El tipo de contenido no es soportado, usa application/json");
+        error.put(TRACE_ID,TraceIdFilter.traceIdActual());
         return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(error);
     }
 
@@ -319,9 +324,9 @@ public class GlobalExceptionHandler {
             HttpServletRequest request) {
         log.warn("Método no permitido: metodo={}, ruta={}", request.getMethod(), request.getRequestURI());
         Map<String, Object> error = new HashMap<>();
-        error.put("errorCode", "METODO_NO_PERMITIDO");
-        error.put("message", "Este método no está permitido en esta ruta");
-        error.put("traceId", TraceIdFilter.traceIdActual());
+        error.put(ERROR_CODE,"METODO_NO_PERMITIDO");
+        error.put(MESSAGE,"Este método no está permitido en esta ruta");
+        error.put(TRACE_ID,TraceIdFilter.traceIdActual());
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(error);
     }
 
@@ -331,9 +336,9 @@ public class GlobalExceptionHandler {
             HttpServletRequest request) {
         log.warn("Ruta no encontrada: metodo={}, ruta={}", request.getMethod(), request.getRequestURI());
         Map<String, Object> error = new HashMap<>();
-        error.put("errorCode", "RUTA_NO_ENCONTRADA");
-        error.put("message", "La ruta no existe");
-        error.put("traceId", TraceIdFilter.traceIdActual());
+        error.put(ERROR_CODE,"RUTA_NO_ENCONTRADA");
+        error.put(MESSAGE,"La ruta no existe");
+        error.put(TRACE_ID,TraceIdFilter.traceIdActual());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 }

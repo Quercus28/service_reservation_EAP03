@@ -8,6 +8,6 @@ public record Verificar2faLoginRequestDTO(
     String tokenTemporal,
 
     @NotBlank(message = "El código 2FA es obligatorio")
-    @Pattern(regexp = "^[0-9]{6}$", message = "El código debe ser de 6 dígitos numéricos")
+    @Pattern(regexp = "^\\d{6}$", message = "El código debe ser de 6 dígitos numéricos")
     String codigo
 ) {}
