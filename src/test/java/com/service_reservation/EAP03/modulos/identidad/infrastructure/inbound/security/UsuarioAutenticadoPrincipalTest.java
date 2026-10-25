@@ -24,7 +24,8 @@ class UsuarioAutenticadoPrincipalTest {
         assertEquals(1L, principal.getIdUsuario());
         assertEquals("ana@test.com", principal.getEmail());
         assertEquals(List.of("CLIENTE"), principal.getRoles());
-        assertThrows(UnsupportedOperationException.class, () -> principal.getRoles().add("ADMIN"));
+        List<String> rolesExpuestos = principal.getRoles();
+        assertThrows(UnsupportedOperationException.class, () -> rolesExpuestos.add("ADMIN"));
     }
 
     @Test

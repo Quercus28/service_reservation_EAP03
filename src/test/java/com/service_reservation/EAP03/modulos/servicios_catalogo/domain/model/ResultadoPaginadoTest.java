@@ -47,6 +47,7 @@ class ResultadoPaginadoTest {
 
         // Assert
         assertEquals(List.of("a"), resultado.elementos());
-        assertThrows(UnsupportedOperationException.class, () -> resultado.elementos().add("c"));
+        List<String> elementos = resultado.elementos();
+        assertThrows(UnsupportedOperationException.class, () -> elementos.add("c"));
     }
 }

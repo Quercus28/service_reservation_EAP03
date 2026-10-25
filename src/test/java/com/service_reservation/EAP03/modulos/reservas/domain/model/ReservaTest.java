@@ -63,8 +63,9 @@ class ReservaTest {
     void notesLengthLimit() {
         assertEquals(500, Reserva.nueva(3L, 10, 7, INICIO, FIN, "a".repeat(500), AHORA).getNotas().length());
 
+        String notasLargas = "a".repeat(501);
         DatosReservaInvalidosException ex = assertThrows(DatosReservaInvalidosException.class,
-                () -> Reserva.nueva(3L, 10, 7, INICIO, FIN, "a".repeat(501), AHORA));
+                () -> Reserva.nueva(3L, 10, 7, INICIO, FIN, notasLargas, AHORA));
         assertEquals("Las notas no pueden superar los 500 caracteres", ex.getMessage());
     }
 
@@ -72,8 +73,10 @@ class ReservaTest {
     @DisplayName("Permite reservar justo en la hora actual y rechaza una fecha pasada")
     void rejectsPastStart() {
         assertEquals(AHORA, Reserva.nueva(3L, 10, 7, AHORA, AHORA.plusHours(1), null, AHORA).getFechaInicio());
+        LocalDateTime unMinutoAntes = AHORA.minusMinutes(1);
+        LocalDateTime unaHoraDespues = AHORA.plusHours(1);
         assertThrows(FechaEnElPasadoException.class,
-                () -> Reserva.nueva(3L, 10, 7, AHORA.minusMinutes(1), AHORA.plusHours(1), null, AHORA));
+                () -> Reserva.nueva(3L, 10, 7, unMinutoAntes, unaHoraDespues, null, AHORA));
     }
 
     @Test
@@ -137,8 +140,9 @@ class ReservaTest {
     void clientCannotCancelTooLate() {
         Reserva reserva = withState(EstadoReserva.RESERVADO);
 
+        LocalDateTime pocoAntes = INICIO.minusHours(2).plusMinutes(1);
         CancelacionFueraDeTiempoException ex = assertThrows(CancelacionFueraDeTiempoException.class,
-                () -> reserva.cancelar(INICIO.minusHours(2).plusMinutes(1), 2, null));
+                () -> reserva.cancelar(pocoAntes, 2, null));
 
         assertEquals(CancelacionFueraDeTiempoException.faltaPocoTiempo(8, 2).getMessage(), ex.getMessage());
         assertEquals(EstadoReserva.RESERVADO, reserva.getEstado());
@@ -156,10 +160,12 @@ class ReservaTest {
     @Test
     @DisplayName("El cliente no puede cancelar una reserva ya cancelada o que no está reservada")
     void clientCannotCancelInactiveReservation() {
+        Reserva reservaCancelada = withState(EstadoReserva.CANCELADO);
         ReservaNoCancelableException cancelada = assertThrows(ReservaNoCancelableException.class,
-                () -> withState(EstadoReserva.CANCELADO).cancelar(AHORA, 2, null));
+                () -> reservaCancelada.cancelar(AHORA, 2, null));
+        Reserva reservaEnProceso = withState(EstadoReserva.EN_PROCESO);
         ReservaNoCancelableException enProceso = assertThrows(ReservaNoCancelableException.class,
-                () -> withState(EstadoReserva.EN_PROCESO).cancelar(AHORA, 2, null));
+                () -> reservaEnProceso.cancelar(AHORA, 2, null));
 
         assertEquals("La reserva 8 ya estaba cancelada.", cancelada.getMessage());
         assertEquals(ReservaNoCancelableException.noActiva(8, EstadoReserva.EN_PROCESO).getMessage(), enProceso.getMessage());
@@ -181,8 +187,10 @@ class ReservaTest {
     @Test
     @DisplayName("Cancelar exige la hora actual")
     void cancelRequiresCurrentTime() {
-        assertThrows(NullPointerException.class, () -> withState(EstadoReserva.RESERVADO).cancelar(null, 2, null));
-        assertThrows(NullPointerException.class, () -> withState(EstadoReserva.RESERVADO).cancelarPorAdministrador(null, null));
+        Reserva paraCliente = withState(EstadoReserva.RESERVADO);
+        assertThrows(NullPointerException.class, () -> paraCliente.cancelar(null, 2, null));
+        Reserva paraAdministrador = withState(EstadoReserva.RESERVADO);
+        assertThrows(NullPointerException.class, () -> paraAdministrador.cancelarPorAdministrador(null, null));
     }
 
     // ---------------------------------------------------------------- Cancelación del administrador
@@ -205,10 +213,12 @@ class ReservaTest {
     @Test
     @DisplayName("El administrador no puede cancelar una reserva cancelada o terminada")
     void adminCannotCancelInactiveReservation() {
+        Reserva reservaCancelada = withState(EstadoReserva.CANCELADO);
         ReservaNoCancelableException cancelada = assertThrows(ReservaNoCancelableException.class,
-                () -> withState(EstadoReserva.CANCELADO).cancelarPorAdministrador(AHORA, null));
+                () -> reservaCancelada.cancelarPorAdministrador(AHORA, null));
+        Reserva reservaCompletada = withState(EstadoReserva.COMPLETADO);
         ReservaNoCancelableException completada = assertThrows(ReservaNoCancelableException.class,
-                () -> withState(EstadoReserva.COMPLETADO).cancelarPorAdministrador(AHORA, null));
+                () -> reservaCompletada.cancelarPorAdministrador(AHORA, null));
 
         assertEquals("La reserva 8 ya estaba cancelada.", cancelada.getMessage());
         assertEquals(ReservaNoCancelableException.noActiva(8, EstadoReserva.COMPLETADO).getMessage(), completada.getMessage());

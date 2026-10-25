@@ -152,7 +152,8 @@ class CrearReservaServiceTest {
     void rejectsNonClient() {
         when(consultarClienteUseCase.buscarIdClientePorUsuario(ID_USUARIO)).thenReturn(Optional.empty());
 
-        assertThrows(UsuarioNoEsClienteException.class, () -> service.ejecutar(command(LUNES_NUEVE)));
+        CrearReservaComando peticion = command(LUNES_NUEVE);
+        assertThrows(UsuarioNoEsClienteException.class, () -> service.ejecutar(peticion));
         verifyNoInteractions(obtenerServicioPorIdUseCase, reservaRepositoryPort);
     }
 
@@ -162,7 +163,8 @@ class CrearReservaServiceTest {
         when(consultarClienteUseCase.buscarIdClientePorUsuario(ID_USUARIO)).thenReturn(Optional.of(ID_CLIENTE));
         when(obtenerServicioPorIdUseCase.ejecutar(ID_SERVICIO)).thenThrow(new ServicioNoEncontradoException(ID_SERVICIO));
 
-        ServicioNoReservableException ex = assertThrows(ServicioNoReservableException.class, () -> service.ejecutar(command(LUNES_NUEVE)));
+        CrearReservaComando peticion = command(LUNES_NUEVE);
+        ServicioNoReservableException ex = assertThrows(ServicioNoReservableException.class, () -> service.ejecutar(peticion));
 
         assertEquals("No se encontró el servicio con ID: 10", ex.getMessage());
     }
@@ -172,7 +174,8 @@ class CrearReservaServiceTest {
     void rejectsPastReservation() {
         clientAndService();
 
-        assertThrows(FechaEnElPasadoException.class, () -> service.ejecutar(command(LocalDateTime.of(2026, 10, 1, 9, 0))));
+        CrearReservaComando enElPasado = command(LocalDateTime.of(2026, 10, 1, 9, 0));
+        assertThrows(FechaEnElPasadoException.class, () -> service.ejecutar(enElPasado));
         verifyNoInteractions(disponibilidadAgenda);
     }
 
@@ -182,7 +185,8 @@ class CrearReservaServiceTest {
         clientAndService();
         when(disponibilidadAgenda.consultarHorariosDisponibles(ID_PROVEEDOR, ID_SERVICIO)).thenThrow(new AgendaNoEncontradaException(10L));
 
-        HorarioNoDisponibleException ex = assertThrows(HorarioNoDisponibleException.class, () -> service.ejecutar(command(LUNES_NUEVE)));
+        CrearReservaComando peticion = command(LUNES_NUEVE);
+        HorarioNoDisponibleException ex = assertThrows(HorarioNoDisponibleException.class, () -> service.ejecutar(peticion));
 
         assertEquals(HorarioNoDisponibleException.sinAgenda(ID_SERVICIO).getMessage(), ex.getMessage());
     }
@@ -196,9 +200,10 @@ class CrearReservaServiceTest {
                 new Horario(2L, DiaSemana.MARTES, LocalTime.of(8, 0), LocalTime.of(12, 0)),
                 new Horario(3L, DiaSemana.LUNES, LocalTime.of(10, 0), LocalTime.of(23, 0)));
         LocalDateTime antesDeAbrir = LUNES_NUEVE.withHour(7);
+        CrearReservaComando peticion = command(antesDeAbrir);
 
         // Act
-        HorarioNoDisponibleException ex = assertThrows(HorarioNoDisponibleException.class, () -> service.ejecutar(command(antesDeAbrir)));
+        HorarioNoDisponibleException ex = assertThrows(HorarioNoDisponibleException.class, () -> service.ejecutar(peticion));
 
         // Assert
         assertEquals(HorarioNoDisponibleException.fueraDeAgenda(ID_SERVICIO, antesDeAbrir, antesDeAbrir.plusMinutes(60)).getMessage(),
@@ -212,8 +217,10 @@ class CrearReservaServiceTest {
         clientAndService();
         agendaWith(LUNES_DE_OCHO_A_DOCE, new Horario(2L, DiaSemana.LUNES, LocalTime.of(22, 0), LocalTime.of(23, 59)));
 
-        assertThrows(HorarioNoDisponibleException.class, () -> service.ejecutar(command(LUNES_NUEVE.withHour(11).withMinute(30))));
-        assertThrows(HorarioNoDisponibleException.class, () -> service.ejecutar(command(LUNES_NUEVE.withHour(23).withMinute(30))));
+        CrearReservaComando terminaTarde = command(LUNES_NUEVE.withHour(11).withMinute(30));
+        assertThrows(HorarioNoDisponibleException.class, () -> service.ejecutar(terminaTarde));
+        CrearReservaComando cruzaMedianoche = command(LUNES_NUEVE.withHour(23).withMinute(30));
+        assertThrows(HorarioNoDisponibleException.class, () -> service.ejecutar(cruzaMedianoche));
     }
 
     @Test
@@ -222,8 +229,9 @@ class CrearReservaServiceTest {
         clientAndService();
         agendaWith(LUNES_DE_OCHO_A_DOCE);
 
+        CrearReservaComando aMediaHora = command(LUNES_NUEVE.withMinute(30));
         HoraFueraDeTurnoException ex = assertThrows(HoraFueraDeTurnoException.class,
-                () -> service.ejecutar(command(LUNES_NUEVE.withMinute(30))));
+                () -> service.ejecutar(aMediaHora));
 
         assertEquals("Este servicio se reserva cada 60 minutos desde las 08:00.", ex.getMessage());
         verifyNoInteractions(reservaRepositoryPort);
@@ -241,9 +249,10 @@ class CrearReservaServiceTest {
                 EstadoReserva.RESERVADO, null, null, null, null);
         when(reservaRepositoryPort.buscarActivasQueSeSolapan(ID_SERVICIO, LUNES_NUEVE, LUNES_NUEVE.plusMinutes(60)))
                 .thenReturn(List.of(enElBorde, cruzada));
+        CrearReservaComando peticion = command(LUNES_NUEVE);
 
         // Act
-        HorarioNoDisponibleException ex = assertThrows(HorarioNoDisponibleException.class, () -> service.ejecutar(command(LUNES_NUEVE)));
+        HorarioNoDisponibleException ex = assertThrows(HorarioNoDisponibleException.class, () -> service.ejecutar(peticion));
 
         // Assert
         assertEquals(HorarioNoDisponibleException.yaReservado(ID_SERVICIO, LUNES_NUEVE, LUNES_NUEVE.plusMinutes(60)).getMessage(),
@@ -260,10 +269,11 @@ class CrearReservaServiceTest {
         freeSlotAndSavingWithId();
         RecursoOpcionalNoValidoException causa = new RecursoOpcionalNoValidoException("'Masaje'", List.of("'Toalla'"));
         when(apartarRecursosDeReservaUseCase.ejecutar(any(), any(), any(), any(), any())).thenThrow(causa);
+        CrearReservaComando peticion = command(LUNES_NUEVE);
 
         // Act
         RecursoOpcionalInvalidoException ex = assertThrows(RecursoOpcionalInvalidoException.class,
-                () -> service.ejecutar(command(LUNES_NUEVE)));
+                () -> service.ejecutar(peticion));
 
         // Assert
         assertEquals(causa.getMessage(), ex.getMessage());
@@ -278,10 +288,11 @@ class CrearReservaServiceTest {
         freeSlotAndSavingWithId();
         RecursoDesactivadoException causa = RecursoDesactivadoException.alReservar("Aceite");
         when(apartarRecursosDeReservaUseCase.ejecutar(any(), any(), any(), any(), any())).thenThrow(causa);
+        CrearReservaComando peticion = command(LUNES_NUEVE);
 
         // Act
         RecursoNoDisponibleException ex = assertThrows(RecursoNoDisponibleException.class,
-                () -> service.ejecutar(command(LUNES_NUEVE)));
+                () -> service.ejecutar(peticion));
 
         // Assert
         assertEquals(causa.getMessage(), ex.getMessage());

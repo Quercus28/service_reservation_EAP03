@@ -109,8 +109,9 @@ class RecursoPrestadoTest {
     @Test
     @DisplayName("Rechaza precio total negativo")
     void rechazaPrecioNegativo() {
+        BigDecimal negativo = new BigDecimal("-1");
         assertThrows(DatosInvalidosException.class,
-                () -> RecursoPrestado.nuevo(1, 1, 2, DIEZ, DOCE, new BigDecimal("-1")));
+                () -> RecursoPrestado.nuevo(1, 1, 2, DIEZ, DOCE, negativo));
     }
 
     @Test

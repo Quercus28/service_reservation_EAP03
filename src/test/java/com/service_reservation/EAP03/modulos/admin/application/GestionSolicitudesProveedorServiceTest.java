@@ -345,14 +345,14 @@ class GestionSolicitudesProveedorServiceTest {
     @DisplayName("Actualizar el perfil exige comando, administrador, usuario y razón social")
     void updateProfileRequiresData() {
         assertThrows(DatosAdminInvalidosException.class, () -> service.actualizarPerfilProveedor(null));
-        assertThrows(DatosAdminInvalidosException.class, () -> service.actualizarPerfilProveedor(
-                new ActualizarProveedorPerfilComando(null, ID_USUARIO, "Empresa", null, null)));
-        assertThrows(DatosAdminInvalidosException.class, () -> service.actualizarPerfilProveedor(
-                new ActualizarProveedorPerfilComando(ID_ADMIN, null, "Empresa", null, null)));
-        assertThrows(DatosAdminInvalidosException.class, () -> service.actualizarPerfilProveedor(
-                new ActualizarProveedorPerfilComando(ID_ADMIN, ID_USUARIO, null, null, null)));
-        assertThrows(DatosAdminInvalidosException.class, () -> service.actualizarPerfilProveedor(
-                new ActualizarProveedorPerfilComando(ID_ADMIN, ID_USUARIO, "  ", null, null)));
+        ActualizarProveedorPerfilComando sinAdmin = new ActualizarProveedorPerfilComando(null, ID_USUARIO, "Empresa", null, null);
+        assertThrows(DatosAdminInvalidosException.class, () -> service.actualizarPerfilProveedor(sinAdmin));
+        ActualizarProveedorPerfilComando sinUsuario = new ActualizarProveedorPerfilComando(ID_ADMIN, null, "Empresa", null, null);
+        assertThrows(DatosAdminInvalidosException.class, () -> service.actualizarPerfilProveedor(sinUsuario));
+        ActualizarProveedorPerfilComando sinRazonSocial = new ActualizarProveedorPerfilComando(ID_ADMIN, ID_USUARIO, null, null, null);
+        assertThrows(DatosAdminInvalidosException.class, () -> service.actualizarPerfilProveedor(sinRazonSocial));
+        ActualizarProveedorPerfilComando razonSocialEnBlanco = new ActualizarProveedorPerfilComando(ID_ADMIN, ID_USUARIO, "  ", null, null);
+        assertThrows(DatosAdminInvalidosException.class, () -> service.actualizarPerfilProveedor(razonSocialEnBlanco));
         verifyNoInteractions(proveedorPerfilPort);
     }
 

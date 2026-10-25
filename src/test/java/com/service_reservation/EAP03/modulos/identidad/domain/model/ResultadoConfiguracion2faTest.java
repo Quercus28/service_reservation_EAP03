@@ -21,10 +21,15 @@ class ResultadoConfiguracion2faTest {
     @Test
     @DisplayName("No son iguales si cambia la imagen, el secreto o el tipo de objeto")
     void differentContentIsNotEqual() {
+        // Act
+        boolean igualANulo = RESULTADO.equals(null);
+        boolean igualAOtroTipo = RESULTADO.equals("SECRETO");
+
+        // Assert
         assertNotEquals(RESULTADO, new ResultadoConfiguracion2fa(new byte[]{9}, "SECRETO"));
         assertNotEquals(RESULTADO, new ResultadoConfiguracion2fa(new byte[]{1, 2, 3}, "OTRO"));
-        assertFalse(RESULTADO.equals(null));
-        assertFalse(RESULTADO.equals("SECRETO"));
+        assertFalse(igualANulo);
+        assertFalse(igualAOtroTipo);
     }
 
     @Test

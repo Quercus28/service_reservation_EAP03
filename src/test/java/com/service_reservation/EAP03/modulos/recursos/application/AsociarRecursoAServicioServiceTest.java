@@ -61,7 +61,8 @@ class AsociarRecursoAServicioServiceTest {
         when(obtenerServicioPorIdUseCase.ejecutar(ID_SERVICIO)).thenReturn(servicioDe(ID_PROVEEDOR));
         when(recursoRepositoryPort.buscarPorId(ID_RECURSO)).thenReturn(Optional.empty());
 
-        assertThrows(RecursoNoEncontradoException.class, () -> service.ejecutar(comando(1)));
+        AsociarRecursoComando peticion = comando(1);
+        assertThrows(RecursoNoEncontradoException.class, () -> service.ejecutar(peticion));
         verify(servicioRecursoRepositoryPort, never()).guardar(any());
     }
 
@@ -82,7 +83,8 @@ class AsociarRecursoAServicioServiceTest {
     void rechazaServicioInexistente() {
         when(obtenerServicioPorIdUseCase.ejecutar(ID_SERVICIO)).thenThrow(new ServicioNoEncontradoException(ID_SERVICIO));
 
-        assertThrows(ServicioNoExisteException.class, () -> service.ejecutar(comando(1)));
+        AsociarRecursoComando peticion = comando(1);
+        assertThrows(ServicioNoExisteException.class, () -> service.ejecutar(peticion));
         verify(servicioRecursoRepositoryPort, never()).guardar(any());
     }
 
@@ -92,7 +94,8 @@ class AsociarRecursoAServicioServiceTest {
         when(obtenerServicioPorIdUseCase.ejecutar(ID_SERVICIO)).thenReturn(servicioDe(99));
         when(recursoRepositoryPort.buscarPorId(ID_RECURSO)).thenReturn(Optional.of(recurso(null)));
 
-        assertThrows(RecursoDeOtroProveedorException.class, () -> service.ejecutar(comando(1)));
+        AsociarRecursoComando peticion = comando(1);
+        assertThrows(RecursoDeOtroProveedorException.class, () -> service.ejecutar(peticion));
         verify(servicioRecursoRepositoryPort, never()).guardar(any());
     }
 
@@ -103,7 +106,8 @@ class AsociarRecursoAServicioServiceTest {
         when(recursoRepositoryPort.buscarPorId(ID_RECURSO))
                 .thenReturn(Optional.of(recurso(LocalDateTime.of(2026, 10, 1, 9, 0))));
 
-        assertThrows(RecursoDesactivadoException.class, () -> service.ejecutar(comando(1)));
+        AsociarRecursoComando peticion = comando(1);
+        assertThrows(RecursoDesactivadoException.class, () -> service.ejecutar(peticion));
         verify(servicioRecursoRepositoryPort, never()).guardar(any());
     }
 
@@ -114,7 +118,8 @@ class AsociarRecursoAServicioServiceTest {
         when(recursoRepositoryPort.buscarPorId(ID_RECURSO)).thenReturn(Optional.of(recurso(null)));
         when(servicioRecursoRepositoryPort.existePorServicioYRecurso(ID_SERVICIO, ID_RECURSO)).thenReturn(true);
 
-        assertThrows(RecursoYaAsociadoException.class, () -> service.ejecutar(comando(1)));
+        AsociarRecursoComando peticion = comando(1);
+        assertThrows(RecursoYaAsociadoException.class, () -> service.ejecutar(peticion));
         verify(servicioRecursoRepositoryPort, never()).guardar(any());
     }
 
@@ -124,7 +129,8 @@ class AsociarRecursoAServicioServiceTest {
         when(obtenerServicioPorIdUseCase.ejecutar(ID_SERVICIO)).thenReturn(servicioDe(ID_PROVEEDOR));
         when(recursoRepositoryPort.buscarPorId(ID_RECURSO)).thenReturn(Optional.of(recurso(null)));
 
-        assertThrows(DatosInvalidosException.class, () -> service.ejecutar(comando(0)));
+        AsociarRecursoComando peticion = comando(0);
+        assertThrows(DatosInvalidosException.class, () -> service.ejecutar(peticion));
         verify(servicioRecursoRepositoryPort, never()).guardar(any());
     }
 }

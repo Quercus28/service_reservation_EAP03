@@ -50,7 +50,8 @@ class RecursoTest {
     void updateRejectsNegativePrice() {
         Recurso recurso = Recurso.nuevo(1, "Camilla", PRECIO, 3);
 
-        assertThrows(DatosInvalidosException.class, () -> recurso.actualizarDatos("Camilla", new BigDecimal("-1"), 3));
+        BigDecimal negativo = new BigDecimal("-1");
+        assertThrows(DatosInvalidosException.class, () -> recurso.actualizarDatos("Camilla", negativo, 3));
     }
 
     @Test
@@ -75,8 +76,9 @@ class RecursoTest {
     @Test
     @DisplayName("Rechaza precio negativo")
     void rechazaPrecioNegativo() {
+        BigDecimal negativo = new BigDecimal("-1");
         assertThrows(DatosInvalidosException.class,
-                () -> Recurso.nuevo(1, "Camilla", new BigDecimal("-1"), 3));
+                () -> Recurso.nuevo(1, "Camilla", negativo, 3));
     }
 
     @Test
