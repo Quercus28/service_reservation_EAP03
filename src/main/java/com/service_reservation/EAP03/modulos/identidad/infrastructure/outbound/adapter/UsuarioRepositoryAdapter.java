@@ -6,6 +6,7 @@ import com.service_reservation.EAP03.modulos.identidad.infrastructure.outbound.p
 import com.service_reservation.EAP03.modulos.identidad.infrastructure.outbound.persistence.repository.*;
 import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -76,7 +77,7 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
         usuarioEntity.setEmail(usuario.getEmail());
         usuarioEntity.setPasswordHash(usuario.getPasswordHash());
         usuarioEntity.setEnabled(true);
-        usuarioEntity.setCreatedAt(LocalDateTime.now());
+        usuarioEntity.setCreatedAt(LocalDateTime.now(ZoneId.systemDefault()));
 
         final String rolBuscado = normalizarNombreRol(nombreRol);
 
@@ -142,7 +143,7 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
         proveedor.setRazonSocial(razonSocial);
         proveedor.setTelefono(telefono);
         proveedor.setNitRut(nitRut);
-        proveedor.setCreatedAt(LocalDateTime.now());
+        proveedor.setCreatedAt(LocalDateTime.now(ZoneId.systemDefault()));
         proveedorJpaRepo.save(proveedor);
     }
 

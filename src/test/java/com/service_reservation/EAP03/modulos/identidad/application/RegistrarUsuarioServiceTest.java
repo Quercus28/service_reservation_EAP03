@@ -133,4 +133,20 @@ class RegistrarUsuarioServiceTest {
         verify(usuarioRepository, never()).guardarPerfilProveedor(any(), any(), any(), any());
         verify(eventPublisher).publishEvent(new UsuarioRegistradoEvent(3L, "ROLE_ADMIN"));
     }
+
+    @Test
+    @DisplayName("Guarda el perfil de cliente de un usuario ya registrado")
+    void savesClientProfile() {
+        service.guardarPerfilCliente(1L, "Nombre Apellido", "3001234567", "CC123456");
+
+        verify(usuarioRepository).guardarPerfilCliente(1L, "Nombre Apellido", "3001234567", "CC123456");
+    }
+
+    @Test
+    @DisplayName("Guarda el perfil de proveedor de un usuario ya registrado")
+    void savesProviderProfile() {
+        service.guardarPerfilProveedor(2L, "Empresa SAS", "3001234567", "900123-1");
+
+        verify(usuarioRepository).guardarPerfilProveedor(2L, "Empresa SAS", "3001234567", "900123-1");
+    }
 }

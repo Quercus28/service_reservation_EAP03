@@ -23,6 +23,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Configuration
 @EnableWebSecurity
@@ -44,7 +45,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) {
         http
             // Deshabilitar CSRF (API REST sin estado)
             .csrf(csrf -> csrf.disable())
@@ -102,7 +103,7 @@ public class SecurityConfig {
                                     ? principal.getIdUsuario()
                                     : null;
                             auditUseCase.registrar(new IntentoAccesoDenegado(
-                                    LocalDateTime.now(),
+                                    LocalDateTime.now(ZoneId.systemDefault()),
                                     idUsuario,
                                     request.getMethod(),
                                     request.getRequestURI()

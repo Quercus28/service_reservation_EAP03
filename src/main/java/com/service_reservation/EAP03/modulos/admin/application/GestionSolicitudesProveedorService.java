@@ -25,6 +25,8 @@ import java.util.Optional;
 @Service
 public class GestionSolicitudesProveedorService implements GestionarSolicitudesProveedorUseCase {
 
+    private static final String DETALLE_SOLICITUD = "solicitud=";
+
     private final SolicitudProveedorRepositoryPort solicitudRepository;
     private final PermisoOperativoPort permisoOperativoPort;
     private final ProveedorPerfilPort proveedorPerfilPort;
@@ -103,7 +105,7 @@ public class GestionSolicitudesProveedorService implements GestionarSolicitudesP
 
         auditoriaPort.registrar(RegistroAuditoria.exito(ahora, idAdmin, solicitud.getIdUsuario(),
                 AccionAdmin.SOLICITUD_PROVEEDOR_APROBADA, RolOperativo.PROVEEDOR,
-                "solicitud=" + idSolicitud));
+                DETALLE_SOLICITUD +idSolicitud));
         return guardada;
     }
 
@@ -118,7 +120,7 @@ public class GestionSolicitudesProveedorService implements GestionarSolicitudesP
 
         auditoriaPort.registrar(RegistroAuditoria.exito(ahora, idAdmin, solicitud.getIdUsuario(),
                 AccionAdmin.SOLICITUD_PROVEEDOR_RECHAZADA, RolOperativo.PROVEEDOR,
-                "solicitud=" + idSolicitud + ", motivo=" + guardada.getMotivoRechazo()));
+                DETALLE_SOLICITUD +idSolicitud + ", motivo=" + guardada.getMotivoRechazo()));
         return guardada;
     }
 
@@ -134,7 +136,7 @@ public class GestionSolicitudesProveedorService implements GestionarSolicitudesP
         SolicitudAprobacionProveedor guardada =
                 solicitudRepository.guardar(SolicitudAprobacionProveedor.nueva(idUsuario, ahora));
         auditoriaPort.registrar(RegistroAuditoria.exito(ahora, idUsuario, idUsuario,
-                accion, RolOperativo.PROVEEDOR, "solicitud=" + guardada.getId()));
+                accion, RolOperativo.PROVEEDOR, DETALLE_SOLICITUD +guardada.getId()));
         return guardada;
     }
 

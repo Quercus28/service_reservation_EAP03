@@ -6,8 +6,8 @@ import java.util.Set;
 
 public class Usuario {
     private Long id;
-    private String email;
-    private String passwordHash;
+    private final String email;
+    private final String passwordHash;
     private boolean enabled = true;
     private Set<String> roles = new HashSet<>();
     private String secret2fa;

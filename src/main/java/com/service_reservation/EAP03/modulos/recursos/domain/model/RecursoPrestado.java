@@ -11,10 +11,10 @@ public class RecursoPrestado {
     private final Integer id;
     private final Integer idRecurso;
     private final Integer idServicioPrestado;
-    private int cantidad;
-    private LocalDateTime fechaInicio;
-    private LocalDateTime fechaFin;
-    private BigDecimal precioTotal;
+    private final int cantidad;
+    private final LocalDateTime fechaInicio;
+    private final LocalDateTime fechaFin;
+    private final BigDecimal precioTotal;
     private LocalDateTime liberadoEn;
 
     private RecursoPrestado(Integer id, Integer idRecurso, Integer idServicioPrestado,

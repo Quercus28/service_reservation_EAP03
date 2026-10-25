@@ -12,7 +12,7 @@ public record RegistroUsuarioRequestDTO(
     String email,
     
     @NotBlank(message = "La contraseña es obligatoria")
-    @Pattern(regexp = "^(?=.*[A-Z])(?=.*[0-9])(?=.*[a-z]).{8,}$", 
+    @Pattern(regexp = "^(?=.*[A-Z])(?=.*\\d)(?=.*[a-z]).{8,}$", 
              message = "La contraseña debe tener mínimo 8 caracteres, incluir números y mayúsculas")
     String password,
     
@@ -28,7 +28,7 @@ public record RegistroUsuarioRequestDTO(
              message = "Caracteres no permitidos")
     String nombreIdentificacion,
 
-    @Pattern(regexp = "^[0-9]{7,10}$", message = "El teléfono debe contener entre 7 y 10 dígitos")
+    @Pattern(regexp = "^\\d{7,10}$", message = "El teléfono debe contener entre 7 y 10 dígitos")
     String telefono,
 
     @NotBlank(message = "El documento o NIT es obligatorio")

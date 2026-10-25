@@ -9,9 +9,9 @@ public record ResultadoConfiguracion2fa(
 ) {
     @Override
     public boolean equals(Object o) {
-        return o instanceof ResultadoConfiguracion2fa otro
-                && Arrays.equals(imagenQr, otro.imagenQr)
-                && Objects.equals(secreto, otro.secreto);
+        return o instanceof ResultadoConfiguracion2fa(byte[] otraImagen, String otroSecreto)
+                && Arrays.equals(imagenQr, otraImagen)
+                && Objects.equals(secreto, otroSecreto);
     }
 
     @Override

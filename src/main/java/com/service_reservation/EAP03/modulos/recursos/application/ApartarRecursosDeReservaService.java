@@ -46,7 +46,7 @@ public class ApartarRecursosDeReservaService implements ApartarRecursosDeReserva
         this.obtenerServicioPorIdUseCase = obtenerServicioPorIdUseCase;
     }
 
-    // Si algún recurso falla se lanza el error. Como todo va en la misma transacción que la
+    // Si algún recurso falla se lanza el error. Como los préstamos van en la misma transacción que la
     // reserva, no queda guardado ningún préstamo ni la reserva.
     @Override
     @Transactional
