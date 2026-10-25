@@ -4,6 +4,7 @@ plugins {
 	id 'org.springframework.boot' version '4.1.1'
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'org.sonarqube' version '7.5.0.8588'
+	id 'info.solidsoft.pitest' version '1.19.0'
 }
 
 group = 'com.service_reservation'
@@ -69,4 +70,15 @@ sonar {
 		property 'sonar.host.url', 'https://sonarcloud.io'
 		property 'sonar.coverage.jacoco.xmlReportPaths', "${layout.buildDirectory.get()}/reports/jacoco/test/jacocoTestReport.xml"
 	}
+}
+
+// Pruebas de mutacion (PIT). No forma parte de ./gradlew build: se ejecuta con ./gradlew pitest.
+// Empieza por el modulo reservas; para otro modulo, cambia los paquetes de targetClasses y targetTests.
+pitest {
+	junit5PluginVersion = '1.2.3'
+	targetClasses = ['com.service_reservation.EAP03.modulos.reservas.*']
+	targetTests = ['com.service_reservation.EAP03.modulos.reservas.*']
+	threads = 4
+	outputFormats = ['HTML', 'XML']
+	timestampedReports = false
 }
