@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,6 +41,32 @@ class RecursoSecurityTest {
     private Recurso recursoDelProveedor(int idProveedor) {
         return Recurso.reconstruir(1, idProveedor, "Camilla", PRECIO, 3,
                 LocalDateTime.of(2026, 9, 1, 8, 0), null);
+    }
+
+    @Test
+    @DisplayName("idProveedorDe devuelve el proveedor del usuario autenticado")
+    void providerIdOfAuthenticatedUser() {
+        when(consultarProveedorUseCase.buscarIdProveedorPorUsuario(10L)).thenReturn(Optional.of(4));
+
+        assertEquals(Optional.of(4), recursoSecurity.idProveedorDe(autenticadoComoUsuario(10L)));
+    }
+
+    @Test
+    @DisplayName("idProveedorDe no resuelve proveedor sin autenticación válida")
+    void noProviderIdWithoutValidAuthentication() {
+        UsuarioAutenticadoPrincipal principal = new UsuarioAutenticadoPrincipal(10L, "test@test.com", List.of("PROVEEDOR"));
+
+        assertTrue(recursoSecurity.idProveedorDe(null).isEmpty());
+        assertTrue(recursoSecurity.idProveedorDe(new UsernamePasswordAuthenticationToken(principal, null)).isEmpty());
+        assertTrue(recursoSecurity.idProveedorDe(new UsernamePasswordAuthenticationToken("anonimo", null, List.of())).isEmpty());
+        verifyNoInteractions(consultarProveedorUseCase);
+    }
+
+    @Test
+    @DisplayName("Con otro tipo de principal NO pasa la verificación de propietario")
+    void unknownPrincipalIsNotOwner() {
+        assertFalse(recursoSecurity.esPropietario(new UsernamePasswordAuthenticationToken("anonimo", null, List.of()), 1));
+        verifyNoInteractions(consultarProveedorUseCase, recursoRepositoryPort);
     }
 
     @Test

@@ -2,7 +2,10 @@ package com.service_reservation.EAP03.modulos.recursos.application;
 
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.DatosInvalidosException;
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.RecursoNoEncontradoException;
+import com.service_reservation.EAP03.modulos.recursos.domain.model.BloqueoRecurso;
+import com.service_reservation.EAP03.modulos.recursos.domain.model.DiaSemana;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.DisponibilidadRecurso;
+import com.service_reservation.EAP03.modulos.recursos.domain.model.HorarioRecurso;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.Recurso;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.RecursoPrestado;
 import com.service_reservation.EAP03.modulos.recursos.domain.ports.out.BloqueoRecursoRepositoryPort;
@@ -18,12 +21,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,6 +44,85 @@ class ConsultarDisponibilidadServiceTest {
     @Mock private BloqueoRecursoRepositoryPort bloqueoRecursoRepositoryPort;
 
     @InjectMocks private ConsultarDisponibilidadService service;
+
+    private void resourceWithoutLoans() {
+        Recurso recurso = Recurso.reconstruir(1, 7, "Camilla", PRECIO, 4, LocalDateTime.of(2026, 9, 1, 8, 0), null);
+        when(recursoRepositoryPort.buscarPorId(1)).thenReturn(Optional.of(recurso));
+        when(recursoPrestadoRepositoryPort.buscarQueSeSolapan(1, DESDE, HASTA)).thenReturn(List.of());
+    }
+
+    private static HorarioRecurso thursday(int desde, int hasta) {
+        return HorarioRecurso.reconstruir(3, 1, DiaSemana.JUEVES, LocalTime.of(desde, 0), LocalTime.of(hasta, 0));
+    }
+
+    @Test
+    @DisplayName("Falla si falta la fecha final del rango")
+    void rejectsMissingEnd() {
+        assertThrows(DatosInvalidosException.class, () -> service.ejecutar(1, DESDE, null));
+    }
+
+    @Test
+    @DisplayName("Es operativo cuando el rango cabe en una de sus franjas")
+    void operationalInsideSchedule() {
+        // Arrange
+        resourceWithoutLoans();
+        when(horarioRecursoRepositoryPort.buscarPorRecurso(1)).thenReturn(List.of(thursday(14, 18), thursday(8, 13)));
+        when(bloqueoRecursoRepositoryPort.buscarQueSeSolapan(1, DESDE, HASTA)).thenReturn(List.of());
+
+        // Act
+        DisponibilidadRecurso resultado = service.ejecutar(1, DESDE, HASTA);
+
+        // Assert
+        assertTrue(resultado.operativo());
+        assertEquals(4, resultado.disponible());
+    }
+
+    @Test
+    @DisplayName("No es operativo y no tiene unidades cuando el rango queda fuera de sus franjas")
+    void notOperationalOutsideSchedule() {
+        // Arrange
+        resourceWithoutLoans();
+        when(horarioRecursoRepositoryPort.buscarPorRecurso(1)).thenReturn(List.of(thursday(14, 18)));
+
+        // Act
+        DisponibilidadRecurso resultado = service.ejecutar(1, DESDE, HASTA);
+
+        // Assert
+        assertFalse(resultado.operativo());
+        assertEquals(0, resultado.disponible());
+        assertEquals(4, resultado.stockTotal());
+        verifyNoInteractions(bloqueoRecursoRepositoryPort);
+    }
+
+    @Test
+    @DisplayName("No es operativo cuando un bloqueo se cruza con el rango")
+    void notOperationalWhenBlocked() {
+        // Arrange
+        resourceWithoutLoans();
+        when(horarioRecursoRepositoryPort.buscarPorRecurso(1)).thenReturn(List.of());
+        when(bloqueoRecursoRepositoryPort.buscarQueSeSolapan(1, DESDE, HASTA)).thenReturn(List.of(
+                BloqueoRecurso.reconstruir(5, 1, DESDE.plusHours(1), HASTA.plusHours(1), null, DESDE.minusDays(1))));
+
+        // Act
+        DisponibilidadRecurso resultado = service.ejecutar(1, DESDE, HASTA);
+
+        // Assert
+        assertFalse(resultado.operativo());
+        assertEquals(0, resultado.disponible());
+    }
+
+    @Test
+    @DisplayName("Un bloqueo que solo toca el borde del rango no lo vuelve no operativo")
+    void blockTouchingEdgeKeepsOperational() {
+        // Arrange
+        resourceWithoutLoans();
+        when(horarioRecursoRepositoryPort.buscarPorRecurso(1)).thenReturn(List.of());
+        when(bloqueoRecursoRepositoryPort.buscarQueSeSolapan(1, DESDE, HASTA)).thenReturn(List.of(
+                BloqueoRecurso.reconstruir(5, 1, HASTA, HASTA.plusHours(1), null, DESDE.minusDays(1))));
+
+        // Act & Assert
+        assertTrue(service.ejecutar(1, DESDE, HASTA).operativo());
+    }
 
     @Test
     @DisplayName("Resta del stock solo los prestamos que realmente se solapan")

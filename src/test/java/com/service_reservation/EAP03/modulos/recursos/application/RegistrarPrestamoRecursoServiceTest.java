@@ -1,7 +1,9 @@
 package com.service_reservation.EAP03.modulos.recursos.application;
 
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.DisponibilidadInsuficienteException;
+import com.service_reservation.EAP03.modulos.recursos.domain.exception.RecursoDesactivadoException;
 import com.service_reservation.EAP03.modulos.recursos.domain.exception.RecursoNoEncontradoException;
+import com.service_reservation.EAP03.modulos.recursos.domain.exception.RecursoNoOperativoException;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.DisponibilidadRecurso;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.Recurso;
 import com.service_reservation.EAP03.modulos.recursos.domain.model.RecursoPrestado;
@@ -44,6 +46,52 @@ class RegistrarPrestamoRecursoServiceTest {
     private Recurso recurso() {
         return Recurso.reconstruir(1, 7, "Camilla", PRECIO, 5,
                 LocalDateTime.of(2026, 9, 1, 8, 0), null);
+    }
+
+    @Test
+    @DisplayName("No presta un recurso desactivado")
+    void rejectsDeactivatedResource() {
+        // Arrange
+        Recurso desactivado = Recurso.reconstruir(1, 7, "Camilla", PRECIO, 5,
+                LocalDateTime.of(2026, 9, 1, 8, 0), LocalDateTime.of(2026, 9, 2, 8, 0));
+        when(recursoRepositoryPort.buscarPorIdConBloqueo(1)).thenReturn(Optional.of(desactivado));
+
+        // Act
+        RecursoDesactivadoException ex = assertThrows(RecursoDesactivadoException.class, () -> service.ejecutar(comando(1)));
+
+        // Assert
+        assertEquals(RecursoDesactivadoException.alPrestar("Camilla").getMessage(), ex.getMessage());
+        verifyNoInteractions(consultarDisponibilidadUseCase, recursoPrestadoRepositoryPort);
+    }
+
+    @Test
+    @DisplayName("Informa como no operativo un rango fuera de horario o bloqueado")
+    void rejectsNotOperationalRange() {
+        // Arrange
+        when(recursoRepositoryPort.buscarPorIdConBloqueo(1)).thenReturn(Optional.of(recurso()));
+        when(consultarDisponibilidadUseCase.ejecutar(1, DESDE, HASTA))
+                .thenReturn(new DisponibilidadRecurso(1, DESDE, HASTA, 5, 0, 0, false));
+
+        // Act & Assert
+        assertThrows(RecursoNoOperativoException.class, () -> service.ejecutar(comando(1)));
+        verify(recursoPrestadoRepositoryPort, never()).guardar(any());
+    }
+
+    @Test
+    @DisplayName("Permite prestar exactamente las unidades disponibles")
+    void lendsExactlyAvailableUnits() {
+        // Arrange
+        when(recursoRepositoryPort.buscarPorIdConBloqueo(1)).thenReturn(Optional.of(recurso()));
+        when(consultarDisponibilidadUseCase.ejecutar(1, DESDE, HASTA))
+                .thenReturn(new DisponibilidadRecurso(1, DESDE, HASTA, 5, 3, 2));
+        when(recursoPrestadoRepositoryPort.guardar(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        RecursoPrestado prestamo = service.ejecutar(comando(2));
+
+        // Assert
+        assertEquals(100, prestamo.getIdServicioPrestado());
+        assertEquals(PRECIO, prestamo.getPrecioTotal());
     }
 
     @Test
