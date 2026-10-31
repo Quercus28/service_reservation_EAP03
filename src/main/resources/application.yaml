@@ -34,9 +34,9 @@ jwt:
 
 swagger:
   security:
-    enabled: ${SWAGGER_SECURITY_ENABLED:false}
-    username: ${SWAGGER_USERNAME:}
-    password: ${SWAGGER_PASSWORD:}
+    enabled: ${SWAGGER_SECURITY_ENABLED:true}
+    username: ${SWAGGER_USERNAME:documentacion}
+    password: ${SWAGGER_PASSWORD:DocumentacionPruebas123.}
 
 # Reservas
 reservas:

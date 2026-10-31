@@ -6,12 +6,15 @@ import com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound.se
 import com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound.security.UsuarioAutenticadoPrincipal;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -21,7 +24,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
@@ -54,7 +56,7 @@ public class SecurityConfig {
 
     @Bean
     @ConditionalOnProperty(prefix = "swagger.security", name = "enabled", havingValue = "true")
-    public UserDetailsService swaggerUserDetailsService(
+    public InMemoryUserDetailsManager swaggerUserDetailsService(
             PasswordEncoder passwordEncoder,
             @Value("${swagger.security.username}") String username,
             @Value("${swagger.security.password}") String password) {
@@ -71,9 +73,22 @@ public class SecurityConfig {
     }
 
     @Bean
+    @ConditionalOnProperty(prefix = "swagger.security", name = "enabled", havingValue = "true")
+    public AuthenticationProvider swaggerAuthenticationProvider(
+            InMemoryUserDetailsManager swaggerUserDetailsService,
+            PasswordEncoder passwordEncoder) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(swaggerUserDetailsService);
+        provider.setPasswordEncoder(passwordEncoder);
+        return provider;
+    }
+
+    @Bean
     @Order(1)
     @ConditionalOnProperty(prefix = "swagger.security", name = "enabled", havingValue = "true")
-    public SecurityFilterChain swaggerFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain swaggerFilterChain(
+            HttpSecurity http,
+            @Qualifier("swaggerAuthenticationProvider")
+            AuthenticationProvider swaggerAuthenticationProvider) throws Exception {
         http
             .securityMatcher(
                 "/swagger-ui/**",
@@ -86,6 +101,7 @@ public class SecurityConfig {
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+            .authenticationProvider(swaggerAuthenticationProvider)
             .httpBasic(Customizer.withDefaults());
 
         return http.build();
