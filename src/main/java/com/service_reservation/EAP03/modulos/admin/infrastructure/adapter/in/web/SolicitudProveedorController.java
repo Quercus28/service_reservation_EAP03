@@ -6,6 +6,12 @@ import com.service_reservation.EAP03.modulos.admin.domain.model.ProveedorPerfilD
 import com.service_reservation.EAP03.modulos.admin.domain.model.SolicitudAprobacionProveedor;
 import com.service_reservation.EAP03.modulos.admin.domain.ports.in.GestionarSolicitudesProveedorUseCase;
 import com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound.security.UsuarioAutenticadoPrincipal;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -19,6 +25,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/solicitudes")
+@Tag(name = "Administración - solicitudes de proveedor", description = "Solicitud, consulta y revisión administrativa de la aprobación de proveedores.")
 public class SolicitudProveedorController {
 
     private final GestionarSolicitudesProveedorUseCase useCase;
@@ -29,6 +36,12 @@ public class SolicitudProveedorController {
 
     @PostMapping("/proveedor")
     @PreAuthorize("hasRole('PROVEEDOR')")
+    @Operation(summary = "Solicitar aprobación como proveedor", description = "Registra una solicitud de aprobación para el proveedor autenticado. El identificador se obtiene del JWT.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Solicitud registrada."),
+            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "La operación está disponible para proveedores.", content = @Content(mediaType = "application/json"))
+    })
     public ResponseEntity<SolicitudAprobacionProveedor> solicitarAprobacion(
             @AuthenticationPrincipal UsuarioAutenticadoPrincipal principal) {
         SolicitudAprobacionProveedor solicitud = useCase.registrarSolicitud(principal.getIdUsuario());
@@ -37,6 +50,12 @@ public class SolicitudProveedorController {
 
     @PostMapping("/proveedor/reenviar")
     @PreAuthorize("hasRole('PROVEEDOR')")
+    @Operation(summary = "Reenviar solicitud de aprobación", description = "Solicita nuevamente la aprobación del proveedor autenticado según el estado actual de su solicitud.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Solicitud reenviada."),
+            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "La operación está disponible para proveedores.", content = @Content(mediaType = "application/json"))
+    })
     public ResponseEntity<SolicitudAprobacionProveedor> reenviarSolicitud(
             @AuthenticationPrincipal UsuarioAutenticadoPrincipal principal) {
         SolicitudAprobacionProveedor solicitud = useCase.reenviarSolicitud(principal.getIdUsuario());
@@ -45,6 +64,12 @@ public class SolicitudProveedorController {
 
     @GetMapping("/proveedor/me")
     @PreAuthorize("hasRole('PROVEEDOR')")
+    @Operation(summary = "Consultar mi solicitud de proveedor", description = "Obtiene la solicitud más reciente asociada al proveedor autenticado.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Solicitud consultada."),
+            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "La operación está disponible para proveedores.", content = @Content(mediaType = "application/json"))
+    })
     public ResponseEntity<SolicitudAprobacionProveedor> consultarMiSolicitud(
             @AuthenticationPrincipal UsuarioAutenticadoPrincipal principal) {
         SolicitudAprobacionProveedor solicitud = useCase.consultarUltimaSolicitud(principal.getIdUsuario());
@@ -53,14 +78,29 @@ public class SolicitudProveedorController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Listar solicitudes de proveedor", description = "Lista las solicitudes de aprobación y permite filtrar opcionalmente por estado. Requiere rol ADMIN.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Solicitudes consultadas."),
+            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "Se requiere rol ADMIN.", content = @Content(mediaType = "application/json"))
+    })
     public ResponseEntity<List<SolicitudAprobacionProveedor>> listar(
+            @io.swagger.v3.oas.annotations.Parameter(description = "Estado opcional por el que se filtran las solicitudes.")
             @RequestParam(required = false) EstadoSolicitud estado) {
         return ResponseEntity.ok(useCase.listar(estado));
     }
 
     @PostMapping("/{id}/aprobar")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Aprobar una solicitud de proveedor", description = "Aprueba la solicitud indicada y registra al administrador autenticado como responsable de la decisión.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Solicitud aprobada."),
+            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "Se requiere rol ADMIN.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404", description = "No se encontró la solicitud.", content = @Content(mediaType = "application/json"))
+    })
     public ResponseEntity<SolicitudAprobacionProveedor> aprobar(
+            @io.swagger.v3.oas.annotations.Parameter(description = "Identificador de la solicitud.", example = "42")
             @PathVariable Long id,
             @AuthenticationPrincipal UsuarioAutenticadoPrincipal admin) {
         SolicitudAprobacionProveedor aprobada = useCase.aprobar(admin.getIdUsuario(), id);
@@ -69,7 +109,24 @@ public class SolicitudProveedorController {
 
     @PostMapping("/{id}/rechazar")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Rechazar una solicitud de proveedor", description = "Rechaza la solicitud indicada. El motivo es obligatorio y debe tener entre 3 y 500 caracteres.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Solicitud rechazada."),
+            @ApiResponse(responseCode = "400", description = "El motivo no cumple las validaciones.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "Se requiere rol ADMIN.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404", description = "No se encontró la solicitud.", content = @Content(mediaType = "application/json"))
+    })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Motivo del rechazo (entre 3 y 500 caracteres).",
+            content = @Content(examples = @ExampleObject(value = """
+                    {
+                      "motivo": "La documentación presentada está incompleta"
+                    }
+                    """))
+    )
     public ResponseEntity<SolicitudAprobacionProveedor> rechazar(
+            @io.swagger.v3.oas.annotations.Parameter(description = "Identificador de la solicitud.", example = "42")
             @PathVariable Long id,
             @Valid @RequestBody RechazoRequest request,
             @AuthenticationPrincipal UsuarioAutenticadoPrincipal admin) {
@@ -79,12 +136,37 @@ public class SolicitudProveedorController {
 
     @GetMapping("/proveedor/{idUsuario}/perfil")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Consultar el perfil de un proveedor", description = "Obtiene los datos del perfil del proveedor correspondiente al usuario indicado. Requiere rol ADMIN.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Perfil consultado."),
+            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "Se requiere rol ADMIN.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404", description = "No se encontró el proveedor.", content = @Content(mediaType = "application/json"))
+    })
     public ResponseEntity<ProveedorPerfilDTO> consultarPerfilProveedor(@PathVariable Long idUsuario) {
         return ResponseEntity.ok(useCase.consultarPerfilProveedor(idUsuario));
     }
 
     @PutMapping("/proveedor/{idUsuario}/perfil")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Actualizar el perfil de un proveedor", description = "Actualiza la razón social y los datos de contacto del proveedor indicado. Requiere rol ADMIN.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Perfil actualizado."),
+            @ApiResponse(responseCode = "400", description = "Uno o más campos no cumplen las validaciones.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "Se requiere rol ADMIN.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404", description = "No se encontró el proveedor.", content = @Content(mediaType = "application/json"))
+    })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Datos del perfil que se actualizarán.",
+            content = @Content(examples = @ExampleObject(value = """
+                    {
+                      "razonSocial": "Servicios Integrales SAS",
+                      "nitRut": "900123456-7",
+                      "telefono": "+573001234567"
+                    }
+                    """))
+    )
     public ResponseEntity<ProveedorPerfilDTO> actualizarPerfilProveedor(
             @PathVariable Long idUsuario,
             @Valid @RequestBody ActualizarPerfilProveedorRequest request,
