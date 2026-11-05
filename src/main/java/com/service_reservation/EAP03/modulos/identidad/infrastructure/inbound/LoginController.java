@@ -32,17 +32,18 @@ public class LoginController {
     @PostMapping("/login")
     @Operation(
             summary = "Iniciar sesión",
-            description = "Valida el correo y la contraseña. Si la cuenta tiene 2FA habilitado, devuelve un token temporal para completar la verificación; de lo contrario, devuelve el JWT de acceso."
+            description = "Valida el correo y la contraseña. Los administradores siempre deben completar MFA. Devuelve un token temporal y un mensaje para configurar o verificar el factor; el JWT de acceso solo se entrega al completar MFA."
     )
     @SecurityRequirements
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Credenciales válidas; la respuesta indica si se requiere completar 2FA.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoginResponseDTO.class), examples = @ExampleObject(value = """
                     {
-                      "token": "<jwt-de-acceso-o-null-si-se-requiere-2fa>",
-                      "tipo": "Bearer",
-                      "expiracionSegundos": 3600,
-                      "requiere2fa": false,
-                      "tokenTemporal": null
+                      "token": null,
+                      "tipo": null,
+                      "expiracionSegundos": 0,
+                      "requiere2fa": true,
+                      "tokenTemporal": "<token-temporal>",
+                      "mensaje": "Verifique el código en su autenticador"
                     }
                     """))),
             @ApiResponse(responseCode = "400", description = "El correo o la contraseña no cumplen el formato requerido.", content = @Content(mediaType = "application/json")),
@@ -66,7 +67,8 @@ public class LoginController {
                 respuesta.tipo(),
                 respuesta.expiracionSegundos(),
                 respuesta.requiere2fa(),
-                respuesta.tokenTemporal()
+                respuesta.tokenTemporal(),
+                respuesta.mensaje()
         ));
     }
 }

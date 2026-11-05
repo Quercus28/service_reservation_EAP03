@@ -5,17 +5,22 @@ public record TokenRespuesta(
     String tipo,
     long expiracionSegundos,
     boolean requiere2fa,
-    String tokenTemporal
+    String tokenTemporal,
+    String mensaje
 ) {
     public TokenRespuesta(String token, String tipo, long expiracionSegundos) {
-        this(token, tipo, expiracionSegundos, false, null);
+        this(token, tipo, expiracionSegundos, false, null, null);
     }
 
     public static TokenRespuesta exitoso(String token, String tipo, long expiracionSegundos) {
-        return new TokenRespuesta(token, tipo, expiracionSegundos, false, null);
+        return new TokenRespuesta(token, tipo, expiracionSegundos, false, null, null);
     }
 
     public static TokenRespuesta requiere2fa(String tokenTemporal) {
-        return new TokenRespuesta(null, null, 0, true, tokenTemporal);
+        return requiere2fa(tokenTemporal, "Verifique el código en su autenticador");
+    }
+
+    public static TokenRespuesta requiere2fa(String tokenTemporal, String mensaje) {
+        return new TokenRespuesta(null, null, 0, true, tokenTemporal, mensaje);
     }
 }

@@ -5,9 +5,14 @@ public record LoginResponseDTO(
     String tipo,
     long expiracionSegundos,
     boolean requiere2fa,
-    String tokenTemporal
+    String tokenTemporal,
+    String mensaje
 ) {
     public LoginResponseDTO(String token, String tipo, long expiracionSegundos) {
-        this(token, tipo, expiracionSegundos, false, null);
+        this(token, tipo, expiracionSegundos, false, null, null);
+    }
+
+    public LoginResponseDTO(String token, String tipo, long expiracionSegundos, boolean requiere2fa, String tokenTemporal) {
+        this(token, tipo, expiracionSegundos, requiere2fa, tokenTemporal, null);
     }
 }
