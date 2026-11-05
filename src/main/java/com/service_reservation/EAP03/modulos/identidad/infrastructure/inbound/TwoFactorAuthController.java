@@ -2,6 +2,7 @@ package com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound;
 
 import com.service_reservation.EAP03.modulos.identidad.domain.model.ResultadoConfiguracion2fa;
 import com.service_reservation.EAP03.modulos.identidad.domain.model.TokenRespuesta;
+import com.service_reservation.EAP03.modulos.identidad.domain.exception.CredencialesInvalidasException;
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.in.Activar2faUseCase;
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.in.Configurar2faUseCase;
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.in.VerificarLogin2faUseCase;
@@ -133,25 +134,35 @@ public class TwoFactorAuthController {
             @ApiResponse(responseCode = "401", description = "Token temporal o código 2FA inválido o expirado.", content = @Content(mediaType = "application/json"))
     })
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "Token temporal y código TOTP.",
+            description = "Código TOTP. El token temporal debe enviarse en el header Authorization como Bearer.",
             content = @Content(examples = @ExampleObject(value = """
                     {
-                      "tokenTemporal": "<token-temporal-devuelto-por-login>",
                       "codigo": "123456"
                     }
                     """))
     )
     public ResponseEntity<LoginResponseDTO> verificarLogin(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
             @Valid @RequestBody Verificar2faLoginRequestDTO request
     ) {
-        TokenRespuesta respuesta = verificarLogin2faUseCase.ejecutar(request.tokenTemporal(), request.codigo());
+        String tokenTemporal = extraerTokenBearer(authorization);
+        TokenRespuesta respuesta = verificarLogin2faUseCase.ejecutar(tokenTemporal, request.codigo());
 
         return ResponseEntity.ok(new LoginResponseDTO(
                 respuesta.token(),
                 respuesta.tipo(),
                 respuesta.expiracionSegundos(),
                 false,
-                null
+                null,
+                respuesta.mensaje()
         ));
+    }
+
+    private String extraerTokenBearer(String authorization) {
+        if (authorization == null || !authorization.startsWith("Bearer ")
+                || authorization.substring("Bearer ".length()).isBlank()) {
+            throw new CredencialesInvalidasException("El header Authorization debe contener un token Bearer");
+        }
+        return authorization.substring("Bearer ".length()).trim();
     }
 }

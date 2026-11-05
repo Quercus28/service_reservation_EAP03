@@ -70,10 +70,15 @@ public class IniciarSesionService implements IniciarSesionUseCase {
         // 5. Credenciales válidas: reiniciar intentos fallidos
         bloqueoFuerzaBrutaPort.resetearIntentos(email);
 
-        // 6. Si el usuario tiene 2FA activado, emitir token temporal
-        if (usuario.is2faEnabled()) {
+        // 6. Los administradores siempre deben completar MFA, incluso si aún no lo han configurado
+        boolean esAdministrador = usuario.getRoles().stream()
+                .anyMatch(rol -> "ADMIN".equals(rol) || "ROLE_ADMIN".equals(rol));
+        if (esAdministrador || usuario.is2faEnabled()) {
             String tokenTemporal = jwtPort.generarTokenTemporal2fa(usuario);
-            return TokenRespuesta.requiere2fa(tokenTemporal);
+            String mensaje = usuario.is2faEnabled()
+                    ? "Verifique el código en su autenticador"
+                    : "Activar el factor de múltiple autenticación";
+            return TokenRespuesta.requiere2fa(tokenTemporal, mensaje);
         }
 
         // 7. Generación del token JWT normal

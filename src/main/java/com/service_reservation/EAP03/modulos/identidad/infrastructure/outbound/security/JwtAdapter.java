@@ -68,6 +68,7 @@ public class JwtAdapter implements JwtPort {
         return Jwts.builder()
                 .subject(usuario.getEmail())
                 .claim("id", usuario.getId())
+                .claim("roles", new ArrayList<>(usuario.getRoles()))
                 .claim("stage", "2FA_PENDING")
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiry))
