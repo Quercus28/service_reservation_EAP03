@@ -104,9 +104,12 @@ public class TwoFactorAuthController {
                         return ResponseEntity.status(401).build();
                 }
 
-        activar2faUseCase.ejecutar(principal.getIdUsuario(), request.codigo());
+        TokenRespuesta respuesta = activar2faUseCase.ejecutar(principal.getIdUsuario(), request.codigo());
         return ResponseEntity.ok(Map.of(
-                "message", "Autenticación de dos factores activada exitosamente"
+                "token", respuesta.token(),
+                "tipo", respuesta.tipo(),
+                "expiracionSegundos", String.valueOf(respuesta.expiracionSegundos()),
+                "message", "Factor de multiple autenticacion activado con éxito. A partir de ahora deberá verificarse cada vez que quiera iniciar sesión"
         ));
     }
 
