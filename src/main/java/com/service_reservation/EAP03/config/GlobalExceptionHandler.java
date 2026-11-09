@@ -33,13 +33,17 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.access.AccessDeniedException;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.exc.InvalidFormatException;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice
@@ -293,17 +297,54 @@ public class GlobalExceptionHandler {
     }
 
     // JSON mal formado o cuerpo vacío. El mensaje de la excepción no se devuelve porque
-    // trae nombres de clases internas.
+    // trae nombres de clases internas. Si el JSON está bien pero un campo trae un valor que
+    // no se puede convertir a su tipo (p. ej. un enum), se responde como error de validación.
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, Object>> handleCuerpoNoLegible(
             HttpMessageNotReadableException ex,
             HttpServletRequest request) {
         log.warn("Cuerpo de la petición no válido: metodo={}, ruta={}", request.getMethod(), request.getRequestURI());
+        if (ex.getCause() instanceof InvalidFormatException valorInvalido && !valorInvalido.getPath().isEmpty()) {
+            return respuestaValorNoConvertible(valorInvalido);
+        }
         Map<String, Object> error = new HashMap<>();
         error.put(ERROR_CODE,"CUERPO_NO_VALIDO");
         error.put(MESSAGE,"El cuerpo de la petición no es válido");
         error.put(TRACE_ID,TraceIdFilter.traceIdActual());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    private static ResponseEntity<Map<String, Object>> respuestaValorNoConvertible(InvalidFormatException ex) {
+        Map<String, Object> error = new HashMap<>();
+        error.put(ERROR_CODE,"VALIDACION_ENTRADA");
+        error.put(MESSAGE,"Error en los datos enviados");
+        error.put("details", Map.of(nombreCampo(ex), mensajeValorNoConvertible(ex.getTargetType())));
+        error.put(TRACE_ID,TraceIdFilter.traceIdActual());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    // Arma el nombre igual que Bean Validation: "diaSemana" o "horarios[0].diaSemana".
+    private static String nombreCampo(InvalidFormatException ex) {
+        StringBuilder campo = new StringBuilder();
+        for (JacksonException.Reference parte : ex.getPath()) {
+            if (parte.getPropertyName() == null) {
+                campo.append('[').append(parte.getIndex()).append(']');
+            } else {
+                campo.append(campo.isEmpty() ? "" : ".").append(parte.getPropertyName());
+            }
+        }
+        return campo.toString();
+    }
+
+    // Se usa toString porque Jackson 3 lee los enum por ese valor. El valor recibido no se repite.
+    private static String mensajeValorNoConvertible(Class<?> tipo) {
+        if (tipo == null || !tipo.isEnum()) {
+            return "El valor enviado no es válido";
+        }
+        String permitidos = Arrays.stream(tipo.getEnumConstants())
+                .map(String::valueOf)
+                .collect(Collectors.joining(", "));
+        return "El valor enviado no es válido. Valores permitidos: " + permitidos;
     }
 
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
