@@ -177,8 +177,8 @@ public class GlobalExceptionHandler {
         }
 
         Map<String, Object> error = new HashMap<>();
-        error.put(ERROR_CODE,"ACCESO_NO_AUTORIZADO");
-        error.put(MESSAGE,"No tiene privilegios para realizar esta operación");
+        error.put(ERROR_CODE,RespuestaErrorJson.ACCESO_NO_AUTORIZADO);
+        error.put(MESSAGE,RespuestaErrorJson.MENSAJE_ACCESO_NO_AUTORIZADO);
         error.put(TRACE_ID,TraceIdFilter.traceIdActual());
 
         return ResponseEntity
