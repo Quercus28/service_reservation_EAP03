@@ -48,7 +48,7 @@ class SecurityErrorResponsesEncodingTest {
     }
 
     @Test
-    @DisplayName("El 403 por rol se envía en UTF-8 y conserva la tilde de 'acción'")
+    @DisplayName("El 403 por rol se envía en UTF-8 y conserva la tilde de 'operación'")
     void forbiddenResponseIsUtf8() throws Exception {
         // Arrange: un CLIENTE en una ruta que exige el rol PROVEEDOR
 
@@ -59,6 +59,6 @@ class SecurityErrorResponsesEncodingTest {
         // Assert
         assertEquals(403, result.getResponse().getStatus());
         assertTrue(result.getResponse().getContentType().toUpperCase().contains("CHARSET=UTF-8"));
-        assertTrue(result.getResponse().getContentAsString(StandardCharsets.UTF_8).contains("acción"));
+        assertTrue(result.getResponse().getContentAsString(StandardCharsets.UTF_8).contains("operación"));
     }
 }
