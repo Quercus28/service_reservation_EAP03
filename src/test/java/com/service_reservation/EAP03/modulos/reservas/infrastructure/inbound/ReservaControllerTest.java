@@ -37,6 +37,7 @@ class ReservaControllerTest {
 
     @Mock private CrearReservaUseCase crearReservaUseCase;
     @Mock private CancelarReservaUseCase cancelarReservaUseCase;
+    @Mock private com.service_reservation.EAP03.modulos.reservas.domain.ports.in.ConsultarHistorialReservasUseCase consultarHistorialReservasUseCase;
 
     @InjectMocks private ReservaController controller;
 
@@ -96,5 +97,46 @@ class ReservaControllerTest {
         controller.cancelar(50, null, CLIENTE);
 
         verify(cancelarReservaUseCase).ejecutar(new CancelarReservaComando(20L, 50, null));
+    }
+
+    @Test
+    @DisplayName("Historial pasa al caso de uso el usuario autenticado y los parámetros validados")
+    void historyUsesAuthenticatedUserAndParams() {
+        org.springframework.mock.web.MockHttpServletRequest request = new org.springframework.mock.web.MockHttpServletRequest("GET", "/api/v1/reservas/mias");
+        request.setParameter("estado", "CANCELADO");
+        request.setParameter("page", "1");
+        request.setParameter("size", "5");
+        com.service_reservation.EAP03.modulos.reservas.domain.model.ConsultarHistorialComando comando =
+                new com.service_reservation.EAP03.modulos.reservas.domain.model.ConsultarHistorialComando(20L, null, EstadoReserva.CANCELADO, 1, 5);
+        when(consultarHistorialReservasUseCase.ejecutar(comando)).thenReturn(new com.service_reservation.EAP03.modulos.reservas.domain.model.PaginaHistorial(
+                List.of(new com.service_reservation.EAP03.modulos.reservas.domain.model.ReservaHistorial(cancelled(), "Corte")), 1, 5, 6));
+
+        HistorialReservasResponseDTO response = controller.historial(request, CLIENTE);
+
+        assertEquals(1, response.contenido().size());
+        assertEquals("Corte", response.contenido().get(0).nombreServicio());
+        assertEquals(2, response.totalPaginas());
+    }
+
+    @Test
+    @DisplayName("Historial con parámetros inválidos falla antes de llamar al caso de uso")
+    void historyRejectsInvalidParams() {
+        org.springframework.mock.web.MockHttpServletRequest request = new org.springframework.mock.web.MockHttpServletRequest("GET", "/api/v1/reservas/mias");
+        request.setParameter("orden", "asc");
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                com.service_reservation.EAP03.modulos.reservas.domain.exception.ConsultaHistorialInvalidaException.class,
+                () -> controller.historial(request, CLIENTE));
+        org.mockito.Mockito.verifyNoInteractions(consultarHistorialReservasUseCase);
+    }
+
+    @Test
+    @DisplayName("Historial sin usuario del sistema pasa un usuario nulo al caso de uso")
+    void historyWithoutSystemUserPassesNull() {
+        org.springframework.mock.web.MockHttpServletRequest request = new org.springframework.mock.web.MockHttpServletRequest("GET", "/api/v1/reservas/mias");
+        when(consultarHistorialReservasUseCase.ejecutar(new com.service_reservation.EAP03.modulos.reservas.domain.model.ConsultarHistorialComando(null, null, null, 0, 10)))
+                .thenReturn(new com.service_reservation.EAP03.modulos.reservas.domain.model.PaginaHistorial(List.of(), 0, 10, 0));
+
+        assertEquals(HistorialReservasResponseDTO.MENSAJE_SIN_CITAS, controller.historial(request, null).mensaje());
     }
 }

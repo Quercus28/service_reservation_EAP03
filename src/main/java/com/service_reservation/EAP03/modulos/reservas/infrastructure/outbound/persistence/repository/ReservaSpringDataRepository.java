@@ -2,6 +2,8 @@ package com.service_reservation.EAP03.modulos.reservas.infrastructure.outbound.p
 
 import com.service_reservation.EAP03.modulos.reservas.domain.model.EstadoReserva;
 import com.service_reservation.EAP03.modulos.reservas.infrastructure.outbound.persistence.entity.ReservaJpaEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,6 +23,10 @@ public interface ReservaSpringDataRepository extends JpaRepository<ReservaJpaEnt
     List<ReservaJpaEntity> findByIdClienteAndEstadoIn(Long idCliente, Collection<EstadoReserva> estados);
 
     List<ReservaJpaEntity> findByIdProveedorAndEstadoIn(Integer idProveedor, Collection<EstadoReserva> estados);
+
+    Page<ReservaJpaEntity> findByIdCliente(Long idCliente, Pageable pageable);
+
+    Page<ReservaJpaEntity> findByIdClienteAndEstado(Long idCliente, EstadoReserva estado, Pageable pageable);
 
     long countByIdClienteAndEstadoIn(Long idCliente, Collection<EstadoReserva> estados);
 

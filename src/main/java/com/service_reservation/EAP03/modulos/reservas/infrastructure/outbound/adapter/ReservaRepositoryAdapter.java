@@ -1,10 +1,15 @@
 package com.service_reservation.EAP03.modulos.reservas.infrastructure.outbound.adapter;
 
 import com.service_reservation.EAP03.modulos.reservas.domain.model.EstadoReserva;
+import com.service_reservation.EAP03.modulos.reservas.domain.model.PaginaReservas;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.Reserva;
 import com.service_reservation.EAP03.modulos.reservas.domain.ports.out.ReservaRepositoryPort;
 import com.service_reservation.EAP03.modulos.reservas.infrastructure.outbound.persistence.ReservaMapper;
+import com.service_reservation.EAP03.modulos.reservas.infrastructure.outbound.persistence.entity.ReservaJpaEntity;
 import com.service_reservation.EAP03.modulos.reservas.infrastructure.outbound.persistence.repository.ReservaSpringDataRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -58,6 +63,17 @@ public class ReservaRepositoryAdapter implements ReservaRepositoryPort {
         return repositorio.findByIdProveedorAndEstadoIn(idProveedor, ESTADOS_ACTIVOS).stream()
                 .map(mapper::aDominio)
                 .toList();
+    }
+
+    @Override
+    public PaginaReservas buscarHistorialDeCliente(Long idCliente, EstadoReserva estado, int page, int size) {
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("fechaInicio"), Sort.Order.desc("id")));
+        Page<ReservaJpaEntity> pagina = estado == null
+                ? repositorio.findByIdCliente(idCliente, pageable)
+                : repositorio.findByIdClienteAndEstado(idCliente, estado, pageable);
+        return new PaginaReservas(
+                pagina.getContent().stream().map(mapper::aDominio).toList(),
+                page, size, pagina.getTotalElements());
     }
 
     @Override

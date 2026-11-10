@@ -126,4 +126,35 @@ class ReservaRepositoryAdapterTest {
         assertEquals(4, adapter.contarActivasDeCliente(3L));
         assertEquals(2, adapter.contarActivasDeProveedor(7));
     }
+
+    @Test
+    @DisplayName("El historial sin filtro trae todas las reservas del cliente, la más reciente primero")
+    void historyWithoutFilter() {
+        org.springframework.data.domain.PageRequest pageable = org.springframework.data.domain.PageRequest.of(1, 5,
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Order.desc("fechaInicio"),
+                        org.springframework.data.domain.Sort.Order.desc("id")));
+        when(repositorio.findByIdCliente(3L, pageable)).thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(entity(50)), pageable, 6));
+
+        com.service_reservation.EAP03.modulos.reservas.domain.model.PaginaReservas pagina = adapter.buscarHistorialDeCliente(3L, null, 1, 5);
+
+        assertEquals(1, pagina.contenido().size());
+        assertEquals(EstadoReserva.CANCELADO, pagina.contenido().get(0).getEstado());
+        assertEquals(6, pagina.total());
+        assertEquals(1, pagina.page());
+        assertEquals(5, pagina.size());
+        verify(repositorio, never()).findByIdClienteAndEstado(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("El historial con estado filtra por ese estado")
+    void historyWithStateFilter() {
+        org.springframework.data.domain.PageRequest pageable = org.springframework.data.domain.PageRequest.of(0, 10,
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Order.desc("fechaInicio"),
+                        org.springframework.data.domain.Sort.Order.desc("id")));
+        when(repositorio.findByIdClienteAndEstado(3L, EstadoReserva.CANCELADO, pageable))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(), pageable, 0));
+
+        assertEquals(0, adapter.buscarHistorialDeCliente(3L, EstadoReserva.CANCELADO, 0, 10).total());
+        verify(repositorio, never()).findByIdCliente(any(), any());
+    }
 }
