@@ -106,7 +106,7 @@ class AvailabilityControllerTest {
     @DisplayName("Sin espacios libres responde 200 con mensaje y sin bloques")
     void sinDisponibilidad() {
         // Arrange
-        when(useCase.ejecutar(ID_SERVICIO, HOY, MANANA)).thenReturn(List.of());
+        when(useCase.ejecutar(ID_SERVICIO, HOY, MANANA, 0)).thenReturn(List.of());
 
         // Act
         ResponseEntity<DisponibilidadServicioResponseDTO> respuesta =
@@ -122,7 +122,7 @@ class AvailabilityControllerTest {
     @DisplayName("Agrupa las franjas por fecha y las ordena cronológicamente")
     void agrupaYOrdenaPorFecha() {
         // Arrange
-        when(useCase.ejecutar(ID_SERVICIO, HOY, MANANA)).thenReturn(List.of(
+        when(useCase.ejecutar(ID_SERVICIO, HOY, MANANA, 0)).thenReturn(List.of(
                 franja(MANANA, 9),
                 franja(HOY, 15),
                 franja(MANANA, 8),
@@ -144,7 +144,7 @@ class AvailabilityControllerTest {
     @DisplayName("Acepta consultar un único día")
     void consultaUnSoloDia() {
         // Arrange
-        when(useCase.ejecutar(ID_SERVICIO, HOY, HOY)).thenReturn(List.of(franja(HOY, 11)));
+        when(useCase.ejecutar(ID_SERVICIO, HOY, HOY, 0)).thenReturn(List.of(franja(HOY, 11)));
 
         // Act
         ResponseEntity<DisponibilidadServicioResponseDTO> respuesta =
@@ -153,6 +153,25 @@ class AvailabilityControllerTest {
         // Assert
         assertEquals(new DisponibilidadServicioResponseDTO(ID_SERVICIO, 1,
                 List.of(new BloqueDisponibilidadDTO(HOY, List.of(franjaDto(11)))), null), respuesta.getBody());
-        verify(useCase).ejecutar(ID_SERVICIO, HOY, HOY);
+        verify(useCase).ejecutar(ID_SERVICIO, HOY, HOY, 0);
+    }
+
+    @Test
+    @DisplayName("Delega el índice de página al caso de uso cuando se consulta un bloque específico")
+    void delegaPaginaAlCasoDeUso() {
+        // Arrange
+        LocalDate fin = HOY.plusDays(89);
+        LocalDate fechaSegundoBloque = HOY.plusDays(30);
+        when(useCase.ejecutar(ID_SERVICIO, HOY, fin, 1)).thenReturn(List.of(franja(fechaSegundoBloque, 11)));
+
+        // Act
+        ResponseEntity<DisponibilidadServicioResponseDTO> respuesta =
+                controller.consultarDisponibilidad(ID_SERVICIO, HOY, fin, 1);
+
+        // Assert
+        assertEquals(HttpStatus.OK, respuesta.getStatusCode());
+        assertEquals(new DisponibilidadServicioResponseDTO(ID_SERVICIO, 1,
+                List.of(new BloqueDisponibilidadDTO(fechaSegundoBloque, List.of(franjaDto(11)))), null), respuesta.getBody());
+        verify(useCase).ejecutar(ID_SERVICIO, HOY, fin, 1);
     }
 }
