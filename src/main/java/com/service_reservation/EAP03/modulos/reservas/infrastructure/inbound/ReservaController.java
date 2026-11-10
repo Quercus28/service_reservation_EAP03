@@ -4,7 +4,9 @@ import com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound.se
 import com.service_reservation.EAP03.modulos.reservas.domain.model.CancelarReservaComando;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.CrearReservaComando;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.Reserva;
+import com.service_reservation.EAP03.modulos.reservas.domain.model.ConsultarHistorialComando;
 import com.service_reservation.EAP03.modulos.reservas.domain.ports.in.CancelarReservaUseCase;
+import com.service_reservation.EAP03.modulos.reservas.domain.ports.in.ConsultarHistorialReservasUseCase;
 import com.service_reservation.EAP03.modulos.reservas.domain.ports.in.CrearReservaUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -13,6 +15,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,11 +29,14 @@ public class ReservaController {
 
     private final CrearReservaUseCase crearReservaUseCase;
     private final CancelarReservaUseCase cancelarReservaUseCase;
+    private final ConsultarHistorialReservasUseCase consultarHistorialReservasUseCase;
 
     public ReservaController(CrearReservaUseCase crearReservaUseCase,
-                             CancelarReservaUseCase cancelarReservaUseCase) {
+                             CancelarReservaUseCase cancelarReservaUseCase,
+                             ConsultarHistorialReservasUseCase consultarHistorialReservasUseCase) {
         this.crearReservaUseCase = crearReservaUseCase;
         this.cancelarReservaUseCase = cancelarReservaUseCase;
+        this.consultarHistorialReservasUseCase = consultarHistorialReservasUseCase;
     }
 
     // Además del rol, el cliente tiene que tener sus permisos activos: si el administrador
@@ -116,6 +122,26 @@ public class ReservaController {
                 request != null ? request.motivo() : null
         ));
         return CancelacionReservaResponseDTO.desde(reserva);
+    }
+
+    // Historial del cliente autenticado. El cliente sale del JWT; si la solicitud trae un idCliente
+    // distinto se responde 403. Los parámetros se validan con lista blanca (ConsultaHistorialParametros).
+    @GetMapping("/mias")
+    @PreAuthorize("hasRole('CLIENTE') and @permisoOperativo.activo(authentication, 'CLIENTE')")
+    @Operation(
+            summary = "Consultar mi historial de reservas",
+            description = "Lista las reservas del cliente autenticado en cualquier estado (RESERVADO, EN_PROCESO, COMPLETADO, CANCELADO, NO_ASISTIO), la más reciente primero. Parámetros opcionales: estado, page (desde 0), size (1 a 50, por defecto 10) e idCliente (solo se acepta el propio). Si no hay citas devuelve 200 con una lista vacía y un mensaje."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Historial paginado (puede estar vacío).", content = @Content(mediaType = "application/json", schema = @Schema(implementation = HistorialReservasResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Parámetros no permitidos, con formato inválido o con texto sospechoso.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "No es CLIENTE, su permiso está inactivo o intentó ver el historial de otro cliente.", content = @Content(mediaType = "application/json"))
+    })
+    public HistorialReservasResponseDTO historial(HttpServletRequest request, Authentication authentication) {
+        ConsultaHistorialParametros p = ConsultaHistorialParametros.desde(request.getParameterMap());
+        return HistorialReservasResponseDTO.desde(consultarHistorialReservasUseCase.ejecutar(
+                new ConsultarHistorialComando(idUsuarioDe(authentication), p.idCliente(), p.estado(), p.page(), p.size())));
     }
 
     // Se toma el usuario que inició sesión. Si no se puede identificar, el caso de uso

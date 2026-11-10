@@ -37,6 +37,7 @@ class ReservaControllerTest {
 
     @Mock private CrearReservaUseCase crearReservaUseCase;
     @Mock private CancelarReservaUseCase cancelarReservaUseCase;
+    @Mock private com.service_reservation.EAP03.modulos.reservas.domain.ports.in.ConsultarHistorialReservasUseCase consultarHistorialReservasUseCase;
 
     @InjectMocks private ReservaController controller;
 
