@@ -147,6 +147,7 @@ class SecurityConfigTest {
             String cuerpo = response.getContentAsString(StandardCharsets.UTF_8);
             assertTrue(cuerpo.contains("No tiene los permisos necesarios para realizar esta acción."));
             assertTrue(cuerpo.contains("\"path\":\"/api/v1/agendas\""));
+            assertTrue(cuerpo.contains("\"traceId\":\""));
             verifyNoInteractions(auditUseCase);
         }
 

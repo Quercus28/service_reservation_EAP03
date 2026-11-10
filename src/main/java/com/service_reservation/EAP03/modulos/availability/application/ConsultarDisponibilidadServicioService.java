@@ -1,7 +1,6 @@
 package com.service_reservation.EAP03.modulos.availability.application;
 
 import com.service_reservation.EAP03.modulos.availability.domain.exception.DisponibilidadInvalidaException;
-import com.service_reservation.EAP03.modulos.availability.domain.exception.RangoFechasExcedidoException;
 import com.service_reservation.EAP03.modulos.availability.domain.exception.ServicioParaDisponibilidadNoEncontradoException;
 import com.service_reservation.EAP03.modulos.availability.domain.model.DateRange;
 import com.service_reservation.EAP03.modulos.availability.domain.model.HorarioSemanal;
@@ -42,11 +41,20 @@ public class ConsultarDisponibilidadServicioService implements ConsultarDisponib
     @Override
     @Transactional(readOnly = true)
     public List<TimeSlot> ejecutar(Integer servicioId, LocalDate startDate, LocalDate endDate) {
+        return ejecutar(servicioId, startDate, endDate, 0);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TimeSlot> ejecutar(Integer servicioId, LocalDate startDate, LocalDate endDate, int page) {
         if (servicioId == null) {
             throw new DisponibilidadInvalidaException("El id del servicio es obligatorio");
         }
         if (startDate == null || endDate == null) {
             throw new DisponibilidadInvalidaException("Las fechas de inicio y fin son obligatorias");
+        }
+        if (page < 0) {
+            throw new DisponibilidadInvalidaException("La página de consulta no puede ser negativa");
         }
 
         LocalDate hoy = LocalDate.now(clock);
@@ -54,23 +62,27 @@ public class ConsultarDisponibilidadServicioService implements ConsultarDisponib
             throw new DisponibilidadInvalidaException("La fecha de inicio (startDate) no puede ser una fecha pasada");
         }
 
-        DateRange dateRange = new DateRange(startDate, endDate);
-        if (dateRange.totalDias() > MAX_DIAS_RANGO) {
-            throw new RangoFechasExcedidoException(
-                    "El rango de consulta no puede superar los " + MAX_DIAS_RANGO + " días"
-            );
-        }
+        new DateRange(startDate, endDate);
 
         ServicioDisponibilidadInfo servicioInfo = availabilityRepository.obtenerServicioInfo(servicioId)
                 .orElseThrow(() -> new ServicioParaDisponibilidadNoEncontradoException(servicioId));
+
+        LocalDate inicioVentana = startDate.plusDays((long) page * MAX_DIAS_RANGO);
+        if (inicioVentana.isAfter(endDate)) {
+            return List.of();
+        }
+
+        LocalDate limiteVentana = inicioVentana.plusDays(MAX_DIAS_RANGO - 1L);
+        LocalDate finVentana = endDate.isBefore(limiteVentana) ? endDate : limiteVentana;
+        DateRange dateRange = new DateRange(inicioVentana, finVentana);
 
         List<HorarioSemanal> horariosProveedor = availabilityRepository.obtenerHorariosProveedor(
                 servicioId,
                 servicioInfo.idProveedor()
         );
 
-        LocalDateTime rangoInicio = startDate.atStartOfDay();
-        LocalDateTime rangoFin = endDate.atTime(LocalTime.MAX);
+        LocalDateTime rangoInicio = inicioVentana.atStartOfDay();
+        LocalDateTime rangoFin = finVentana.atTime(LocalTime.MAX);
 
         List<TimeSlot> reservasOcupadas = availabilityRepository.obtenerReservasActivas(
                 servicioId,
