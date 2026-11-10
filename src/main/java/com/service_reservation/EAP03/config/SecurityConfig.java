@@ -5,6 +5,8 @@ import com.service_reservation.EAP03.modulos.admin.domain.ports.in.RegistrarAcce
 import com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound.security.JwtAuthenticationFilter;
 import com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound.security.UsuarioAutenticadoPrincipal;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,6 +41,8 @@ import java.time.ZoneId;
 @EnableWebSecurity
 @EnableMethodSecurity   // Habilita @PreAuthorize / @PostAuthorize en toda la aplicación
 public class SecurityConfig {
+
+    private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final ObjectProvider<RegistrarAccesoDenegadoUseCase> registrarAccesoDenegadoUseCaseProvider;
@@ -146,13 +150,18 @@ public class SecurityConfig {
                 })
                 // 403 — Autenticado pero sin el rol necesario
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    log.warn(
+                        "Intento de acceso no autorizado: metodo={}, ruta={}",
+                        request.getMethod(),
+                        request.getRequestURI()
+                    );
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                     response.setCharacterEncoding(StandardCharsets.UTF_8.name());
                     response.getWriter().write(String.format(
                         "{\"timestamp\":\"%s\",\"status\":403,\"error\":\"Acceso denegado\"," +
-                        "\"message\":\"No tiene los permisos necesarios para realizar esta acción.\",\"path\":\"%s\"}",
-                        Instant.now(), request.getRequestURI()
+                        "\"message\":\"No tiene los permisos necesarios para realizar esta acción.\",\"path\":\"%s\",\"traceId\":\"%s\"}",
+                        Instant.now(), request.getRequestURI(), TraceIdFilter.traceIdActual()
                     ));
 
                     // Auditoría de intentos de acceso denegado a rutas administrativas
