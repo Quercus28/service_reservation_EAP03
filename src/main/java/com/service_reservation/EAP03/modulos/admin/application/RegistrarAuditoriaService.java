@@ -21,9 +21,13 @@ public class RegistrarAuditoriaService implements RegistrarAuditoriaUseCase {
     static final String OMITIDO = "[omitido]";
 
     // Por si alguien manda por error un dato personal en el texto: correos y números largos
-    // (7 o más dígitos, como un teléfono o un documento) se reemplazan antes de guardar.
-    private static final Pattern CORREO = Pattern.compile("[\\w.+-]+@[\\w-]+(\\.[\\w-]+)+");
-    private static final Pattern NUMERO_LARGO = Pattern.compile("\\+?\\d(?:[\\s-]?\\d){6,}");
+    // se reemplazan antes de guardar. Las expresiones solo repiten grupos de caracteres ([...]),
+    // nunca grupos entre paréntesis: así no se caen por falta de memoria con textos muy largos.
+    private static final Pattern CORREO = Pattern.compile("[\\w.+-]+@[\\w-]+\\.[\\w.-]+");
+    // Números de 7 o más caracteres entre dígitos, espacios y guiones (teléfonos, documentos).
+    // También tapa fechas con guiones, por ejemplo 2026-11-16. Eso es aceptable porque el
+    // detalle debe ser un texto fijo (la fecha del evento ya se guarda en su propia columna).
+    private static final Pattern NUMERO_LARGO = Pattern.compile("\\+?\\d[\\d\\s-]{5,}\\d");
 
     private final AuditoriaPort auditoriaPort;
     private final Clock clock;

@@ -121,12 +121,34 @@ class RegistrarAuditoriaServiceTest {
     @Test
     @DisplayName("La acción y el resultado son obligatorios; sin ellos no se guarda nada")
     void accionYResultadoObligatorios() {
+        EventoAuditoria sinAccion = new EventoAuditoria(7L, null, null, ResultadoAuditoria.DENEGADO, "GET /x", "motivo");
+        EventoAuditoria sinResultado = new EventoAuditoria(7L, null, AccionAdmin.HISTORIAL_AJENO_DENEGADO, null, "GET /x", "motivo");
+
         assertThrows(NullPointerException.class, () -> service.ejecutar(null));
-        assertThrows(NullPointerException.class, () -> service.ejecutar(
-                new EventoAuditoria(7L, null, null, ResultadoAuditoria.DENEGADO, "GET /x", "motivo")));
-        assertThrows(NullPointerException.class, () -> service.ejecutar(
-                new EventoAuditoria(7L, null, AccionAdmin.HISTORIAL_AJENO_DENEGADO, null, "GET /x", "motivo")));
+        assertThrows(NullPointerException.class, () -> service.ejecutar(sinAccion));
+        assertThrows(NullPointerException.class, () -> service.ejecutar(sinResultado));
         verifyNoInteractions(auditoriaPort);
+    }
+
+    @Test
+    @DisplayName("Un texto enorme no hace caer la búsqueda de datos personales y el correo igual se tapa")
+    void textoEnormeNoSeCae() {
+        String enorme = "correo=" + "a".repeat(1000) + "@b" + ".c".repeat(100_000) + " tel=" + "1 ".repeat(100_000);
+        EventoAuditoria evento = new EventoAuditoria(7L, null, AccionAdmin.HISTORIAL_AJENO_DENEGADO,
+                ResultadoAuditoria.DENEGADO, "GET /x", enorme);
+
+        service.ejecutar(evento);
+
+        assertEquals("correo=[omitido] tel=[omitido]", guardado().detalle());
+    }
+
+    @Test
+    @DisplayName("Las fechas con guiones en el detalle también se tapan (el detalle debe ser texto fijo)")
+    void tapaFechasConGuiones() {
+        service.ejecutar(new EventoAuditoria(7L, null, AccionAdmin.CAMBIO_ESTADO_RESERVA_DENEGADO,
+                ResultadoAuditoria.DENEGADO, "GET /x", "fecha=2026-11-16"));
+
+        assertEquals("fecha=[omitido]", guardado().detalle());
     }
 
     @Test
