@@ -52,6 +52,7 @@ class CambiarEstadoReservaWebTest {
 
     @Mock private CrearReservaUseCase crearReservaUseCase;
     @Mock private CancelarReservaUseCase cancelarReservaUseCase;
+    @Mock private com.service_reservation.EAP03.modulos.reservas.domain.ports.in.ConsultarHistorialReservasUseCase consultarHistorialReservasUseCase;
     @Mock private VerificarPermisoOperativoUseCase verificarPermisoOperativoUseCase;
     @Mock private ConsultarProveedorUseCase consultarProveedorUseCase;
     @Mock private ReservaRepositoryPort reservaRepositoryPort;
@@ -63,7 +64,8 @@ class CambiarEstadoReservaWebTest {
     void setUp() {
         CambiarEstadoReservaService servicio = new CambiarEstadoReservaService(
                 verificarPermisoOperativoUseCase, consultarProveedorUseCase, reservaRepositoryPort, registrarAuditoriaUseCase);
-        ReservaController controller = new ReservaController(crearReservaUseCase, cancelarReservaUseCase, servicio);
+        ReservaController controller = new ReservaController(crearReservaUseCase, cancelarReservaUseCase, servicio,
+                consultarHistorialReservasUseCase);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new ReservaExceptionHandler(), new GlobalExceptionHandler(null))
                 .build();

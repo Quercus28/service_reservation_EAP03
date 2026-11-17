@@ -37,11 +37,18 @@ public class AvailabilityController {
         this.consultarDisponibilidadServicioUseCase = consultarDisponibilidadServicioUseCase;
     }
 
+    public ResponseEntity<DisponibilidadServicioResponseDTO> consultarDisponibilidad(
+            Integer id,
+            LocalDate startDate,
+            LocalDate endDate) {
+        return consultarDisponibilidad(id, startDate, endDate, 0);
+    }
+
     @GetMapping("/{id}/disponibilidad")
     @PreAuthorize("isAuthenticated()")
     @Operation(
             summary = "Consultar disponibilidad de un servicio",
-            description = "Devuelve las franjas horarias disponibles agrupadas por fecha dentro del intervalo indicado. Ambas fechas son obligatorias, usan formato ISO YYYY-MM-DD y endDate no puede ser anterior a startDate. Requiere JWT."
+            description = "Devuelve las franjas horarias disponibles agrupadas por fecha dentro del intervalo indicado. Ambas fechas son obligatorias, usan formato ISO YYYY-MM-DD y endDate no puede ser anterior a startDate. Ante rangos mayores a 30 días, procesa bloques de hasta 30 días por página. Requiere JWT."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Disponibilidad consultada; la lista puede estar vacía si no hay franjas libres.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = DisponibilidadServicioResponseDTO.class), examples = @ExampleObject(value = """
@@ -75,7 +82,9 @@ public class AvailabilityController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @io.swagger.v3.oas.annotations.Parameter(description = "Fecha final del rango, inclusive, en formato ISO YYYY-MM-DD.", example = "2026-11-05", required = true)
             @RequestParam(value = "endDate", required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @io.swagger.v3.oas.annotations.Parameter(description = "Índice de página/bloque de 30 días (base 0).", example = "0")
+            @RequestParam(value = "page", defaultValue = "0") int page) {
 
         if (id == null) {
             throw new DisponibilidadInvalidaException("El parámetro 'id' del servicio es obligatorio");
@@ -90,7 +99,7 @@ public class AvailabilityController {
             throw new DisponibilidadInvalidaException("El parámetro 'endDate' no puede ser anterior a 'startDate'");
         }
 
-        List<TimeSlot> slotsLibres = consultarDisponibilidadServicioUseCase.ejecutar(id, startDate, endDate);
+        List<TimeSlot> slotsLibres = consultarDisponibilidadServicioUseCase.ejecutar(id, startDate, endDate, page);
 
         // Agrupar resultados por fecha (bloques por día)
         Map<LocalDate, List<TimeSlot>> porFecha = slotsLibres.stream()
