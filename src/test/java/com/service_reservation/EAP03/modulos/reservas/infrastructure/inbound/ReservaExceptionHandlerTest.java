@@ -93,4 +93,39 @@ class ReservaExceptionHandlerTest {
         assertError(handler.manejarConcurrencia(new PessimisticLockingFailureException("serialización")), 409, "HORARIO_NO_DISPONIBLE",
                 "Otra persona acaba de tomar este horario o uno de los recursos que necesita. Intenta de nuevo.");
     }
+
+    @Test
+    @DisplayName("El historial ajeno responde 403 con un mensaje fijo")
+    void otherClientsHistoryReturns403() {
+        org.springframework.mock.web.MockHttpServletRequest request = new org.springframework.mock.web.MockHttpServletRequest("GET", "/api/v1/reservas/mias");
+        com.service_reservation.EAP03.modulos.reservas.domain.exception.HistorialAjenoException ex =
+                new com.service_reservation.EAP03.modulos.reservas.domain.exception.HistorialAjenoException();
+
+        assertError(handler.manejarHistorialAjeno(ex, request), 403, "HISTORIAL_AJENO", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("Una consulta de historial inválida responde 400 sin repetir lo enviado, con o sin usuario autenticado")
+    void invalidHistoryQueryReturns400() {
+        org.springframework.mock.web.MockHttpServletRequest request = new org.springframework.mock.web.MockHttpServletRequest("GET", "/api/v1/reservas/mias");
+        com.service_reservation.EAP03.modulos.reservas.domain.exception.ConsultaHistorialInvalidaException ex =
+                new com.service_reservation.EAP03.modulos.reservas.domain.exception.ConsultaHistorialInvalidaException(
+                        com.service_reservation.EAP03.modulos.reservas.domain.exception.ConsultaHistorialInvalidaException.Motivo.PATRON_SOSPECHOSO);
+
+        // Sin autenticación
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        assertError(handler.manejarConsultaHistorialInvalida(ex, request), 400, "CONSULTA_INVALIDA", "La solicitud de consulta no es válida.");
+
+        // Con un usuario del sistema autenticado
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        new com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound.security.UsuarioAutenticadoPrincipal(20L, "c@test.com", List.of("CLIENTE")), null, List.of()));
+        try {
+            assertError(handler.manejarConsultaHistorialInvalida(ex, request), 400, "CONSULTA_INVALIDA", "La solicitud de consulta no es válida.");
+            assertError(handler.manejarHistorialAjeno(new com.service_reservation.EAP03.modulos.reservas.domain.exception.HistorialAjenoException(), request),
+                    403, "HISTORIAL_AJENO", "No tiene permiso para consultar el historial de otro cliente.");
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        }
+    }
 }

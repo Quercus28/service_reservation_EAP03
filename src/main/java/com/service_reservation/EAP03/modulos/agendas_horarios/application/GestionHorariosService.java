@@ -40,7 +40,7 @@ public class GestionHorariosService implements IGestionHorarios, IDisponibilidad
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, noRollbackFor = AgendaNoEncontradaException.class)
     public List<Horario> consultarHorariosDisponibles(Integer proveedorId, Integer servicioId) {
         if (proveedorId == null || servicioId == null) {
             throw new DatosAgendaInvalidosException("El proveedor y el servicio son obligatorios.");

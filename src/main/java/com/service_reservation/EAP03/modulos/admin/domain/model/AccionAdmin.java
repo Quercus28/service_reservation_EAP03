@@ -10,5 +10,9 @@ public enum AccionAdmin {
     REVOCACION_COMPLETADA,
     REVOCACION_FORZADA,
     PERMISOS_RESTAURADOS,
-    ACCESO_DENEGADO
+    ACCESO_DENEGADO,
+    // Las usan otros módulos con RegistrarAuditoriaUseCase. HISTORIAL_AJENO_DENEGADO tiene el
+    // mismo nombre que el evento que reservas ya escribe en el log, para no tener dos nombres.
+    HISTORIAL_AJENO_DENEGADO,
+    CAMBIO_ESTADO_RESERVA_DENEGADO
 }
