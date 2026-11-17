@@ -4,9 +4,7 @@ import com.service_reservation.EAP03.modulos.admin.domain.model.IntentoAccesoDen
 import com.service_reservation.EAP03.modulos.admin.domain.ports.in.RegistrarAccesoDenegadoUseCase;
 import com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound.security.JwtAuthenticationFilter;
 import com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound.security.UsuarioAutenticadoPrincipal;
-import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,7 +12,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
@@ -31,18 +29,16 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.firewall.RequestRejectedHandler;
 
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
+@Slf4j
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity   // Habilita @PreAuthorize / @PostAuthorize en toda la aplicación
 public class SecurityConfig {
-
-    private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final ObjectProvider<RegistrarAccesoDenegadoUseCase> registrarAccesoDenegadoUseCaseProvider;
@@ -138,16 +134,9 @@ public class SecurityConfig {
 
             // 401 — Sin autenticación válida
             .exceptionHandling(ex -> ex
-                .authenticationEntryPoint((request, response, authException) -> {
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                    response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-                    response.getWriter().write(String.format(
-                        "{\"timestamp\":\"%s\",\"status\":401,\"error\":\"No autenticado\"," +
-                        "\"message\":\"Se requiere autenticación para acceder a este recurso.\",\"path\":\"%s\"}",
-                        Instant.now(), request.getRequestURI()
-                    ));
-                })
+                .authenticationEntryPoint((request, response, authException) ->
+                    RespuestaErrorJson.escribir(response, HttpStatus.UNAUTHORIZED, "NO_AUTENTICADO",
+                            "Se requiere autenticación para acceder a este recurso."))
                 // 403 — Autenticado pero sin el rol necesario
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
                     log.warn(
@@ -155,14 +144,8 @@ public class SecurityConfig {
                         request.getMethod(),
                         request.getRequestURI()
                     );
-                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                    response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-                    response.getWriter().write(String.format(
-                        "{\"timestamp\":\"%s\",\"status\":403,\"error\":\"Acceso denegado\"," +
-                        "\"message\":\"No tiene los permisos necesarios para realizar esta acción.\",\"path\":\"%s\",\"traceId\":\"%s\"}",
-                        Instant.now(), request.getRequestURI(), TraceIdFilter.traceIdActual()
-                    ));
+                    RespuestaErrorJson.escribir(response, HttpStatus.FORBIDDEN,
+                            RespuestaErrorJson.ACCESO_NO_AUTORIZADO, RespuestaErrorJson.MENSAJE_ACCESO_NO_AUTORIZADO);
 
                     // Auditoría de intentos de acceso denegado a rutas administrativas
                     if (request.getRequestURI().startsWith("/api/admin")) {
@@ -189,5 +172,15 @@ public class SecurityConfig {
             .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
 
         return http.build();
+    }
+
+    // Peticiones que el firewall de Spring rechaza antes de entrar a las cadenas de seguridad.
+    @Bean
+    public static RequestRejectedHandler peticionRechazadaHandler() {
+        return (request, response, rechazo) -> {
+            log.warn("Petición rechazada por el firewall: metodo={}", request.getMethod());
+            RespuestaErrorJson.escribir(response, HttpStatus.BAD_REQUEST, "PETICION_RECHAZADA",
+                    "La petición no es válida");
+        };
     }
 }
