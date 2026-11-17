@@ -19,4 +19,16 @@ public interface ConsultarDisponibilidadServicioUseCase {
      * @return Lista de TimeSlots disponibles.
      */
     List<TimeSlot> ejecutar(Integer servicioId, LocalDate startDate, LocalDate endDate);
+
+    /**
+     * Consulta las franjas horarias disponibles para un servicio en una ventana/página de 30 días
+     * dentro del rango solicitado.
+     *
+     * @param servicioId Identificador del servicio.
+     * @param startDate  Fecha de inicio de la consulta.
+     * @param endDate    Fecha de fin de la consulta.
+     * @param page       Índice de bloque de 30 días (base 0).
+     * @return Lista de TimeSlots disponibles en el bloque indicado.
+     */
+    List<TimeSlot> ejecutar(Integer servicioId, LocalDate startDate, LocalDate endDate, int page);
 }

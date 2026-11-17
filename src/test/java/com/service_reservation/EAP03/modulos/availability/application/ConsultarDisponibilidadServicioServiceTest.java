@@ -2,7 +2,6 @@ package com.service_reservation.EAP03.modulos.availability.application;
 
 import com.service_reservation.EAP03.modulos.agendas_horarios.domain.model.DiaSemana;
 import com.service_reservation.EAP03.modulos.availability.domain.exception.DisponibilidadInvalidaException;
-import com.service_reservation.EAP03.modulos.availability.domain.exception.RangoFechasExcedidoException;
 import com.service_reservation.EAP03.modulos.availability.domain.exception.ServicioParaDisponibilidadNoEncontradoException;
 import com.service_reservation.EAP03.modulos.availability.domain.model.DateRange;
 import com.service_reservation.EAP03.modulos.availability.domain.model.HorarioSemanal;
@@ -134,18 +133,70 @@ class ConsultarDisponibilidadServicioServiceTest {
     }
 
     @Test
-    @DisplayName("Rechaza rangos de más de 30 días")
-    void rechazaRangoExcedido() {
-        // Arrange
-        LocalDate fin = HOY.plusDays(30); // 31 días contando ambos extremos
+    @DisplayName("Limita un rango mayor a 30 días al primer bloque de 30 días por defecto")
+    void limitaRangoAmplioAPrimerBloqueDeTreintaDias() {
+        // Arrange: 90 días (varios meses)
+        LocalDate fin = HOY.plusDays(89);
+        LocalDate finPrimerBloque = HOY.plusDays(29);
+        when(availabilityRepository.obtenerServicioInfo(ID_SERVICIO)).thenReturn(Optional.of(servicioInfo()));
+        when(disponibilidadCalculator.calcularDisponibilidad(any(), any(), any(), anyInt())).thenReturn(List.of());
 
         // Act
-        RangoFechasExcedidoException ex = assertThrows(RangoFechasExcedidoException.class,
-                () -> service.ejecutar(ID_SERVICIO, HOY, fin));
+        List<TimeSlot> resultado = service.ejecutar(ID_SERVICIO, HOY, fin);
 
         // Assert
-        assertEquals("El rango de consulta no puede superar los 30 días", ex.getMessage());
-        verifyNoInteractions(availabilityRepository);
+        assertTrue(resultado.isEmpty());
+        verify(availabilityRepository).obtenerReservasActivas(
+                ID_SERVICIO, ID_PROVEEDOR, HOY.atStartOfDay(), finPrimerBloque.atTime(LocalTime.MAX));
+        verify(disponibilidadCalculator).calcularDisponibilidad(
+                eq(new DateRange(HOY, finPrimerBloque)), any(), any(), eq(DURACION));
+    }
+
+    @Test
+    @DisplayName("Permite consultar bloques subsiguientes de 30 días mediante el parámetro page")
+    void consultaSegundoBloqueDeTreintaDiasConPage() {
+        // Arrange: 90 días, página 1 (días 31 a 60)
+        LocalDate fin = HOY.plusDays(89);
+        LocalDate inicioSegundoBloque = HOY.plusDays(30);
+        LocalDate finSegundoBloque = HOY.plusDays(59);
+        when(availabilityRepository.obtenerServicioInfo(ID_SERVICIO)).thenReturn(Optional.of(servicioInfo()));
+        when(disponibilidadCalculator.calcularDisponibilidad(any(), any(), any(), anyInt())).thenReturn(List.of());
+
+        // Act
+        List<TimeSlot> resultado = service.ejecutar(ID_SERVICIO, HOY, fin, 1);
+
+        // Assert
+        assertTrue(resultado.isEmpty());
+        verify(availabilityRepository).obtenerReservasActivas(
+                ID_SERVICIO, ID_PROVEEDOR, inicioSegundoBloque.atStartOfDay(), finSegundoBloque.atTime(LocalTime.MAX));
+        verify(disponibilidadCalculator).calcularDisponibilidad(
+                eq(new DateRange(inicioSegundoBloque, finSegundoBloque)), any(), any(), eq(DURACION));
+    }
+
+    @Test
+    @DisplayName("Devuelve lista vacía si la página solicitada supera el rango de fechas")
+    void paginaFueraDelRangoDevuelveVacio() {
+        // Arrange: rango de 30 días, pero se pide página 1 (día 31 en adelante)
+        LocalDate fin = HOY.plusDays(29);
+        when(availabilityRepository.obtenerServicioInfo(ID_SERVICIO)).thenReturn(Optional.of(servicioInfo()));
+
+        // Act
+        List<TimeSlot> resultado = service.ejecutar(ID_SERVICIO, HOY, fin, 1);
+
+        // Assert
+        assertTrue(resultado.isEmpty());
+        verify(availabilityRepository, never()).obtenerHorariosProveedor(any(), any());
+        verifyNoInteractions(disponibilidadCalculator);
+    }
+
+    @Test
+    @DisplayName("Rechaza una página negativa")
+    void rechazaPaginaNegativa() {
+        DisponibilidadInvalidaException ex = assertThrows(DisponibilidadInvalidaException.class,
+                () -> service.ejecutar(ID_SERVICIO, HOY, HOY, -1));
+
+        assertEquals("La página de consulta no puede ser negativa", ex.getMessage());
+        verifyNoInteractions(availabilityRepository, disponibilidadCalculator);
     }
 
     @Test
