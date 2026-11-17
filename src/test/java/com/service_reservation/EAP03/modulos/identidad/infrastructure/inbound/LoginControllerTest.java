@@ -1,5 +1,6 @@
 package com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound;
 
+import com.service_reservation.EAP03.modulos.identidad.domain.model.Etapa2fa;
 import com.service_reservation.EAP03.modulos.identidad.domain.model.IniciarSesionComando;
 import com.service_reservation.EAP03.modulos.identidad.domain.model.TokenRespuesta;
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.in.IniciarSesionUseCase;
@@ -49,6 +50,21 @@ class LoginControllerTest {
                 controller.iniciarSesion(new LoginRequestDTO("admin@test.com", "Clave123"));
 
         // Assert
-        assertEquals(new LoginResponseDTO(null, null, 0, true, "temporal"), response.getBody());
+        assertEquals(new LoginResponseDTO(null, null, 0, true, "temporal", Etapa2fa.VERIFICAR), response.getBody());
+    }
+
+    @Test
+    @DisplayName("Admin sin 2FA: responde con el token de configuración, etapa CONFIGURAR y sin JWT")
+    void adminWithout2faLogin() {
+        // Arrange
+        when(iniciarSesionUseCase.ejecutar(new IniciarSesionComando("admin@test.com", "Clave123")))
+                .thenReturn(TokenRespuesta.requiereConfigurar2fa("configuracion"));
+
+        // Act
+        ResponseEntity<LoginResponseDTO> response =
+                controller.iniciarSesion(new LoginRequestDTO("admin@test.com", "Clave123"));
+
+        // Assert
+        assertEquals(new LoginResponseDTO(null, null, 0, true, "configuracion", Etapa2fa.CONFIGURAR), response.getBody());
     }
 }

@@ -3,6 +3,7 @@ package com.service_reservation.EAP03.modulos.identidad.application;
 import com.service_reservation.EAP03.modulos.identidad.application.exception.ReglaNegocioException;
 import com.service_reservation.EAP03.modulos.identidad.domain.exception.CredencialesInvalidasException;
 import com.service_reservation.EAP03.modulos.identidad.domain.exception.CuentaBloqueadaException;
+import com.service_reservation.EAP03.modulos.identidad.domain.model.Etapa2fa;
 import com.service_reservation.EAP03.modulos.identidad.domain.model.IniciarSesionComando;
 import com.service_reservation.EAP03.modulos.identidad.domain.model.TokenRespuesta;
 import com.service_reservation.EAP03.modulos.identidad.domain.model.Usuario;
@@ -13,6 +14,8 @@ import com.service_reservation.EAP03.modulos.identidad.domain.ports.out.UsuarioR
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -90,7 +93,71 @@ class IniciarSesionServiceTest {
 
         // Assert
         assertEquals(TokenRespuesta.requiere2fa("temporal"), respuesta);
+        assertEquals(Etapa2fa.VERIFICAR, respuesta.etapa2fa());
         verify(jwtPort, never()).generarToken(any());
+    }
+
+    private static Usuario conRol(String rol, boolean con2fa) {
+        return new Usuario(1L, EMAIL, "hash", true, Set.of(rol), con2fa ? "SECRETO" : null, con2fa);
+    }
+
+    @Test
+    @DisplayName("Admin sin 2FA no recibe JWT: recibe el token de configuración con etapa CONFIGURAR")
+    void adminWithout2faGetsSetupTokenAndNoJwt() {
+        // Arrange
+        Usuario admin = conRol("ROLE_ADMIN", false);
+        when(usuarioRepository.buscarPorEmail(EMAIL)).thenReturn(Optional.of(admin));
+        when(passwordEncoder.coincide("Clave123", "hash")).thenReturn(true);
+        when(jwtPort.generarTokenConfiguracion2fa(admin)).thenReturn("configuracion");
+
+        // Act
+        TokenRespuesta respuesta = service.ejecutar(new IniciarSesionComando(EMAIL, "Clave123"));
+
+        // Assert
+        assertTrue(respuesta.requiere2fa());
+        assertNull(respuesta.token());
+        assertEquals("configuracion", respuesta.tokenTemporal());
+        assertEquals(Etapa2fa.CONFIGURAR, respuesta.etapa2fa());
+        verify(jwtPort, never()).generarToken(any());
+        verify(jwtPort, never()).generarTokenTemporal2fa(any());
+    }
+
+    @Test
+    @DisplayName("Admin con 2FA activo sigue igual: token temporal de verificación, sin JWT")
+    void adminWith2faUnchanged() {
+        // Arrange
+        Usuario admin = conRol("ROLE_ADMIN", true);
+        when(usuarioRepository.buscarPorEmail(EMAIL)).thenReturn(Optional.of(admin));
+        when(passwordEncoder.coincide("Clave123", "hash")).thenReturn(true);
+        when(jwtPort.generarTokenTemporal2fa(admin)).thenReturn("temporal");
+
+        // Act
+        TokenRespuesta respuesta = service.ejecutar(new IniciarSesionComando(EMAIL, "Clave123"));
+
+        // Assert
+        assertEquals(TokenRespuesta.requiere2fa("temporal"), respuesta);
+        verify(jwtPort, never()).generarTokenConfiguracion2fa(any());
+        verify(jwtPort, never()).generarToken(any());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"ROLE_CLIENTE", "ROLE_PROVEEDOR"})
+    @DisplayName("Cliente y proveedor sin 2FA siguen entrando con el JWT, sin etapa 2FA")
+    void clientAndProviderWithout2faUnchanged(String rol) {
+        // Arrange
+        Usuario usuario = conRol(rol, false);
+        when(usuarioRepository.buscarPorEmail(EMAIL)).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.coincide("Clave123", "hash")).thenReturn(true);
+        when(jwtPort.generarToken(usuario)).thenReturn("jwt");
+        when(jwtPort.getExpiracionSegundos()).thenReturn(3600L);
+
+        // Act
+        TokenRespuesta respuesta = service.ejecutar(new IniciarSesionComando(EMAIL, "Clave123"));
+
+        // Assert
+        assertEquals(TokenRespuesta.exitoso("jwt", "Bearer", 3600L), respuesta);
+        assertNull(respuesta.etapa2fa());
+        verify(jwtPort, never()).generarTokenConfiguracion2fa(any());
     }
 
     @Test

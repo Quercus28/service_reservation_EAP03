@@ -24,6 +24,7 @@ import java.util.List;
 public class JwtAdapter implements JwtPort {
 
     private static final Logger log = LoggerFactory.getLogger(JwtAdapter.class);
+    private static final String CLAIM_ETAPA = "stage";
 
     private final SecretKey signingKey;
     private final long expirationInSeconds;
@@ -62,13 +63,23 @@ public class JwtAdapter implements JwtPort {
 
     @Override
     public String generarTokenTemporal2fa(Usuario usuario) {
+        return generarTokenDeEtapa(usuario, ETAPA_VERIFICAR_2FA);
+    }
+
+    @Override
+    public String generarTokenConfiguracion2fa(Usuario usuario) {
+        return generarTokenDeEtapa(usuario, ETAPA_CONFIGURAR_2FA);
+    }
+
+    // Los tokens temporales duran 5 minutos y no llevan roles: no sirven como sesión.
+    private String generarTokenDeEtapa(Usuario usuario, String etapa) {
         Instant now = Instant.now();
         Instant expiry = now.plus(5, ChronoUnit.MINUTES);
 
         return Jwts.builder()
                 .subject(usuario.getEmail())
                 .claim("id", usuario.getId())
-                .claim("stage", "2FA_PENDING")
+                .claim(CLAIM_ETAPA, etapa)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiry))
                 .signWith(signingKey)
@@ -79,10 +90,21 @@ public class JwtAdapter implements JwtPort {
     public boolean esTokenTemporal2faValido(String token) {
         try {
             Claims claims = parsearClaims(token);
-            return "2FA_PENDING".equals(claims.get("stage"));
+            return ETAPA_VERIFICAR_2FA.equals(claims.get(CLAIM_ETAPA));
         } catch (Exception e) {
             log.warn("Token temporal 2FA inválido o expirado: {}", e.getMessage());
             return false;
+        }
+    }
+
+    @Override
+    public String extraerEtapa(String token) {
+        try {
+            Object etapa = parsearClaims(token).get(CLAIM_ETAPA);
+            return etapa != null ? etapa.toString() : null;
+        } catch (Exception e) {
+            log.warn("No se pudo leer la etapa del token: {}", e.getMessage());
+            return null;
         }
     }
 

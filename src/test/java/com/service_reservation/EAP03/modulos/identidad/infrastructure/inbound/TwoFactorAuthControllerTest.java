@@ -68,19 +68,37 @@ class TwoFactorAuthControllerTest {
     @DisplayName("POST /activar activa el 2FA del usuario autenticado")
     void enables2fa() {
         // Act
-        ResponseEntity<Map<String, String>> response = controller.activar2fa(admin(), new Activar2faRequestDTO("123456"));
+        ResponseEntity<Object> response = controller.activar2fa(admin(), new Activar2faRequestDTO("123456"));
 
         // Assert
         assertEquals(200, response.getStatusCode().value());
         assertEquals(Map.of("message", "Autenticación de dos factores activada exitosamente"), response.getBody());
         verify(activar2faUseCase).ejecutar(1L, "123456");
+        verify(activar2faUseCase, never()).ejecutarEnConfiguracionInicial(anyLong(), anyString());
+    }
+
+    @Test
+    @DisplayName("POST /activar con el token de configuración activa el 2FA y devuelve el JWT definitivo")
+    void enables2faDuringInitialSetupReturnsJwt() {
+        // Arrange
+        UsuarioAutenticadoPrincipal enConfiguracion = UsuarioAutenticadoPrincipal.enConfiguracion2fa(1L, "admin@test.com");
+        when(activar2faUseCase.ejecutarEnConfiguracionInicial(1L, "123456"))
+                .thenReturn(TokenRespuesta.exitoso("jwt", "Bearer", 3600));
+
+        // Act
+        ResponseEntity<Object> response = controller.activar2fa(enConfiguracion, new Activar2faRequestDTO("123456"));
+
+        // Assert
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals(new LoginResponseDTO("jwt", "Bearer", 3600, false, null, null), response.getBody());
+        verify(activar2faUseCase, never()).ejecutar(anyLong(), anyString());
     }
 
     @Test
     @DisplayName("POST /activar responde 401 sin usuario autenticado")
     void enable2faWithoutAuthentication() {
         // Act
-        ResponseEntity<Map<String, String>> response = controller.activar2fa(null, new Activar2faRequestDTO("123456"));
+        ResponseEntity<Object> response = controller.activar2fa(null, new Activar2faRequestDTO("123456"));
 
         // Assert
         assertEquals(401, response.getStatusCode().value());

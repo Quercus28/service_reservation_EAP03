@@ -6,7 +6,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -33,7 +33,7 @@ import static org.mockito.Mockito.mock;
 })
 class SwaggerSecurityConfigTest {
 
-    @Configuration
+    @TestConfiguration
     @EnableWebMvc
     @Import(SecurityConfig.class)
     static class TestConfig {

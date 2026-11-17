@@ -76,6 +76,12 @@ public class IniciarSesionService implements IniciarSesionUseCase {
             return TokenRespuesta.requiere2fa(tokenTemporal);
         }
 
+        // 6b. Un administrador sin 2FA no recibe el JWT definitivo: solo un token para
+        //     configurar el 2FA (sirve únicamente en /2fa/qr y /2fa/activar).
+        if (usuario.esAdmin()) {
+            return TokenRespuesta.requiereConfigurar2fa(jwtPort.generarTokenConfiguracion2fa(usuario));
+        }
+
         // 7. Generación del token JWT normal
         String token = jwtPort.generarToken(usuario);
 

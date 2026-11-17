@@ -33,6 +33,26 @@ class TokenRespuestaTest {
         assertEquals(0, respuesta.expiracionSegundos());
         assertTrue(respuesta.requiere2fa());
         assertEquals("temporal", respuesta.tokenTemporal());
+        assertEquals(Etapa2fa.VERIFICAR, respuesta.etapa2fa());
+    }
+
+    @Test
+    @DisplayName("Una respuesta que requiere configurar 2FA no lleva JWT y su etapa es CONFIGURAR")
+    void setupRequiredResponse() {
+        // Act
+        TokenRespuesta respuesta = TokenRespuesta.requiereConfigurar2fa("configuracion");
+
+        // Assert
+        assertNull(respuesta.token());
+        assertTrue(respuesta.requiere2fa());
+        assertEquals("configuracion", respuesta.tokenTemporal());
+        assertEquals(Etapa2fa.CONFIGURAR, respuesta.etapa2fa());
+    }
+
+    @Test
+    @DisplayName("El constructor de cinco campos deja la etapa vacía")
+    void fiveFieldConstructor() {
+        assertNull(new TokenRespuesta("jwt", "Bearer", 60, false, null).etapa2fa());
     }
 
     @Test

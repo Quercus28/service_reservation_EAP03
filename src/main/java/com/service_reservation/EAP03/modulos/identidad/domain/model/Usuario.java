@@ -45,4 +45,9 @@ public class Usuario {
     public Set<String> getRoles() { return Collections.unmodifiableSet(roles); }
     public String getSecret2fa() { return secret2fa; }
     public boolean is2faEnabled() { return is2faEnabled; }
+
+    // En la base el rol se llama ROLE_ADMIN; se acepta también ADMIN por si llega sin prefijo.
+    public boolean esAdmin() {
+        return roles.contains("ROLE_ADMIN") || roles.contains("ADMIN");
+    }
 }

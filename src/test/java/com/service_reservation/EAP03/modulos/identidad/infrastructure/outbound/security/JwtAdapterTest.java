@@ -50,6 +50,29 @@ class JwtAdapterTest {
     }
 
     @Test
+    @DisplayName("El token de configuración de 2FA tiene su propia etapa, no tiene roles y no sirve para verificar-login")
+    void setup2faToken() {
+        // Act
+        String token = jwtAdapter.generarTokenConfiguracion2fa(user(7L));
+
+        // Assert
+        assertTrue(jwtAdapter.validarToken(token));
+        assertEquals("2FA_SETUP", jwtAdapter.extraerEtapa(token));
+        assertFalse(jwtAdapter.esTokenTemporal2faValido(token));
+        assertEquals(7L, jwtAdapter.extraerUsuarioId(token));
+        assertTrue(jwtAdapter.extraerRoles(token).isEmpty());
+    }
+
+    @Test
+    @DisplayName("La etapa es la de verificación en el token temporal y vacía en el JWT definitivo o en uno ilegible")
+    void stageOfEachToken() {
+        // Assert
+        assertEquals("2FA_PENDING", jwtAdapter.extraerEtapa(jwtAdapter.generarTokenTemporal2fa(user(7L))));
+        assertNull(jwtAdapter.extraerEtapa(jwtAdapter.generarToken(user(7L))));
+        assertNull(jwtAdapter.extraerEtapa("no-es-un-jwt"));
+    }
+
+    @Test
     @DisplayName("El token temporal de 2FA se reconoce como tal y no tiene roles")
     void temporary2faToken() {
         // Act
