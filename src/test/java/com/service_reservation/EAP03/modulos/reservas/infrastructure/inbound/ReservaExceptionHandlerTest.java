@@ -12,6 +12,7 @@ import com.service_reservation.EAP03.modulos.reservas.domain.exception.ReservaNo
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.ReservaNoEncontradaException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.ServicioNoReservableException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.UsuarioNoEsClienteException;
+import com.service_reservation.EAP03.modulos.reservas.domain.exception.UsuarioNoEsProveedorException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.PessimisticLockingFailureException;
@@ -85,6 +86,24 @@ class ReservaExceptionHandlerTest {
 
         assertError(handler.manejarNoEsCliente(noCliente), 403, "NO_ES_CLIENTE", noCliente.getMessage());
         assertError(handler.manejarReservaAjena(ajena), 403, "RESERVA_AJENA", ajena.getMessage());
+    }
+
+    @Test
+    @DisplayName("Quien no es proveedor con permiso activo responde 403 NO_ES_PROVEEDOR")
+    void notProviderReturns403() {
+        UsuarioNoEsProveedorException noProveedor = new UsuarioNoEsProveedorException();
+
+        assertError(handler.manejarNoEsProveedor(noProveedor), 403, "NO_ES_PROVEEDOR", noProveedor.getMessage());
+    }
+
+    @Test
+    @DisplayName("Un cambio de estado no permitido usa el mismo código que cancelar: 409 RESERVA_NO_CANCELABLE")
+    void invalidStateChangeReturns409() {
+        ReservaNoCancelableException ex = ReservaNoCancelableException.accionNoValida(8,
+                com.service_reservation.EAP03.modulos.reservas.domain.model.EstadoReserva.RESERVADO,
+                com.service_reservation.EAP03.modulos.reservas.domain.model.EstadoReserva.COMPLETADO);
+
+        assertError(handler.manejarNoCancelable(ex), 409, "RESERVA_NO_CANCELABLE", ex.getMessage());
     }
 
     @Test

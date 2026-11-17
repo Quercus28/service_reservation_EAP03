@@ -1,9 +1,12 @@
 package com.service_reservation.EAP03.modulos.reservas.infrastructure.inbound;
 
 import com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound.security.UsuarioAutenticadoPrincipal;
+import com.service_reservation.EAP03.modulos.reservas.domain.model.CambiarEstadoReservaComando;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.CancelarReservaComando;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.CrearReservaComando;
+import com.service_reservation.EAP03.modulos.reservas.domain.model.EstadoReserva;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.Reserva;
+import com.service_reservation.EAP03.modulos.reservas.domain.ports.in.CambiarEstadoReservaUseCase;
 import com.service_reservation.EAP03.modulos.reservas.domain.ports.in.CancelarReservaUseCase;
 import com.service_reservation.EAP03.modulos.reservas.domain.ports.in.CrearReservaUseCase;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,16 +25,66 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/reservas")
-@Tag(name = "Reservas", description = "Creación y cancelación de reservas por el cliente autenticado.")
+@Tag(name = "Reservas", description = "Creación y cancelación de reservas por el cliente autenticado, y cambio de estado por el proveedor dueño.")
 public class ReservaController {
 
     private final CrearReservaUseCase crearReservaUseCase;
     private final CancelarReservaUseCase cancelarReservaUseCase;
+    private final CambiarEstadoReservaUseCase cambiarEstadoReservaUseCase;
 
     public ReservaController(CrearReservaUseCase crearReservaUseCase,
-                             CancelarReservaUseCase cancelarReservaUseCase) {
+                             CancelarReservaUseCase cancelarReservaUseCase,
+                             CambiarEstadoReservaUseCase cambiarEstadoReservaUseCase) {
         this.crearReservaUseCase = crearReservaUseCase;
         this.cancelarReservaUseCase = cancelarReservaUseCase;
+        this.cambiarEstadoReservaUseCase = cambiarEstadoReservaUseCase;
+    }
+
+    // HU20. Solo pide sesión iniciada: el rol de proveedor, el permiso activo y que la reserva
+    // sea suya se revisan en CambiarEstadoReservaService, para que cada rechazo quede en la
+    // auditoría. Si {id} no es un número, Spring responde 400 antes de llegar aquí.
+    @PatchMapping("/{id}/estado")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(
+            summary = "Cambiar el estado de una reserva",
+            description = "El proveedor dueño de la reserva, con permiso operativo activo, la confirma (RESERVADO → CONFIRMADO) o la finaliza (CONFIRMADO → COMPLETADO). Cualquier otro cambio se rechaza. Los intentos de un cliente o de otro proveedor responden 403 y quedan en la auditoría."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Estado cambiado.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ReservaResponseDTO.class), examples = @ExampleObject(value = """
+                    {
+                      "id": 87,
+                      "idServicio": 12,
+                      "fechaInicio": "2026-11-02T09:00:00",
+                      "fechaFin": "2026-11-02T10:00:00",
+                      "estado": "CONFIRMADO",
+                      "notas": "Acceso por la entrada principal"
+                    }
+                    """))),
+            @ApiResponse(responseCode = "400", description = "El identificador no es un número o el estado está vacío o no existe.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "No es el proveedor dueño de la reserva o su permiso operativo está inactivo.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404", description = "La reserva no existe.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "409", description = "La acción no es válida para el estado actual de la reserva.", content = @Content(mediaType = "application/json"))
+    })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Nuevo estado: CONFIRMADO o COMPLETADO.",
+            content = @Content(examples = @ExampleObject(value = """
+                    {
+                      "estado": "CONFIRMADO"
+                    }
+                    """))
+    )
+    public ReservaResponseDTO cambiarEstado(@PathVariable Integer id,
+                                            @Valid @RequestBody CambiarEstadoReservaRequestDTO request,
+                                            Authentication authentication,
+                                            HttpServletRequest httpRequest) {
+        Reserva reserva = cambiarEstadoReservaUseCase.ejecutar(new CambiarEstadoReservaComando(
+                idUsuarioDe(authentication),
+                id,
+                EstadoReserva.valueOf(request.estado()),
+                httpRequest.getMethod() + " " + httpRequest.getRequestURI()
+        ));
+        return ReservaResponseDTO.desde(reserva);
     }
 
     // Además del rol, el cliente tiene que tener sus permisos activos: si el administrador

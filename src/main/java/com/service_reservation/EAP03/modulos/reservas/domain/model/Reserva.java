@@ -74,14 +74,25 @@ public class Reserva {
         return new Reserva(id, partes, intervalo, estado, notas, createdAt, cancelacion);
     }
 
-    // Cancela la reserva. Solo se puede si todavía está en estado RESERVADO y si faltan al
+    // Cambio de estado que hace el proveedor dueño: RESERVADO → CONFIRMADO o CONFIRMADO →
+    // COMPLETADO. Cualquier otro cambio se rechaza con el mismo error que da cancelar cuando
+    // el estado no lo permite.
+    public void cambiarEstado(EstadoReserva nuevo) {
+        Objects.requireNonNull(nuevo, "El nuevo estado es obligatorio");
+        if (!estado.puedePasarA(nuevo)) {
+            throw ReservaNoCancelableException.accionNoValida(id, estado, nuevo);
+        }
+        this.estado = nuevo;
+    }
+
+    // Cancela la reserva. Solo se puede si todavía está en estado RESERVADO o CONFIRMADO y si faltan al
     // menos "anticipacionMinimaHoras" horas para que empiece. Por ejemplo, con 2 horas, una
     // reserva de las 15:00 se puede cancelar hasta las 13:00 en punto. Si la reserva ya
     // empezó o ya pasó, el mensaje lo dice así, para que el cliente entienda el motivo.
     // Al quedar CANCELADO, la reserva deja de ocupar el horario y otro cliente puede tomarlo.
     public void cancelar(LocalDateTime ahora, int anticipacionMinimaHoras, String motivo) {
         Objects.requireNonNull(ahora, AHORA_OBLIGATORIO);
-        if (estado != EstadoReserva.RESERVADO) {
+        if (estado != EstadoReserva.RESERVADO && estado != EstadoReserva.CONFIRMADO) {
             throw estado == EstadoReserva.CANCELADO
                     ? ReservaNoCancelableException.yaCancelada(id)
                     : ReservaNoCancelableException.noActiva(id, estado);

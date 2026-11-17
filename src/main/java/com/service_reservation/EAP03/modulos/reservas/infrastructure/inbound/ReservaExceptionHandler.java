@@ -13,6 +13,7 @@ import com.service_reservation.EAP03.modulos.reservas.domain.exception.ReservaNo
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.ReservaNoEncontradaException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.ServicioNoReservableException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.UsuarioNoEsClienteException;
+import com.service_reservation.EAP03.modulos.reservas.domain.exception.UsuarioNoEsProveedorException;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -58,6 +59,11 @@ public class ReservaExceptionHandler {
     @ExceptionHandler(UsuarioNoEsClienteException.class)
     public ResponseEntity<Map<String, Object>> manejarNoEsCliente(UsuarioNoEsClienteException ex) {
         return construir(HttpStatus.FORBIDDEN, "NO_ES_CLIENTE", ex.getMessage());
+    }
+
+    @ExceptionHandler(UsuarioNoEsProveedorException.class)
+    public ResponseEntity<Map<String, Object>> manejarNoEsProveedor(UsuarioNoEsProveedorException ex) {
+        return construir(HttpStatus.FORBIDDEN, "NO_ES_PROVEEDOR", ex.getMessage());
     }
 
     @ExceptionHandler(ReservaNoEncontradaException.class)
