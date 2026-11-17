@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -39,7 +39,7 @@ import static org.mockito.Mockito.*;
 
 class SecurityConfigTest {
 
-    @Configuration
+    @TestConfiguration
     @EnableWebMvc
     @Import(SecurityConfig.class)
     static class WithoutAuditConfig {
@@ -49,7 +49,7 @@ class SecurityConfigTest {
         }
     }
 
-    @Configuration
+    @TestConfiguration
     @Import(WithoutAuditConfig.class)
     static class WithAuditConfig {
         @Bean

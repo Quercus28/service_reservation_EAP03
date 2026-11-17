@@ -2,7 +2,9 @@ package com.service_reservation.EAP03.modulos.identidad.application;
 
 import com.service_reservation.EAP03.modulos.identidad.application.exception.ReglaNegocioException;
 import com.service_reservation.EAP03.modulos.identidad.domain.exception.CredencialesInvalidasException;
+import com.service_reservation.EAP03.modulos.identidad.domain.model.TokenRespuesta;
 import com.service_reservation.EAP03.modulos.identidad.domain.model.Usuario;
+import com.service_reservation.EAP03.modulos.identidad.domain.ports.out.JwtPort;
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.out.TotpPort;
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.out.UsuarioRepositoryPort;
 import org.junit.jupiter.api.DisplayName;
@@ -28,6 +30,7 @@ class Activar2faServiceTest {
 
     @Mock private UsuarioRepositoryPort usuarioRepository;
     @Mock private TotpPort totpPort;
+    @Mock private JwtPort jwtPort;
 
     @InjectMocks private Activar2faService service;
 
@@ -94,5 +97,75 @@ class Activar2faServiceTest {
         // Assert
         assertEquals("Código 2FA incorrecto o expirado", ex.getMessage());
         verify(usuarioRepository, never()).activar2fa(any());
+    }
+
+    // --- Primer ingreso de un administrador con el token de configuración ---
+
+    @Test
+    @DisplayName("En la configuración inicial activa el 2FA y entrega el JWT definitivo")
+    void initialSetupActivatesAndReturnsJwt() {
+        // Arrange
+        Usuario admin = userWithSecret("SECRETO");
+        when(usuarioRepository.buscarPorId(1L)).thenReturn(Optional.of(admin));
+        when(totpPort.validarCodigo("SECRETO", "123456")).thenReturn(true);
+        when(jwtPort.generarToken(admin)).thenReturn("jwt");
+        when(jwtPort.getExpiracionSegundos()).thenReturn(3600L);
+
+        // Act
+        TokenRespuesta respuesta = service.ejecutarEnConfiguracionInicial(1L, "123456");
+
+        // Assert
+        assertEquals(TokenRespuesta.exitoso("jwt", "Bearer", 3600L), respuesta);
+        verify(usuarioRepository).activar2fa(1L);
+    }
+
+    @Test
+    @DisplayName("En la configuración inicial rechaza (409) si el 2FA ya está activo, sin tocar nada ni dar JWT")
+    void initialSetupRejectsWhenAlreadyActive() {
+        // Arrange
+        when(usuarioRepository.buscarPorId(1L)).thenReturn(Optional.of(
+                new Usuario(1L, "admin@test.com", "hash", true, Set.of("ROLE_ADMIN"), "SECRETO_DEL_DUENO", true)));
+
+        // Act
+        ReglaNegocioException ex = assertThrows(ReglaNegocioException.class,
+                () -> service.ejecutarEnConfiguracionInicial(1L, "123456"));
+
+        // Assert
+        assertEquals("La autenticación de dos factores ya está activa para esta cuenta", ex.getMessage());
+        verifyNoInteractions(totpPort, jwtPort);
+        verify(usuarioRepository, never()).activar2fa(any());
+        verify(usuarioRepository, never()).guardarSecret2fa(any(), any());
+    }
+
+    @Test
+    @DisplayName("En la configuración inicial rechaza a un usuario que ya no es administrador")
+    void initialSetupRejectsNonAdmin() {
+        // Arrange
+        when(usuarioRepository.buscarPorId(1L)).thenReturn(Optional.of(
+                new Usuario(1L, "ana@test.com", "hash", true, Set.of("ROLE_CLIENTE"), "SECRETO", false)));
+
+        // Act
+        assertThrows(CredencialesInvalidasException.class,
+                () -> service.ejecutarEnConfiguracionInicial(1L, "123456"));
+
+        // Assert
+        verifyNoInteractions(totpPort, jwtPort);
+        verify(usuarioRepository, never()).activar2fa(any());
+    }
+
+    @Test
+    @DisplayName("En la configuración inicial un código incorrecto no activa ni entrega JWT")
+    void initialSetupWrongCode() {
+        // Arrange
+        when(usuarioRepository.buscarPorId(1L)).thenReturn(Optional.of(userWithSecret("SECRETO")));
+        when(totpPort.validarCodigo("SECRETO", "000000")).thenReturn(false);
+
+        // Act
+        assertThrows(CredencialesInvalidasException.class,
+                () -> service.ejecutarEnConfiguracionInicial(1L, "000000"));
+
+        // Assert
+        verify(usuarioRepository, never()).activar2fa(any());
+        verifyNoInteractions(jwtPort);
     }
 }

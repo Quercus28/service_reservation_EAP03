@@ -26,6 +26,12 @@ public class Configurar2faService implements Configurar2faUseCase {
         Usuario usuario = usuarioRepository.buscarPorId(idUsuario)
                 .orElseThrow(() -> new ReglaNegocioException("Usuario no encontrado"));
 
+        // Si el 2FA ya está activo no se genera otro secreto: así nadie puede reemplazar el
+        // autenticador del dueño de la cuenta (ni con un JWT robado ni con un token temporal).
+        if (usuario.is2faEnabled()) {
+            throw new ReglaNegocioException("La autenticación de dos factores ya está activa para esta cuenta");
+        }
+
         String secreto = totpPort.generarSecreto();
         usuarioRepository.guardarSecret2fa(idUsuario, secreto);
         byte[] imagenQr = totpPort.generarQrPng(usuario.getEmail(), secreto);

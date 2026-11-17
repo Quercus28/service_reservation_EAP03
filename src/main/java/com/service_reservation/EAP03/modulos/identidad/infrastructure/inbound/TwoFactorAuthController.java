@@ -5,6 +5,7 @@ import com.service_reservation.EAP03.modulos.identidad.domain.model.TokenRespues
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.in.Activar2faUseCase;
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.in.Configurar2faUseCase;
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.in.VerificarLogin2faUseCase;
+import com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound.security.JwtAuthenticationFilter;
 import com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound.security.UsuarioAutenticadoPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -50,11 +51,12 @@ public class TwoFactorAuthController {
     @GetMapping(value = "/qr", produces = MediaType.IMAGE_PNG_VALUE)
     @Operation(
             summary = "Obtener el QR para configurar 2FA",
-            description = "Genera el código QR de configuración para el usuario autenticado. La respuesta incluye el secreto en la cabecera X-2FA-Secret; debe tratarse como información confidencial."
+            description = "Genera el código QR de configuración para el usuario autenticado. Acepta el JWT de acceso o el token temporal de configuración que el login entrega a un administrador sin 2FA (etapa2fa = CONFIGURAR). La respuesta incluye el secreto en la cabecera X-2FA-Secret; debe tratarse como información confidencial. Si el 2FA ya está activo responde 409 y no cambia el secreto."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Imagen PNG del código QR.", content = @Content(mediaType = MediaType.IMAGE_PNG_VALUE, schema = @Schema(type = "string", format = "binary"))),
-            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json"))
+            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "409", description = "La autenticación de dos factores ya está activa.", content = @Content(mediaType = "application/json"))
     })
     public ResponseEntity<byte[]> obtenerQr(
             @AuthenticationPrincipal UsuarioAutenticadoPrincipal principal
@@ -75,17 +77,29 @@ public class TwoFactorAuthController {
     /**
      * Confirma el primer código TOTP tras escanear el QR y activa definitivamente el 2FA.
      */
+    // El permiso de configuración solo lo pone JwtAuthenticationFilter cuando llega el token de
+    // configuración (que el login entrega únicamente a administradores sin 2FA) en esta ruta.
     @PostMapping("/activar")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('" + JwtAuthenticationFilter.PERMISO_CONFIGURAR_2FA + "')")
     @Operation(
             summary = "Activar autenticación de dos factores",
-            description = "Valida el código TOTP generado por la aplicación autenticadora y activa 2FA para la cuenta. Requiere JWT de un administrador."
+            description = "Valida el código TOTP generado por la aplicación autenticadora y activa 2FA para la cuenta. Requiere JWT de un administrador o el token temporal de configuración del login (etapa2fa = CONFIGURAR); en este último caso responde con el JWT de acceso y rechaza la petición si el 2FA ya estaba activo."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Autenticación de dos factores activada."),
+            @ApiResponse(responseCode = "200", description = "Autenticación de dos factores activada. Con el token de configuración, devuelve el JWT de acceso.", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = """
+                    {
+                      "token": "<jwt-de-acceso>",
+                      "tipo": "Bearer",
+                      "expiracionSegundos": 3600,
+                      "requiere2fa": false,
+                      "tokenTemporal": null,
+                      "etapa2fa": null
+                    }
+                    """))),
             @ApiResponse(responseCode = "400", description = "El código debe contener seis dígitos o no es válido.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "401", description = "Se requiere autenticación.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "El usuario autenticado no tiene rol de administrador.", content = @Content(mediaType = "application/json"))
+            @ApiResponse(responseCode = "401", description = "Se requiere autenticación o el código 2FA es incorrecto.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "El usuario autenticado no tiene rol de administrador.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "409", description = "La autenticación de dos factores ya está activa (con el token de configuración).", content = @Content(mediaType = "application/json"))
     })
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Código TOTP de seis dígitos.",
@@ -95,13 +109,20 @@ public class TwoFactorAuthController {
                     }
                     """))
     )
-    public ResponseEntity<Map<String, String>> activar2fa(
+    public ResponseEntity<Object> activar2fa(
             @AuthenticationPrincipal UsuarioAutenticadoPrincipal principal,
             @Valid @RequestBody Activar2faRequestDTO request
     ) {
                 if (principal == null) {
                         return ResponseEntity.status(401).build();
                 }
+
+        // Primer ingreso de un administrador sin 2FA: al activar recibe el JWT definitivo.
+        if (principal.isConfiguracion2fa()) {
+            TokenRespuesta respuesta = activar2faUseCase.ejecutarEnConfiguracionInicial(
+                    principal.getIdUsuario(), request.codigo());
+            return ResponseEntity.ok(LoginResponseDTO.desde(respuesta));
+        }
 
         activar2faUseCase.ejecutar(principal.getIdUsuario(), request.codigo());
         return ResponseEntity.ok(Map.of(

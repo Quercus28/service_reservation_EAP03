@@ -86,4 +86,13 @@ class UsuarioTest {
         assertEquals("SECRETO", usuario.getSecret2fa());
         assertTrue(usuario.is2faEnabled());
     }
+
+    @Test
+    @DisplayName("Es administrador con ROLE_ADMIN o ADMIN; cliente y proveedor no lo son")
+    void esAdmin() {
+        assertTrue(new Usuario(1L, "a@test.com", "h", true, Set.of("ROLE_ADMIN")).esAdmin());
+        assertTrue(new Usuario(1L, "a@test.com", "h", true, Set.of("ADMIN")).esAdmin());
+        assertFalse(new Usuario(1L, "a@test.com", "h", true, Set.of("ROLE_CLIENTE", "ROLE_PROVEEDOR")).esAdmin());
+        assertFalse(new Usuario("a@test.com", "h").esAdmin());
+    }
 }

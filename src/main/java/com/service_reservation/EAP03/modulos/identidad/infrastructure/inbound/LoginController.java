@@ -32,7 +32,7 @@ public class LoginController {
     @PostMapping("/login")
     @Operation(
             summary = "Iniciar sesión",
-            description = "Valida el correo y la contraseña. Si la cuenta tiene 2FA habilitado, devuelve un token temporal para completar la verificación; de lo contrario, devuelve el JWT de acceso."
+            description = "Valida el correo y la contraseña. Si la cuenta tiene 2FA habilitado, devuelve un token temporal con etapa2fa = VERIFICAR para completar la verificación en /2fa/verificar-login. Si es un administrador sin 2FA, no devuelve el JWT de acceso: entrega un token temporal con etapa2fa = CONFIGURAR que solo sirve en /2fa/qr y /2fa/activar. En los demás casos devuelve el JWT de acceso."
     )
     @SecurityRequirements
     @ApiResponses({
@@ -42,7 +42,8 @@ public class LoginController {
                       "tipo": "Bearer",
                       "expiracionSegundos": 3600,
                       "requiere2fa": false,
-                      "tokenTemporal": null
+                      "tokenTemporal": null,
+                      "etapa2fa": null
                     }
                     """))),
             @ApiResponse(responseCode = "400", description = "El correo o la contraseña no cumplen el formato requerido.", content = @Content(mediaType = "application/json")),
@@ -61,12 +62,6 @@ public class LoginController {
     public ResponseEntity<LoginResponseDTO> iniciarSesion(@Valid @RequestBody LoginRequestDTO request) {
         IniciarSesionComando comando = new IniciarSesionComando(request.email(), request.password());
         TokenRespuesta respuesta = iniciarSesionUseCase.ejecutar(comando);
-        return ResponseEntity.ok(new LoginResponseDTO(
-                respuesta.token(),
-                respuesta.tipo(),
-                respuesta.expiracionSegundos(),
-                respuesta.requiere2fa(),
-                respuesta.tokenTemporal()
-        ));
+        return ResponseEntity.ok(LoginResponseDTO.desde(respuesta));
     }
 }

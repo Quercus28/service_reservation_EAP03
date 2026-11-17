@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -41,6 +42,22 @@ class Configurar2faServiceTest {
         assertEquals("SECRETO", resultado.secreto());
         assertArrayEquals(qr, resultado.imagenQr());
         verify(usuarioRepository).guardarSecret2fa(1L, "SECRETO");
+    }
+
+    @Test
+    @DisplayName("Si el 2FA ya está activo responde 409 y no cambia el secreto")
+    void alreadyActiveKeepsSecret() {
+        // Arrange
+        when(usuarioRepository.buscarPorId(1L)).thenReturn(Optional.of(
+                new Usuario(1L, "admin@test.com", "hash", true, Set.of("ROLE_ADMIN"), "SECRETO_DEL_DUENO", true)));
+
+        // Act
+        ReglaNegocioException ex = assertThrows(ReglaNegocioException.class, () -> service.ejecutar(1L));
+
+        // Assert
+        assertEquals("La autenticación de dos factores ya está activa para esta cuenta", ex.getMessage());
+        verify(usuarioRepository, never()).guardarSecret2fa(anyLong(), anyString());
+        verifyNoInteractions(totpPort);
     }
 
     @Test
