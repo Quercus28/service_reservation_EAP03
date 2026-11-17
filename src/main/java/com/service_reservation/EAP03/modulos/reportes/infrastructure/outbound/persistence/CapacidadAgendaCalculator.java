@@ -25,7 +25,7 @@ import java.util.Map;
  * Esta clase no tiene estado ni anotaciones de Spring; se usa como utilidad
  * estática dentro del adaptador.
  */
-class CapacidadAgendaCalculator {
+public class CapacidadAgendaCalculator {
 
     private CapacidadAgendaCalculator() { }
 
@@ -36,7 +36,7 @@ class CapacidadAgendaCalculator {
      * @param periodo rango de fechas del reporte
      * @return minutos totales disponibles; 0 si no hay horarios o la agenda está inactiva
      */
-    static long calcularMinutosDisponibles(AgendaJpaEntity agenda, PeriodoReporte periodo) {
+    public static long calcularMinutosDisponibles(AgendaJpaEntity agenda, PeriodoReporte periodo) {
         if (!agenda.isActiva() || agenda.getHorarios() == null || agenda.getHorarios().isEmpty()) {
             return 0L;
         }
