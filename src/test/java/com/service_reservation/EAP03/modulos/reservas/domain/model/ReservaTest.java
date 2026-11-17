@@ -1,5 +1,6 @@
 package com.service_reservation.EAP03.modulos.reservas.domain.model;
 
+import com.service_reservation.EAP03.modulos.reservas.domain.exception.CambioEstadoNoPermitidoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.CancelacionFueraDeTiempoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.DatosReservaInvalidosException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.FechaEnElPasadoException;
@@ -313,10 +314,10 @@ class ReservaTest {
     void otherStateChangesRejected(EstadoReserva desde, EstadoReserva hacia) {
         Reserva reserva = withState(desde);
 
-        ReservaNoCancelableException ex = assertThrows(ReservaNoCancelableException.class,
+        CambioEstadoNoPermitidoException ex = assertThrows(CambioEstadoNoPermitidoException.class,
                 () -> reserva.cambiarEstado(hacia));
 
-        assertEquals(ReservaNoCancelableException.accionNoValida(8, desde, hacia).getMessage(), ex.getMessage());
+        assertEquals(new CambioEstadoNoPermitidoException(8, desde, hacia).getMessage(), ex.getMessage());
         assertEquals(desde, reserva.getEstado());
     }
 

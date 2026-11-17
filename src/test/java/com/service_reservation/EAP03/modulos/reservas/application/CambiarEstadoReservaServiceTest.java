@@ -9,7 +9,7 @@ import com.service_reservation.EAP03.modulos.admin.domain.ports.in.VerificarPerm
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.in.ConsultarProveedorUseCase;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.DatosReservaInvalidosException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.ReservaAjenaException;
-import com.service_reservation.EAP03.modulos.reservas.domain.exception.ReservaNoCancelableException;
+import com.service_reservation.EAP03.modulos.reservas.domain.exception.CambioEstadoNoPermitidoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.ReservaNoEncontradaException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.UsuarioNoEsProveedorException;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.CambiarEstadoReservaComando;
@@ -193,7 +193,7 @@ class CambiarEstadoReservaServiceTest {
         when(reservaRepositoryPort.buscarPorId(ID_RESERVA)).thenReturn(Optional.of(reserva(ID_PROVEEDOR, desde)));
 
         // Act
-        ReservaNoCancelableException ex = assertThrows(ReservaNoCancelableException.class,
+        CambioEstadoNoPermitidoException ex = assertThrows(CambioEstadoNoPermitidoException.class,
                 () -> service.ejecutar(comando(hacia)));
 
         // Assert

@@ -116,13 +116,13 @@ class CambiarEstadoReservaWebTest {
     }
 
     @Test
-    @DisplayName("Un cambio no permitido responde 409 RESERVA_NO_CANCELABLE con el mensaje de acción no válida")
+    @DisplayName("Un cambio no permitido responde 409 CAMBIO_ESTADO_NO_PERMITIDO con el mensaje de acción no válida")
     void invalidChangeReturns409() throws Exception {
         proveedorDueno(EstadoReserva.RESERVADO);
 
         cambiar("8", "{\"estado\":\"COMPLETADO\"}", usuario(ID_PROVEEDOR_USUARIO, "PROVEEDOR"))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.errorCode").value("RESERVA_NO_CANCELABLE"))
+                .andExpect(jsonPath("$.errorCode").value("CAMBIO_ESTADO_NO_PERMITIDO"))
                 .andExpect(jsonPath("$.message").value(
                         "La acción no es válida para el estado actual de la reserva 8: no se puede pasar de RESERVADO a COMPLETADO."))
                 .andExpect(jsonPath("$.traceId").exists());

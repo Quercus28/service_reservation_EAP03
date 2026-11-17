@@ -1,6 +1,7 @@
 package com.service_reservation.EAP03.modulos.reservas.infrastructure.inbound;
 
 import com.service_reservation.EAP03.config.TraceIdFilter;
+import com.service_reservation.EAP03.modulos.reservas.domain.exception.CambioEstadoNoPermitidoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.CancelacionFueraDeTiempoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.DatosReservaInvalidosException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.FechaEnElPasadoException;
@@ -79,6 +80,11 @@ public class ReservaExceptionHandler {
     @ExceptionHandler(ReservaNoCancelableException.class)
     public ResponseEntity<Map<String, Object>> manejarNoCancelable(ReservaNoCancelableException ex) {
         return construir(HttpStatus.CONFLICT, "RESERVA_NO_CANCELABLE", ex.getMessage());
+    }
+
+    @ExceptionHandler(CambioEstadoNoPermitidoException.class)
+    public ResponseEntity<Map<String, Object>> manejarCambioEstadoNoPermitido(CambioEstadoNoPermitidoException ex) {
+        return construir(HttpStatus.CONFLICT, "CAMBIO_ESTADO_NO_PERMITIDO", ex.getMessage());
     }
 
     @ExceptionHandler(CancelacionFueraDeTiempoException.class)

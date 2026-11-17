@@ -1,5 +1,6 @@
 package com.service_reservation.EAP03.modulos.reservas.infrastructure.inbound;
 
+import com.service_reservation.EAP03.modulos.reservas.domain.exception.CambioEstadoNoPermitidoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.CancelacionFueraDeTiempoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.DatosReservaInvalidosException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.FechaEnElPasadoException;
@@ -97,13 +98,13 @@ class ReservaExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("Un cambio de estado no permitido usa el mismo código que cancelar: 409 RESERVA_NO_CANCELABLE")
+    @DisplayName("Un cambio de estado no permitido responde 409 con su propio código CAMBIO_ESTADO_NO_PERMITIDO")
     void invalidStateChangeReturns409() {
-        ReservaNoCancelableException ex = ReservaNoCancelableException.accionNoValida(8,
+        CambioEstadoNoPermitidoException ex = new CambioEstadoNoPermitidoException(8,
                 com.service_reservation.EAP03.modulos.reservas.domain.model.EstadoReserva.RESERVADO,
                 com.service_reservation.EAP03.modulos.reservas.domain.model.EstadoReserva.COMPLETADO);
 
-        assertError(handler.manejarNoCancelable(ex), 409, "RESERVA_NO_CANCELABLE", ex.getMessage());
+        assertError(handler.manejarCambioEstadoNoPermitido(ex), 409, "CAMBIO_ESTADO_NO_PERMITIDO", ex.getMessage());
     }
 
     @Test

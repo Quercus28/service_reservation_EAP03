@@ -1,5 +1,6 @@
 package com.service_reservation.EAP03.modulos.reservas.domain.model;
 
+import com.service_reservation.EAP03.modulos.reservas.domain.exception.CambioEstadoNoPermitidoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.CancelacionFueraDeTiempoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.DatosReservaInvalidosException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.FechaEnElPasadoException;
@@ -75,12 +76,11 @@ public class Reserva {
     }
 
     // Cambio de estado que hace el proveedor dueño: RESERVADO → CONFIRMADO o CONFIRMADO →
-    // COMPLETADO. Cualquier otro cambio se rechaza con el mismo error que da cancelar cuando
-    // el estado no lo permite.
+    // COMPLETADO. Cualquier otro cambio se rechaza.
     public void cambiarEstado(EstadoReserva nuevo) {
         Objects.requireNonNull(nuevo, "El nuevo estado es obligatorio");
         if (!estado.puedePasarA(nuevo)) {
-            throw ReservaNoCancelableException.accionNoValida(id, estado, nuevo);
+            throw new CambioEstadoNoPermitidoException(id, estado, nuevo);
         }
         this.estado = nuevo;
     }

@@ -20,11 +20,4 @@ class ReservaNoCancelableExceptionTest {
         assertEquals("La reserva 8 ya no se puede cancelar porque no está pendiente ni confirmada (su estado es COMPLETADO).",
                 ReservaNoCancelableException.noActiva(8, EstadoReserva.COMPLETADO).getMessage());
     }
-
-    @Test
-    @DisplayName("Indica que la acción no es válida para el estado actual al cambiar de estado")
-    void invalidAction() {
-        assertEquals("La acción no es válida para el estado actual de la reserva 8: no se puede pasar de RESERVADO a COMPLETADO.",
-                ReservaNoCancelableException.accionNoValida(8, EstadoReserva.RESERVADO, EstadoReserva.COMPLETADO).getMessage());
-    }
 }
