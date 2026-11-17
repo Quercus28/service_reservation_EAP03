@@ -1,6 +1,10 @@
 package com.service_reservation.EAP03.modulos.reservas.infrastructure.inbound;
 
 import com.service_reservation.EAP03.config.TraceIdFilter;
+import com.service_reservation.EAP03.modulos.admin.domain.model.AccionAdmin;
+import com.service_reservation.EAP03.modulos.admin.domain.model.EventoAuditoria;
+import com.service_reservation.EAP03.modulos.admin.domain.model.ResultadoAuditoria;
+import com.service_reservation.EAP03.modulos.admin.domain.ports.in.RegistrarAuditoriaUseCase;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.CancelacionFueraDeTiempoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.ConsultaHistorialInvalidaException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.DatosReservaInvalidosException;
@@ -34,6 +38,12 @@ import java.util.Map;
 public class ReservaExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(ReservaExceptionHandler.class);
+
+    private final RegistrarAuditoriaUseCase registrarAuditoriaUseCase;
+
+    public ReservaExceptionHandler(RegistrarAuditoriaUseCase registrarAuditoriaUseCase) {
+        this.registrarAuditoriaUseCase = registrarAuditoriaUseCase;
+    }
 
     @ExceptionHandler(FechaEnElPasadoException.class)
     public ResponseEntity<Map<String, Object>> manejarFechaEnElPasado(FechaEnElPasadoException ex) {
@@ -107,8 +117,29 @@ public class ReservaExceptionHandler {
     // Intento de ver el historial de otro cliente: se responde 403 y queda en el log del backend.
     @ExceptionHandler(HistorialAjenoException.class)
     public ResponseEntity<Map<String, Object>> manejarHistorialAjeno(HistorialAjenoException ex, HttpServletRequest request) {
-        auditar("HISTORIAL_AJENO_DENEGADO", "intento de ver historial de otro cliente", request);
+        Long idUsuario = auditar("HISTORIAL_AJENO_DENEGADO", "intento de ver historial de otro cliente", request);
+        guardarEnAuditoria(idUsuario, request);
         return construir(HttpStatus.FORBIDDEN, "HISTORIAL_AJENO", ex.getMessage());
+    }
+
+    // Además del log, el intento queda en la auditoría de admin. RegistrarAuditoriaUseCase lo
+    // guarda en su propia transacción, así que queda aunque la consulta se haya deshecho.
+    // Solo números y textos fijos: ni correo ni nombre ni los valores que envió el usuario.
+    // Si la auditoría falla, el cliente igual recibe su 403 y el fallo queda en el log.
+    private void guardarEnAuditoria(Long idUsuario, HttpServletRequest request) {
+        try {
+            registrarAuditoriaUseCase.ejecutar(new EventoAuditoria(
+                    idUsuario,
+                    null,
+                    AccionAdmin.HISTORIAL_AJENO_DENEGADO,
+                    ResultadoAuditoria.DENEGADO,
+                    request.getMethod() + " " + request.getRequestURI(),
+                    "motivo=historial de otro cliente"
+            ));
+        } catch (RuntimeException e) {
+            log.error("No se pudo guardar en la auditoría el intento de ver un historial ajeno: traceId={}",
+                    TraceIdFilter.traceIdActual(), e);
+        }
     }
 
     // Parámetros raros o con aspecto de comando: 400 con mensaje fijo (no repite lo enviado) y queda en el log.
@@ -120,7 +151,7 @@ public class ReservaExceptionHandler {
 
     // Auditoría en el log: solo evento, motivo fijo, id del usuario, método, ruta y traceId.
     // Nunca correo, IP ni los valores que envió el usuario.
-    private static void auditar(String evento, String motivo, HttpServletRequest request) {
+    private static Long auditar(String evento, String motivo, HttpServletRequest request) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Long idUsuario = auth != null && auth.getPrincipal() instanceof UsuarioAutenticadoPrincipal principal
                 ? principal.getIdUsuario()
@@ -128,6 +159,7 @@ public class ReservaExceptionHandler {
         log.warn("AUDITORIA evento={} motivo={} idUsuario={} metodo={} ruta={} traceId={}",
                 evento, motivo, idUsuario, request.getMethod(), request.getRequestURI(),
                 TraceIdFilter.traceIdActual());
+        return idUsuario;
     }
 
     private ResponseEntity<Map<String, Object>> construir(HttpStatus status, String errorCode, String mensaje) {

@@ -12,7 +12,12 @@ import com.service_reservation.EAP03.modulos.reservas.domain.exception.ReservaNo
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.ReservaNoEncontradaException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.ServicioNoReservableException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.UsuarioNoEsClienteException;
+import com.service_reservation.EAP03.modulos.admin.domain.model.AccionAdmin;
+import com.service_reservation.EAP03.modulos.admin.domain.model.EventoAuditoria;
+import com.service_reservation.EAP03.modulos.admin.domain.model.ResultadoAuditoria;
+import com.service_reservation.EAP03.modulos.admin.domain.ports.in.RegistrarAuditoriaUseCase;
 import org.junit.jupiter.api.DisplayName;
+import org.mockito.ArgumentCaptor;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
@@ -23,13 +28,21 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 class ReservaExceptionHandlerTest {
 
     private static final LocalDateTime INICIO = LocalDateTime.of(2026, 11, 2, 9, 0);
 
-    private final ReservaExceptionHandler handler = new ReservaExceptionHandler();
+    private final RegistrarAuditoriaUseCase registrarAuditoriaUseCase = mock(RegistrarAuditoriaUseCase.class);
+    private final ReservaExceptionHandler handler = new ReservaExceptionHandler(registrarAuditoriaUseCase);
 
     private static void assertError(ResponseEntity<Map<String, Object>> response, int status, String errorCode, String message) {
         assertEquals(status, response.getStatusCode().value());
@@ -127,5 +140,76 @@ class ReservaExceptionHandlerTest {
         } finally {
             org.springframework.security.core.context.SecurityContextHolder.clearContext();
         }
+    }
+
+    private static void autenticar(Long idUsuario, String email) {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        new com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound.security.UsuarioAutenticadoPrincipal(
+                                idUsuario, email, List.of("CLIENTE")), null, List.of()));
+    }
+
+    @Test
+    @DisplayName("El historial ajeno queda en la auditoría con la acción HISTORIAL_AJENO_DENEGADO y sin datos personales")
+    void otherClientsHistoryIsAudited() {
+        org.springframework.mock.web.MockHttpServletRequest request =
+                new org.springframework.mock.web.MockHttpServletRequest("GET", "/api/v1/reservas/mias");
+        request.setQueryString("idCliente=99");
+        autenticar(20L, "cliente.privado@test.com");
+        try {
+            handler.manejarHistorialAjeno(new com.service_reservation.EAP03.modulos.reservas.domain.exception.HistorialAjenoException(), request);
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        }
+
+        ArgumentCaptor<EventoAuditoria> captor = ArgumentCaptor.forClass(EventoAuditoria.class);
+        verify(registrarAuditoriaUseCase).ejecutar(captor.capture());
+        EventoAuditoria evento = captor.getValue();
+        assertEquals(20L, evento.idActor());
+        assertNull(evento.idUsuarioAfectado());
+        assertEquals(AccionAdmin.HISTORIAL_AJENO_DENEGADO, evento.accion());
+        assertEquals(ResultadoAuditoria.DENEGADO, evento.resultado());
+        assertEquals("GET /api/v1/reservas/mias", evento.endpoint());
+        assertEquals("motivo=historial de otro cliente", evento.detalle());
+        String todo = evento.endpoint() + evento.detalle();
+        assertFalse(todo.contains("@"));
+        assertFalse(todo.contains("cliente.privado"));
+        assertFalse(todo.contains("idCliente=99"));
+    }
+
+    @Test
+    @DisplayName("Sin usuario identificado, el historial ajeno se audita con el usuario vacío")
+    void otherClientsHistoryAuditedWithoutUser() {
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+
+        handler.manejarHistorialAjeno(new com.service_reservation.EAP03.modulos.reservas.domain.exception.HistorialAjenoException(),
+                new org.springframework.mock.web.MockHttpServletRequest("GET", "/api/v1/reservas/mias"));
+
+        ArgumentCaptor<EventoAuditoria> captor = ArgumentCaptor.forClass(EventoAuditoria.class);
+        verify(registrarAuditoriaUseCase).ejecutar(captor.capture());
+        assertNull(captor.getValue().idActor());
+    }
+
+    @Test
+    @DisplayName("Si la auditoría falla, el cliente igual recibe su 403")
+    void auditFailureStillReturns403() {
+        doThrow(new IllegalStateException("base caída")).when(registrarAuditoriaUseCase).ejecutar(any());
+        com.service_reservation.EAP03.modulos.reservas.domain.exception.HistorialAjenoException ex =
+                new com.service_reservation.EAP03.modulos.reservas.domain.exception.HistorialAjenoException();
+        org.springframework.mock.web.MockHttpServletRequest request =
+                new org.springframework.mock.web.MockHttpServletRequest("GET", "/api/v1/reservas/mias");
+
+        assertError(handler.manejarHistorialAjeno(ex, request), 403, "HISTORIAL_AJENO", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("Una consulta de historial inválida solo va al log, no a la auditoría de admin")
+    void invalidHistoryQueryNotAudited() {
+        handler.manejarConsultaHistorialInvalida(
+                new com.service_reservation.EAP03.modulos.reservas.domain.exception.ConsultaHistorialInvalidaException(
+                        com.service_reservation.EAP03.modulos.reservas.domain.exception.ConsultaHistorialInvalidaException.Motivo.VALOR_INVALIDO),
+                new org.springframework.mock.web.MockHttpServletRequest("GET", "/api/v1/reservas/mias"));
+
+        verifyNoInteractions(registrarAuditoriaUseCase);
     }
 }
