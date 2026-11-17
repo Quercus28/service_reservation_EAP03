@@ -12,8 +12,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -39,7 +39,9 @@ import static org.mockito.Mockito.*;
 
 class SecurityConfigTest {
 
-    @Configuration
+    // @TestConfiguration y no @Configuration: si no, el escaneo de los @SpringBootTest también la
+    // recoge y sus simulados reemplazan o duplican los beans reales en toda la aplicación.
+    @TestConfiguration
     @EnableWebMvc
     @Import(SecurityConfig.class)
     static class WithoutAuditConfig {
@@ -49,7 +51,7 @@ class SecurityConfigTest {
         }
     }
 
-    @Configuration
+    @TestConfiguration
     @Import(WithoutAuditConfig.class)
     static class WithAuditConfig {
         @Bean
@@ -114,7 +116,7 @@ class SecurityConfigTest {
         }
 
         @Test
-        @DisplayName("Sin autenticación responde 401 en JSON UTF-8 con la ruta solicitada")
+        @DisplayName("Sin autenticación responde 401 en JSON UTF-8 con el formato estándar")
         void entryPointReturns401Json() throws Exception {
             // Arrange
             MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/servicios");
@@ -127,9 +129,10 @@ class SecurityConfigTest {
             assertTrue(response.getContentType().startsWith("application/json"));
             assertEquals("UTF-8", response.getCharacterEncoding());
             String cuerpo = response.getContentAsString(StandardCharsets.UTF_8);
-            assertTrue(cuerpo.contains("\"status\":401"));
+            assertTrue(cuerpo.contains("\"errorCode\":\"NO_AUTENTICADO\""));
             assertTrue(cuerpo.contains("Se requiere autenticación para acceder a este recurso."));
-            assertTrue(cuerpo.contains("\"path\":\"/api/v1/servicios\""));
+            assertTrue(cuerpo.contains("\"traceId\":"));
+            assertFalse(cuerpo.contains("\"path\""));
         }
 
         @Test
@@ -145,8 +148,9 @@ class SecurityConfigTest {
             assertEquals(403, response.getStatus());
             assertEquals("UTF-8", response.getCharacterEncoding());
             String cuerpo = response.getContentAsString(StandardCharsets.UTF_8);
-            assertTrue(cuerpo.contains("No tiene los permisos necesarios para realizar esta acción."));
-            assertTrue(cuerpo.contains("\"path\":\"/api/v1/agendas\""));
+            assertTrue(cuerpo.contains("\"errorCode\":\"ACCESO_NO_AUTORIZADO\""));
+            assertTrue(cuerpo.contains("No tiene privilegios para realizar esta operación"));
+            assertFalse(cuerpo.contains("\"path\""));
             verifyNoInteractions(auditUseCase);
         }
 
@@ -205,7 +209,7 @@ class SecurityConfigTest {
 
             // Assert
             assertEquals(403, response.getStatus());
-            assertTrue(response.getContentAsString(StandardCharsets.UTF_8).contains("\"path\":\"/api/admin/solicitudes\""));
+            assertTrue(response.getContentAsString(StandardCharsets.UTF_8).contains("\"errorCode\":\"ACCESO_NO_AUTORIZADO\""));
         }
     }
 }
