@@ -139,6 +139,11 @@ public class SecurityConfig {
                             "Se requiere autenticación para acceder a este recurso."))
                 // 403 — Autenticado pero sin el rol necesario
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    log.warn(
+                        "Intento de acceso no autorizado: metodo={}, ruta={}",
+                        request.getMethod(),
+                        request.getRequestURI()
+                    );
                     RespuestaErrorJson.escribir(response, HttpStatus.FORBIDDEN,
                             RespuestaErrorJson.ACCESO_NO_AUTORIZADO, RespuestaErrorJson.MENSAJE_ACCESO_NO_AUTORIZADO);
 
