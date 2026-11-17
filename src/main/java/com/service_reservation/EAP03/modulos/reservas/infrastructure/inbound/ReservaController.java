@@ -11,6 +11,8 @@ import com.service_reservation.EAP03.modulos.reservas.domain.model.ConsultarHist
 import com.service_reservation.EAP03.modulos.reservas.domain.ports.in.CancelarReservaUseCase;
 import com.service_reservation.EAP03.modulos.reservas.domain.ports.in.ConsultarHistorialReservasUseCase;
 import com.service_reservation.EAP03.modulos.reservas.domain.ports.in.CrearReservaUseCase;
+import com.service_reservation.EAP03.modulos.reservas.domain.exception.DatosReservaInvalidosException;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -43,6 +45,17 @@ public class ReservaController {
         this.cancelarReservaUseCase = cancelarReservaUseCase;
         this.cambiarEstadoReservaUseCase = cambiarEstadoReservaUseCase;
         this.consultarHistorialReservasUseCase = consultarHistorialReservasUseCase;
+    }
+
+    // PATCH sin el número de la reserva (/api/v1/reservas/estado): en vez de "la ruta no existe",
+    // se responde que falta el identificador, con el mismo error que da cancelar sin id. Pide
+    // sesión igual que el endpoint real. No se muestra en la documentación porque no es una
+    // operación, solo un mensaje de error más claro.
+    @Hidden
+    @PatchMapping("/estado")
+    @PreAuthorize("isAuthenticated()")
+    public ReservaResponseDTO cambiarEstadoSinId() {
+        throw new DatosReservaInvalidosException("El identificador de la reserva es obligatorio");
     }
 
     // HU20. Solo pide sesión iniciada: el rol de proveedor, el permiso activo y que la reserva

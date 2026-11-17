@@ -38,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -195,5 +196,59 @@ class CambiarEstadoReservaWebTest {
                 .andExpect(jsonPath("$.errorCode").value("FORMATO_PARAMETRO_INVALIDO"))
                 .andExpect(jsonPath("$.message").value("El parámetro 'id' tiene un formato o valor inválido"));
         verifyNoInteractions(verificarPermisoOperativoUseCase, reservaRepositoryPort, registrarAuditoriaUseCase);
+    }
+
+    @Test
+    @DisplayName("Un id que es solo un espacio (%20) responde el mismo error de formato que 'abc'")
+    void blankIdReturnsFormatError() throws Exception {
+        mockMvc.perform(patch(java.net.URI.create("/api/v1/reservas/%20/estado"))
+                        .principal(usuario(ID_PROVEEDOR_USUARIO, "PROVEEDOR"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"estado\":\"CONFIRMADO\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("FORMATO_PARAMETRO_INVALIDO"))
+                .andExpect(jsonPath("$.message").value("El parámetro 'id' tiene un formato o valor inválido"))
+                .andExpect(jsonPath("$.traceId").exists());
+        verifyNoInteractions(verificarPermisoOperativoUseCase, reservaRepositoryPort, registrarAuditoriaUseCase);
+    }
+
+    @Test
+    @DisplayName("Cancelar con un id que es solo un espacio (%20) también responde el error de formato estándar")
+    void blankIdOnCancelReturnsFormatError() throws Exception {
+        mockMvc.perform(post(java.net.URI.create("/api/v1/reservas/%20/cancelacion"))
+                        .principal(usuario(ID_CLIENTE_USUARIO, "CLIENTE")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("FORMATO_PARAMETRO_INVALIDO"))
+                .andExpect(jsonPath("$.message").value("El parámetro 'id' tiene un formato o valor inválido"))
+                .andExpect(jsonPath("$.traceId").exists());
+        verifyNoInteractions(cancelarReservaUseCase);
+    }
+
+    @ParameterizedTest(name = "cuerpo = [{0}]")
+    @ValueSource(strings = {"{\"estado\":\"CONFIRMADO\"}", ""})
+    @DisplayName("PATCH sin el número de la reserva responde 400 DATOS_INVALIDOS diciendo que falta el identificador")
+    void missingIdReturns400(String cuerpo) throws Exception {
+        mockMvc.perform(patch("/api/v1/reservas/estado")
+                        .principal(usuario(ID_PROVEEDOR_USUARIO, "PROVEEDOR"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(cuerpo))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("DATOS_INVALIDOS"))
+                .andExpect(jsonPath("$.message").value("El identificador de la reserva es obligatorio"))
+                .andExpect(jsonPath("$.traceId").exists());
+        verifyNoInteractions(verificarPermisoOperativoUseCase, reservaRepositoryPort, registrarAuditoriaUseCase);
+    }
+
+    @Test
+    @DisplayName("PATCH sin el número de la reserva pide sesión igual que el endpoint real")
+    void missingIdEndpointRequiresSessionLikeRealOne() throws Exception {
+        org.springframework.security.access.prepost.PreAuthorize sinId = ReservaController.class
+                .getMethod("cambiarEstadoSinId").getAnnotation(org.springframework.security.access.prepost.PreAuthorize.class);
+        org.springframework.security.access.prepost.PreAuthorize real = ReservaController.class
+                .getMethod("cambiarEstado", Integer.class, CambiarEstadoReservaRequestDTO.class,
+                        org.springframework.security.core.Authentication.class, jakarta.servlet.http.HttpServletRequest.class)
+                .getAnnotation(org.springframework.security.access.prepost.PreAuthorize.class);
+
+        assertEquals(real.value(), sinId.value());
     }
 }

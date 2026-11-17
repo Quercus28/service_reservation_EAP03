@@ -26,6 +26,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.MissingPathVariableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -105,6 +106,14 @@ public class ReservaExceptionHandler {
     @ExceptionHandler(DatosReservaInvalidosException.class)
     public ResponseEntity<Map<String, Object>> manejarDatosInvalidos(DatosReservaInvalidosException ex) {
         return construir(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", ex.getMessage());
+    }
+
+    // Un id de la ruta que queda vacío al convertirlo (por ejemplo /reservas/%20/estado, un
+    // espacio). Se responde igual que un id que no es número ("abc"), con el formato estándar.
+    @ExceptionHandler(MissingPathVariableException.class)
+    public ResponseEntity<Map<String, Object>> manejarParametroDeRutaVacio(MissingPathVariableException ex) {
+        return construir(HttpStatus.BAD_REQUEST, "FORMATO_PARAMETRO_INVALIDO",
+                "El parámetro '" + ex.getVariableName() + "' tiene un formato o valor inválido");
     }
 
     // Error que da la base de datos cuando dos reservas del mismo horario se guardan al mismo
