@@ -1,5 +1,6 @@
 package com.service_reservation.EAP03.modulos.reservas.domain.model;
 
+import com.service_reservation.EAP03.modulos.reservas.domain.exception.CambioEstadoNoPermitidoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.CancelacionFueraDeTiempoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.DatosReservaInvalidosException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.FechaEnElPasadoException;
@@ -7,7 +8,9 @@ import com.service_reservation.EAP03.modulos.reservas.domain.exception.ReservaNo
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -211,7 +214,7 @@ class ReservaTest {
     // ---------------------------------------------------------------- Cancelación del administrador
 
     @ParameterizedTest(name = "estado = {0}")
-    @EnumSource(value = EstadoReserva.class, names = {"RESERVADO", "EN_PROCESO"})
+    @EnumSource(value = EstadoReserva.class, names = {"RESERVADO", "CONFIRMADO", "EN_PROCESO"})
     @DisplayName("El administrador cancela una reserva activa aunque ya haya empezado")
     void adminCancelsActiveReservation(EstadoReserva estado) {
         // Arrange
@@ -257,5 +260,87 @@ class ReservaTest {
     void belongsToClient() {
         assertTrue(newReservation().esDelCliente(3L));
         assertFalse(newReservation().esDelCliente(4L));
+    }
+
+    // ---------------------------------------------------------------- HU20: estado CONFIRMADO
+
+    @Test
+    @DisplayName("Una reserva nueva sigue creándose como RESERVADO (la Pendiente de la HU)")
+    void newReservationIsPending() {
+        assertEquals(EstadoReserva.RESERVADO, newReservation().getEstado());
+    }
+
+    @Test
+    @DisplayName("Una reserva CONFIRMADO cuenta como activa y ocupa el horario")
+    void confirmedIsActive() {
+        assertTrue(EstadoReserva.CONFIRMADO.esActiva());
+        assertTrue(withState(EstadoReserva.CONFIRMADO).estaActiva());
+    }
+
+    @Test
+    @DisplayName("El cliente cancela una reserva CONFIRMADO con la misma regla de horas")
+    void clientCancelsConfirmedReservation() {
+        Reserva reserva = withState(EstadoReserva.CONFIRMADO);
+
+        reserva.cancelar(INICIO.minusHours(2), 2, null);
+
+        assertEquals(EstadoReserva.CANCELADO, reserva.getEstado());
+    }
+
+    @Test
+    @DisplayName("El cliente tampoco puede cancelar una CONFIRMADO con menos anticipación de la mínima")
+    void clientCannotCancelConfirmedTooLate() {
+        Reserva reserva = withState(EstadoReserva.CONFIRMADO);
+        LocalDateTime pocoAntes = INICIO.minusHours(2).plusMinutes(1);
+
+        assertThrows(CancelacionFueraDeTiempoException.class, () -> reserva.cancelar(pocoAntes, 2, null));
+        assertEquals(EstadoReserva.CONFIRMADO, reserva.getEstado());
+    }
+
+    @ParameterizedTest(name = "{0} -> {1}")
+    @CsvSource({"RESERVADO,CONFIRMADO", "CONFIRMADO,COMPLETADO"})
+    @DisplayName("El proveedor puede confirmar una pendiente y finalizar una confirmada")
+    void allowedStateChanges(EstadoReserva desde, EstadoReserva hacia) {
+        Reserva reserva = withState(desde);
+
+        reserva.cambiarEstado(hacia);
+
+        assertEquals(hacia, reserva.getEstado());
+    }
+
+    @ParameterizedTest(name = "{0} -> {1}")
+    @MethodSource("cambiosNoPermitidos")
+    @DisplayName("Cualquier otro cambio de estado se rechaza y la reserva no cambia")
+    void otherStateChangesRejected(EstadoReserva desde, EstadoReserva hacia) {
+        Reserva reserva = withState(desde);
+
+        CambioEstadoNoPermitidoException ex = assertThrows(CambioEstadoNoPermitidoException.class,
+                () -> reserva.cambiarEstado(hacia));
+
+        assertEquals(new CambioEstadoNoPermitidoException(8, desde, hacia).getMessage(), ex.getMessage());
+        assertEquals(desde, reserva.getEstado());
+    }
+
+    static java.util.stream.Stream<org.junit.jupiter.params.provider.Arguments> cambiosNoPermitidos() {
+        return java.util.Arrays.stream(EstadoReserva.values())
+                .flatMap(desde -> java.util.Arrays.stream(EstadoReserva.values())
+                        .filter(hacia -> !desde.puedePasarA(hacia))
+                        .map(hacia -> org.junit.jupiter.params.provider.Arguments.of(desde, hacia)));
+    }
+
+    @Test
+    @DisplayName("Solo hay dos cambios permitidos en total")
+    void onlyTwoAllowedChanges() {
+        long permitidos = java.util.Arrays.stream(EstadoReserva.values())
+                .flatMap(d -> java.util.Arrays.stream(EstadoReserva.values()).filter(d::puedePasarA))
+                .count();
+        assertEquals(2, permitidos);
+    }
+
+    @Test
+    @DisplayName("El nuevo estado es obligatorio")
+    void newStateRequired() {
+        Reserva reserva = withState(EstadoReserva.RESERVADO);
+        assertThrows(NullPointerException.class, () -> reserva.cambiarEstado(null));
     }
 }

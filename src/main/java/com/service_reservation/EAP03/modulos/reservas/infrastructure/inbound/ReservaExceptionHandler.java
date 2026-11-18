@@ -1,6 +1,7 @@
 package com.service_reservation.EAP03.modulos.reservas.infrastructure.inbound;
 
 import com.service_reservation.EAP03.config.TraceIdFilter;
+import com.service_reservation.EAP03.modulos.reservas.domain.exception.CambioEstadoNoPermitidoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.CancelacionFueraDeTiempoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.ConsultaHistorialInvalidaException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.DatosReservaInvalidosException;
@@ -15,6 +16,7 @@ import com.service_reservation.EAP03.modulos.reservas.domain.exception.ReservaNo
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.ReservaNoEncontradaException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.ServicioNoReservableException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.UsuarioNoEsClienteException;
+import com.service_reservation.EAP03.modulos.reservas.domain.exception.UsuarioNoEsProveedorException;
 import com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound.security.UsuarioAutenticadoPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -24,6 +26,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.MissingPathVariableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -70,6 +73,11 @@ public class ReservaExceptionHandler {
         return construir(HttpStatus.FORBIDDEN, "NO_ES_CLIENTE", ex.getMessage());
     }
 
+    @ExceptionHandler(UsuarioNoEsProveedorException.class)
+    public ResponseEntity<Map<String, Object>> manejarNoEsProveedor(UsuarioNoEsProveedorException ex) {
+        return construir(HttpStatus.FORBIDDEN, "NO_ES_PROVEEDOR", ex.getMessage());
+    }
+
     @ExceptionHandler(ReservaNoEncontradaException.class)
     public ResponseEntity<Map<String, Object>> manejarReservaNoEncontrada(ReservaNoEncontradaException ex) {
         return construir(HttpStatus.NOT_FOUND, "RESERVA_NO_ENCONTRADA", ex.getMessage());
@@ -85,6 +93,11 @@ public class ReservaExceptionHandler {
         return construir(HttpStatus.CONFLICT, "RESERVA_NO_CANCELABLE", ex.getMessage());
     }
 
+    @ExceptionHandler(CambioEstadoNoPermitidoException.class)
+    public ResponseEntity<Map<String, Object>> manejarCambioEstadoNoPermitido(CambioEstadoNoPermitidoException ex) {
+        return construir(HttpStatus.CONFLICT, "CAMBIO_ESTADO_NO_PERMITIDO", ex.getMessage());
+    }
+
     @ExceptionHandler(CancelacionFueraDeTiempoException.class)
     public ResponseEntity<Map<String, Object>> manejarFueraDeTiempo(CancelacionFueraDeTiempoException ex) {
         return construir(HttpStatus.CONFLICT, "CANCELACION_FUERA_DE_TIEMPO", ex.getMessage());
@@ -93,6 +106,14 @@ public class ReservaExceptionHandler {
     @ExceptionHandler(DatosReservaInvalidosException.class)
     public ResponseEntity<Map<String, Object>> manejarDatosInvalidos(DatosReservaInvalidosException ex) {
         return construir(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", ex.getMessage());
+    }
+
+    // Un id de la ruta que queda vacío al convertirlo (por ejemplo /reservas/%20/estado, un
+    // espacio). Se responde igual que un id que no es número ("abc"), con el formato estándar.
+    @ExceptionHandler(MissingPathVariableException.class)
+    public ResponseEntity<Map<String, Object>> manejarParametroDeRutaVacio(MissingPathVariableException ex) {
+        return construir(HttpStatus.BAD_REQUEST, "FORMATO_PARAMETRO_INVALIDO",
+                "El parámetro '" + ex.getVariableName() + "' tiene un formato o valor inválido");
     }
 
     // Error que da la base de datos cuando dos reservas del mismo horario se guardan al mismo

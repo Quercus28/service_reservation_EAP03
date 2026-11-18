@@ -8,7 +8,10 @@ import com.service_reservation.EAP03.modulos.reservas.domain.model.EstadoReserva
 import com.service_reservation.EAP03.modulos.reservas.domain.model.IntervaloReservado;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.PartesReserva;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.Reserva;
+import com.service_reservation.EAP03.modulos.reservas.domain.ports.in.CambiarEstadoReservaUseCase;
 import com.service_reservation.EAP03.modulos.reservas.domain.ports.in.CancelarReservaUseCase;
+import com.service_reservation.EAP03.modulos.reservas.domain.model.CambiarEstadoReservaComando;
+import org.springframework.mock.web.MockHttpServletRequest;
 import com.service_reservation.EAP03.modulos.reservas.domain.ports.in.CrearReservaUseCase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,6 +40,7 @@ class ReservaControllerTest {
 
     @Mock private CrearReservaUseCase crearReservaUseCase;
     @Mock private CancelarReservaUseCase cancelarReservaUseCase;
+    @Mock private CambiarEstadoReservaUseCase cambiarEstadoReservaUseCase;
     @Mock private com.service_reservation.EAP03.modulos.reservas.domain.ports.in.ConsultarHistorialReservasUseCase consultarHistorialReservasUseCase;
 
     @InjectMocks private ReservaController controller;
@@ -116,6 +120,26 @@ class ReservaControllerTest {
         assertEquals(1, response.contenido().size());
         assertEquals("Corte", response.contenido().get(0).nombreServicio());
         assertEquals(2, response.totalPaginas());
+    }
+
+    @Test
+    @DisplayName("Cambiar estado pasa el usuario autenticado, el estado pedido y la ruta para la auditoría")
+    void changesStateForAuthenticatedUser() {
+        // Arrange
+        Authentication proveedor = new UsernamePasswordAuthenticationToken(
+                new UsuarioAutenticadoPrincipal(30L, "proveedor@test.com", List.of("PROVEEDOR")), null, List.of());
+        MockHttpServletRequest httpRequest = new MockHttpServletRequest("PATCH", "/api/v1/reservas/50/estado");
+        Reserva confirmada = Reserva.reconstruir(50, new PartesReserva(3L, 10, 7),
+                new IntervaloReservado(INICIO, INICIO.plusHours(1)), EstadoReserva.CONFIRMADO, "Nota", CANCELADA, null);
+        when(cambiarEstadoReservaUseCase.ejecutar(new CambiarEstadoReservaComando(
+                30L, 50, EstadoReserva.CONFIRMADO, "PATCH /api/v1/reservas/50/estado"))).thenReturn(confirmada);
+
+        // Act
+        ReservaResponseDTO response = controller.cambiarEstado(50,
+                new CambiarEstadoReservaRequestDTO("CONFIRMADO"), proveedor, httpRequest);
+
+        // Assert
+        assertEquals(EstadoReserva.CONFIRMADO, response.estado());
     }
 
     @Test

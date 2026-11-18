@@ -16,4 +16,11 @@ class ReservaAjenaExceptionTest {
         assertEquals("No tiene permiso sobre la reserva 8: pertenece a otro cliente.", ex.getMessage());
         assertInstanceOf(ReservaDominioException.class, ex);
     }
+
+    @Test
+    @DisplayName("Indica que la reserva pertenece a otro proveedor")
+    void otherProvider() {
+        assertEquals("No tiene permiso sobre la reserva 8: pertenece a otro proveedor.",
+                ReservaAjenaException.deOtroProveedor(8).getMessage());
+    }
 }

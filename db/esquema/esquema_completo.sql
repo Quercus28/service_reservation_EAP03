@@ -400,7 +400,7 @@ CREATE TABLE public.servicio_prestado (
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     cancelada_en timestamp without time zone,
     motivo_cancelacion character varying(255),
-    CONSTRAINT chk_servicio_prestado_estado CHECK (((estado)::text = ANY ((ARRAY['RESERVADO'::character varying, 'EN_PROCESO'::character varying, 'COMPLETADO'::character varying, 'CANCELADO'::character varying, 'NO_ASISTIO'::character varying])::text[]))),
+    CONSTRAINT chk_servicio_prestado_estado CHECK (((estado)::text = ANY ((ARRAY['RESERVADO'::character varying, 'CONFIRMADO'::character varying, 'EN_PROCESO'::character varying, 'COMPLETADO'::character varying, 'CANCELADO'::character varying, 'NO_ASISTIO'::character varying])::text[]))),
     CONSTRAINT chk_servicio_prestado_fechas CHECK ((fecha_fin > fecha_inicio))
 );
 

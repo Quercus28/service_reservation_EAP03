@@ -17,7 +17,7 @@ class ReservaNoCancelableExceptionTest {
     @Test
     @DisplayName("Indica el estado cuando la reserva ya no está pendiente")
     void notActive() {
-        assertEquals("La reserva 8 ya no se puede cancelar porque no está pendiente (su estado es COMPLETADO).",
+        assertEquals("La reserva 8 ya no se puede cancelar porque no está pendiente ni confirmada (su estado es COMPLETADO).",
                 ReservaNoCancelableException.noActiva(8, EstadoReserva.COMPLETADO).getMessage());
     }
 }

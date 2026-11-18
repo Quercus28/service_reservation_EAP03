@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ReservaRepositoryAdapterTest {
 
-    private static final List<EstadoReserva> ACTIVOS = List.of(EstadoReserva.RESERVADO, EstadoReserva.EN_PROCESO);
+    private static final List<EstadoReserva> ACTIVOS = List.of(EstadoReserva.RESERVADO, EstadoReserva.CONFIRMADO, EstadoReserva.EN_PROCESO);
     private static final LocalDateTime INICIO = LocalDateTime.of(2026, 11, 2, 9, 0);
     private static final LocalDateTime FIN = INICIO.plusHours(1);
     private static final LocalDateTime CREADA = LocalDateTime.of(2026, 10, 24, 12, 0);
