@@ -15,6 +15,12 @@ import java.util.Map;
  * Helper de cálculo de capacidad disponible para un período.
  * Opera exclusivamente sobre el modelo de dominio público {@link Horario}
  * provisto por el puerto de disponibilidad de agendas.
+ *
+ * Algoritmo:
+ *  1. Cuenta cuántas veces aparece cada DíaDeLaSemana en [startDate, endDate].
+ *  2. Para cada horario de la agenda, multiplica la duración del bloque por
+ *     el número de ocurrencias de ese día en el período.
+ *  3. Suma todos los bloques -> total de minutos disponibles.
  */
 public class CapacidadAgendaCalculator {
 
@@ -44,6 +50,10 @@ public class CapacidadAgendaCalculator {
         return totalMinutos;
     }
 
+    /**
+     * Recorre el rango [startDate, endDate] y cuenta cuántas veces aparece
+     * cada día de la semana. Usa EnumMap para acceso O(1).
+     */
     private static Map<DiaSemana, Long> contarOcurrencias(PeriodoReporte periodo) {
         Map<DiaSemana, Long> conteo = new EnumMap<>(DiaSemana.class);
         LocalDate cursor = periodo.startDate();
@@ -56,6 +66,7 @@ public class CapacidadAgendaCalculator {
         return conteo;
     }
 
+    /** Mapea java.time.DayOfWeek al enum DiaSemana del dominio del proyecto. */
     private static DiaSemana toDiaSemana(DayOfWeek dayOfWeek) {
         return switch (dayOfWeek) {
             case MONDAY    -> DiaSemana.LUNES;

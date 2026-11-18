@@ -29,6 +29,9 @@ import java.util.stream.Collectors;
  *  - Se comunica con el módulo de agendas a través de su puerto público: {@link IDisponibilidad}.
  *  - Consulta reservas mediante su repositorio optimizado {@link ReporteReservaRepository}
  *    excluyendo citas CANCELADAS a nivel de base de datos.
+ *
+ * Los servicios sin reservas en el período se incluyen con totalCitas = 0
+ * y minutosOcupados = 0, garantizando el caso borde de período vacío.
  */
 @Component
 public class OcupacionJpaAdapter implements OcupacionDataPort {
