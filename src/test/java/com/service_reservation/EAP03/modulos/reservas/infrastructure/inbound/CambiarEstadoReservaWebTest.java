@@ -68,7 +68,7 @@ class CambiarEstadoReservaWebTest {
         ReservaController controller = new ReservaController(crearReservaUseCase, cancelarReservaUseCase, servicio,
                 consultarHistorialReservasUseCase);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
-                .setControllerAdvice(new ReservaExceptionHandler(), new GlobalExceptionHandler(null))
+                .setControllerAdvice(new ReservaExceptionHandler(mock(RegistrarAuditoriaUseCase.class)), new GlobalExceptionHandler(null))
                 .build();
     }
 

@@ -163,4 +163,15 @@ class ReservaControllerTest {
 
         assertEquals(HistorialReservasResponseDTO.MENSAJE_SIN_CITAS, controller.historial(request, null).mensaje());
     }
+
+    @Test
+    @DisplayName("Historial filtrado por estado sin resultados dice que no hay citas en ese estado")
+    void historyFilteredByStateWithoutResults() {
+        org.springframework.mock.web.MockHttpServletRequest request = new org.springframework.mock.web.MockHttpServletRequest("GET", "/api/v1/reservas/mias");
+        request.setParameter("estado", "CANCELADO");
+        when(consultarHistorialReservasUseCase.ejecutar(new com.service_reservation.EAP03.modulos.reservas.domain.model.ConsultarHistorialComando(20L, null, EstadoReserva.CANCELADO, 0, 10)))
+                .thenReturn(new com.service_reservation.EAP03.modulos.reservas.domain.model.PaginaHistorial(List.of(), 0, 10, 0));
+
+        assertEquals("No tienes citas en estado CANCELADO.", controller.historial(request, CLIENTE).mensaje());
+    }
 }

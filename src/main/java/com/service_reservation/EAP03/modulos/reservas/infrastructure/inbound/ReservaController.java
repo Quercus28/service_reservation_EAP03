@@ -196,7 +196,7 @@ public class ReservaController {
     @PreAuthorize("hasRole('CLIENTE') and @permisoOperativo.activo(authentication, 'CLIENTE')")
     @Operation(
             summary = "Consultar mi historial de reservas",
-            description = "Lista las reservas del cliente autenticado en cualquier estado (RESERVADO, CONFIRMADO, EN_PROCESO, COMPLETADO, CANCELADO, NO_ASISTIO), la más reciente primero. Parámetros opcionales: estado, page (desde 0), size (1 a 50, por defecto 10) e idCliente (solo se acepta el propio). Si no hay citas devuelve 200 con una lista vacía y un mensaje."
+            description = "Lista las reservas del cliente autenticado en cualquier estado (RESERVADO, CONFIRMADO, EN_PROCESO, COMPLETADO, CANCELADO, NO_ASISTIO), la más reciente primero. Parámetros opcionales: estado, page (desde 0), size (1 a 50, por defecto 10) e idCliente (solo se acepta el propio). Si la lista sale vacía devuelve 200 con un mensaje que dice por qué: no tiene citas, no tiene citas en el estado filtrado o la página pedida no tiene citas."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Historial paginado (puede estar vacío).", content = @Content(mediaType = "application/json", schema = @Schema(implementation = HistorialReservasResponseDTO.class))),
@@ -207,7 +207,8 @@ public class ReservaController {
     public HistorialReservasResponseDTO historial(HttpServletRequest request, Authentication authentication) {
         ConsultaHistorialParametros p = ConsultaHistorialParametros.desde(request.getParameterMap());
         return HistorialReservasResponseDTO.desde(consultarHistorialReservasUseCase.ejecutar(
-                new ConsultarHistorialComando(idUsuarioDe(authentication), p.idCliente(), p.estado(), p.page(), p.size())));
+                new ConsultarHistorialComando(idUsuarioDe(authentication), p.idCliente(), p.estado(), p.page(), p.size())),
+                p.estado());
     }
 
     // Se toma el usuario que inició sesión. Si no se puede identificar, el caso de uso
