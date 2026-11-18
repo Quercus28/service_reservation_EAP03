@@ -1,7 +1,8 @@
 package com.service_reservation.EAP03.modulos.reportes.infrastructure.outbound.adapter;
 
-import com.service_reservation.EAP03.modulos.agendas_horarios.infrastructure.outbound.persistence.entity.AgendaJpaEntity;
-import com.service_reservation.EAP03.modulos.agendas_horarios.infrastructure.outbound.persistence.repository.AgendaSpringDataRepository;
+import com.service_reservation.EAP03.modulos.agendas_horarios.domain.exception.AgendaNoEncontradaException;
+import com.service_reservation.EAP03.modulos.agendas_horarios.domain.model.Horario;
+import com.service_reservation.EAP03.modulos.agendas_horarios.domain.ports.in.IDisponibilidad;
 import com.service_reservation.EAP03.modulos.reportes.domain.model.DatosOcupacionServicio;
 import com.service_reservation.EAP03.modulos.reportes.domain.model.PeriodoReporte;
 import com.service_reservation.EAP03.modulos.reportes.domain.ports.out.OcupacionDataPort;
@@ -9,52 +10,51 @@ import com.service_reservation.EAP03.modulos.reportes.infrastructure.outbound.pe
 import com.service_reservation.EAP03.modulos.reportes.infrastructure.outbound.persistence.projection.ResumenReservasPorServicioProjection;
 import com.service_reservation.EAP03.modulos.reportes.infrastructure.outbound.persistence.repository.ReporteReservaRepository;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.EstadoReserva;
-import com.service_reservation.EAP03.modulos.servicios_catalogo.infrastructure.adapter.out.persistence.ServicioJpaEntity;
-import com.service_reservation.EAP03.modulos.servicios_catalogo.infrastructure.adapter.out.persistence.SpringDataServicioRepository;
+import com.service_reservation.EAP03.modulos.servicios_catalogo.application.dto.PaginaResponse;
+import com.service_reservation.EAP03.modulos.servicios_catalogo.application.dto.ServicioResponse;
+import com.service_reservation.EAP03.modulos.servicios_catalogo.application.usecase.ConsultarServiciosUseCase;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
  * Adaptador de salida (Driven Adapter) que implementa {@link OcupacionDataPort}.
  *
- * Estrategia de consulta:
- *  1. Carga los servicios activos del proveedor (tabla: servicio).
- *  2. Ejecuta una única consulta de agregación sobre reservas para obtener
- *     el conteo de citas efectivas por servicio, excluyendo CANCELADO a nivel SQL.
- *  3. Carga las agendas activas del proveedor (con sus horarios) y delega
- *     el cálculo de capacidad al helper {@link CapacidadAgendaCalculator}.
- *  4. Cruza los tres conjuntos de datos en memoria (N de servicios típicamente
- *     pequeño: single-digit a few dozen) y construye la lista de
- *     {@link DatosOcupacionServicio} para el dominio.
- *
- * Los servicios sin reservas en el período se incluyen con totalCitas = 0
- * y minutosOcupados = 0, garantizando el caso borde de período vacío.
+ * En estricto apego al Monolito Modular y la Arquitectura Hexagonal:
+ *  - Se comunica con el módulo de catálogo a través de su puerto público: {@link ConsultarServiciosUseCase}.
+ *  - Se comunica con el módulo de agendas a través de su puerto público: {@link IDisponibilidad}.
+ *  - Consulta reservas mediante su repositorio optimizado {@link ReporteReservaRepository}
+ *    excluyendo citas CANCELADAS a nivel de base de datos.
  */
 @Component
 public class OcupacionJpaAdapter implements OcupacionDataPort {
 
-    private final SpringDataServicioRepository servicioRepository;
-    private final ReporteReservaRepository     reservaRepository;
-    private final AgendaSpringDataRepository   agendaRepository;
+    private final ConsultarServiciosUseCase  consultarServiciosUseCase;
+    private final IDisponibilidad            disponibilidadAgendaPort;
+    private final ReporteReservaRepository   reservaRepository;
 
-    public OcupacionJpaAdapter(SpringDataServicioRepository servicioRepository,
-                               ReporteReservaRepository reservaRepository,
-                               AgendaSpringDataRepository agendaRepository) {
-        this.servicioRepository = servicioRepository;
-        this.reservaRepository  = reservaRepository;
-        this.agendaRepository   = agendaRepository;
+    public OcupacionJpaAdapter(ConsultarServiciosUseCase consultarServiciosUseCase,
+                               IDisponibilidad disponibilidadAgendaPort,
+                               ReporteReservaRepository reservaRepository) {
+        this.consultarServiciosUseCase = consultarServiciosUseCase;
+        this.disponibilidadAgendaPort  = disponibilidadAgendaPort;
+        this.reservaRepository         = reservaRepository;
     }
 
     @Override
     public List<DatosOcupacionServicio> obtenerDatosOcupacion(Integer proveedorId,
                                                                PeriodoReporte periodo) {
-        // 1. Servicios del proveedor
-        List<ServicioJpaEntity> servicios = servicioRepository.findByIdProveedor(proveedorId);
+        // 1. Obtener servicios del proveedor a través del puerto público de catálogo
+        PaginaResponse<ServicioResponse> pagina = consultarServiciosUseCase.ejecutar(
+                proveedorId, null, 0, 1000);
+        List<ServicioResponse> servicios = pagina != null && pagina.contenido() != null
+                ? pagina.contenido()
+                : List.of();
+
         if (servicios.isEmpty()) {
             return List.of();
         }
@@ -73,42 +73,39 @@ public class OcupacionJpaAdapter implements OcupacionDataPort {
                         ResumenReservasPorServicioProjection::getTotalCitas
                 ));
 
-        // 3. Capacidad: agendas activas del proveedor (con horarios cargados)
-        Map<Integer, AgendaJpaEntity> agendaPorServicio =
-                agendaRepository.findAll().stream()
-                        .filter(a -> proveedorId.equals(a.getIdProveedor()) && a.isActiva())
-                        .collect(Collectors.toMap(
-                                AgendaJpaEntity::getIdServicio,
-                                Function.identity(),
-                                // Si existieran duplicados (no debería por unique constraint), toma la primera
-                                (a1, a2) -> a1
-                        ));
-
-        // 4. Cruzar y construir DatosOcupacionServicio
+        // 3. Cruzar cada servicio con su capacidad (vía puerto de agendas) y sus reservas
         return servicios.stream()
-                .map(servicio -> construirDatos(servicio, citasPorServicio, agendaPorServicio, periodo))
+                .map(servicio -> construirDatos(servicio, proveedorId, citasPorServicio, periodo))
                 .toList();
     }
 
-    private DatosOcupacionServicio construirDatos(ServicioJpaEntity servicio,
+    private DatosOcupacionServicio construirDatos(ServicioResponse servicio,
+                                                   Integer proveedorId,
                                                    Map<Integer, Long> citasPorServicio,
-                                                   Map<Integer, AgendaJpaEntity> agendaPorServicio,
                                                    PeriodoReporte periodo) {
-        int     totalCitas        = citasPorServicio.getOrDefault(servicio.getId(), 0L).intValue();
-        long    minutosOcupados   = (long) totalCitas * servicio.getDuracionMinutos();
+        int  totalCitas      = citasPorServicio.getOrDefault(servicio.id(), 0L).intValue();
+        long minutosOcupados = (long) totalCitas * servicio.duracionMinutos();
 
-        AgendaJpaEntity agenda    = agendaPorServicio.get(servicio.getId());
-        long minutosDisponibles   = agenda != null
-                ? CapacidadAgendaCalculator.calcularMinutosDisponibles(agenda, periodo)
-                : 0L;
+        List<Horario> horarios = obtenerHorariosSeguros(proveedorId, servicio.id());
+        long minutosDisponibles = CapacidadAgendaCalculator.calcularMinutosDisponibles(horarios, periodo);
 
         return new DatosOcupacionServicio(
-                servicio.getId(),
-                servicio.getNombre(),
-                servicio.getDuracionMinutos(),
+                servicio.id(),
+                servicio.nombre(),
+                servicio.duracionMinutos(),
                 totalCitas,
                 minutosOcupados,
                 minutosDisponibles
         );
+    }
+
+    private List<Horario> obtenerHorariosSeguros(Integer proveedorId, Integer servicioId) {
+        try {
+            List<Horario> horarios = disponibilidadAgendaPort.consultarHorariosDisponibles(
+                    proveedorId, servicioId);
+            return horarios != null ? horarios : Collections.emptyList();
+        } catch (AgendaNoEncontradaException e) {
+            return Collections.emptyList();
+        }
     }
 }
