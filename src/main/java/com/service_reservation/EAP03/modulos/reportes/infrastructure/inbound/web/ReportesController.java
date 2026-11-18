@@ -76,13 +76,15 @@ public class ReportesController {
     /**
      * Valida que no se intenten inyectar identificadores de proveedor en la petición
      * para evitar manipulación o consultas cruzadas.
+     * Para prevenir vulnerabilidades de Log Injection, no se registra el valor
+     * arbitrario enviado por el usuario, solo el nombre del parámetro prohibido.
      */
     private void validarPeticionSegura(HttpServletRequest request, Authentication authentication) {
         for (String param : PARAMETROS_PROHIBIDOS) {
             if (request.getParameter(param) != null) {
                 Long idUsuario = obtenerIdUsuario(authentication);
-                log.warn("ALERTA DE SEGURIDAD: Usuario idUsuario={} intentó enviar parámetro prohibido '{}' con valor '{}' en consulta de reporte",
-                        idUsuario, param, request.getParameter(param));
+                log.warn("ALERTA DE SEGURIDAD: Usuario idUsuario={} intentó enviar parámetro prohibido '{}' en consulta de reporte",
+                        idUsuario, param);
                 throw new AccessDeniedException("No está permitido especificar el identificador del proveedor en la petición");
             }
         }
