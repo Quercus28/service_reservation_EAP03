@@ -12,24 +12,13 @@ import java.util.List;
 
 /**
  * Repositorio de lectura optimizado para el módulo de reportes.
- * Opera sobre la misma tabla (servicio_prestado) que el módulo de reservas,
- * pero expone solo las consultas de agregación necesarias para el reporte
- * de ocupación, manteniendo el acoplamiento mínimo entre módulos.
- *
- * La exclusión de CANCELADO se aplica a nivel de base de datos en la cláusula
- * WHERE, no en memoria, para garantizar eficiencia con grandes volúmenes.
+ * Realiza consultas agregadas sobre la tabla de reservas mediante Spring Data JPA.
  */
 public interface ReporteReservaRepository extends JpaRepository<ReservaJpaEntity, Integer> {
 
     /**
      * Cuenta las citas efectivas (excluyendo CANCELADO) del proveedor agrupadas
-     * por servicio, filtrando solo las reservas cuya fecha de inicio cae dentro
-     * del período [inicio, fin).
-     *
-     * @param proveedorId      id del proveedor autenticado (del JWT)
-     * @param estadoExcluido   siempre EstadoReserva.CANCELADO
-     * @param inicio           inicio del período (inclusive) como LocalDateTime
-     * @param fin              fin del período (exclusive, día siguiente al endDate)
+     * por servicio, filtrando reservas en el período [inicio, fin).
      */
     @Query("""
             SELECT r.idServicio  AS idServicio,
@@ -46,5 +35,26 @@ public interface ReporteReservaRepository extends JpaRepository<ReservaJpaEntity
             @Param("estadoExcluido") EstadoReserva  estadoExcluido,
             @Param("inicio")         LocalDateTime  inicio,
             @Param("fin")            LocalDateTime  fin
+    );
+
+    /**
+     * Cuenta las citas canceladas del proveedor agrupadas por servicio,
+     * filtrando reservas en el período [inicio, fin).
+     */
+    @Query("""
+            SELECT r.idServicio  AS idServicio,
+                   COUNT(r)      AS totalCitas
+            FROM   ReservaJpaEntity r
+            WHERE  r.idProveedor  = :proveedorId
+              AND  r.estado       = :estadoCancelado
+              AND  r.fechaInicio >= :inicio
+              AND  r.fechaInicio  < :fin
+            GROUP BY r.idServicio
+            """)
+    List<ResumenReservasPorServicioProjection> contarCanceladasPorServicio(
+            @Param("proveedorId")     Integer        proveedorId,
+            @Param("estadoCancelado") EstadoReserva  estadoCancelado,
+            @Param("inicio")          LocalDateTime  inicio,
+            @Param("fin")             LocalDateTime  fin
     );
 }

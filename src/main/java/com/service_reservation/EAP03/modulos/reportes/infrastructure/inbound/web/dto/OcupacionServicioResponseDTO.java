@@ -3,7 +3,7 @@ package com.service_reservation.EAP03.modulos.reportes.infrastructure.inbound.we
 import com.service_reservation.EAP03.modulos.reportes.domain.model.OcupacionServicio;
 
 /**
- * DTO de salida con las métricas de ocupación para un servicio individual.
+ * DTO de salida con las métricas de ocupación y cancelación para un servicio individual.
  */
 public record OcupacionServicioResponseDTO(
         Integer idServicio,
@@ -11,16 +11,20 @@ public record OcupacionServicioResponseDTO(
         int totalCitas,
         double horasOcupadas,
         double horasDisponibles,
-        double porcentajeOcupacion
+        double porcentajeOcupacion,
+        int citasCanceladas,
+        double porcentajeCancelacion
 ) {
     public static OcupacionServicioResponseDTO from(OcupacionServicio servicio) {
         return new OcupacionServicioResponseDTO(
-                servicio.idServicio(),
-                servicio.nombreServicio(),
-                servicio.totalCitas(),
-                servicio.horasOcupadas(),
-                servicio.horasDisponibles(),
-                servicio.porcentajeOcupacion()
+                servicio.getIdServicio(),
+                servicio.getNombreServicio(),
+                servicio.getTotalCitas(),
+                servicio.getHorasOcupadas(),
+                servicio.getHorasDisponibles(),
+                servicio.getPorcentajeOcupacion(),
+                servicio.getCitasCanceladas(),
+                servicio.getPorcentajeCancelacion()
         );
     }
 }

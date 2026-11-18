@@ -24,14 +24,10 @@ import java.util.stream.Collectors;
 /**
  * Adaptador de salida (Driven Adapter) que implementa {@link OcupacionDataPort}.
  *
- * En estricto apego al Monolito Modular y la Arquitectura Hexagonal:
- *  - Se comunica con el módulo de catálogo a través de su puerto público: {@link ConsultarServiciosUseCase}.
- *  - Se comunica con el módulo de agendas a través de su puerto público: {@link IDisponibilidad}.
- *  - Consulta reservas mediante su repositorio optimizado {@link ReporteReservaRepository}
- *    excluyendo citas CANCELADAS a nivel de base de datos.
- *
- * Los servicios sin reservas en el período se incluyen con totalCitas = 0
- * y minutosOcupados = 0, garantizando el caso borde de período vacío.
+ * Comunica con:
+ *  - Catálogo: {@link ConsultarServiciosUseCase} (puerto público)
+ *  - Agendas: {@link IDisponibilidad} (puerto público)
+ *  - Reservas: {@link ReporteReservaRepository} (consultas agregadas SQL efectivas y canceladas)
  */
 @Component
 public class OcupacionJpaAdapter implements OcupacionDataPort {
@@ -62,44 +58,56 @@ public class OcupacionJpaAdapter implements OcupacionDataPort {
             return List.of();
         }
 
-        // 2. Resumen de reservas efectivas (excluyendo CANCELADO a nivel DB)
         LocalDateTime inicio = periodo.startDate().atStartOfDay();
         LocalDateTime fin    = periodo.endDate().plusDays(1).atStartOfDay();
 
-        List<ResumenReservasPorServicioProjection> resumenes =
+        // 2. Resumen de reservas efectivas (excluyendo CANCELADO a nivel DB)
+        List<ResumenReservasPorServicioProjection> resumenesEfectivas =
                 reservaRepository.contarCitasPorServicio(
                         proveedorId, EstadoReserva.CANCELADO, inicio, fin);
 
-        Map<Integer, Long> citasPorServicio = resumenes.stream()
+        Map<Integer, Long> citasPorServicio = resumenesEfectivas.stream()
                 .collect(Collectors.toMap(
                         ResumenReservasPorServicioProjection::getIdServicio,
                         ResumenReservasPorServicioProjection::getTotalCitas
                 ));
 
-        // 3. Cruzar cada servicio con su capacidad (vía puerto de agendas) y sus reservas
+        // 3. Resumen de reservas canceladas a nivel DB
+        List<ResumenReservasPorServicioProjection> resumenesCanceladas =
+                reservaRepository.contarCanceladasPorServicio(
+                        proveedorId, EstadoReserva.CANCELADO, inicio, fin);
+
+        Map<Integer, Long> canceladasPorServicio = resumenesCanceladas.stream()
+                .collect(Collectors.toMap(
+                        ResumenReservasPorServicioProjection::getIdServicio,
+                        ResumenReservasPorServicioProjection::getTotalCitas
+                ));
+
+        // 4. Cruzar cada servicio con su capacidad (vía puerto de agendas) y sus reservas
         return servicios.stream()
-                .map(servicio -> construirDatos(servicio, proveedorId, citasPorServicio, periodo))
+                .map(servicio -> construirDatos(servicio, proveedorId, citasPorServicio, canceladasPorServicio, periodo))
                 .toList();
     }
 
     private DatosOcupacionServicio construirDatos(ServicioResponse servicio,
                                                    Integer proveedorId,
                                                    Map<Integer, Long> citasPorServicio,
+                                                   Map<Integer, Long> canceladasPorServicio,
                                                    PeriodoReporte periodo) {
         int  totalCitas      = citasPorServicio.getOrDefault(servicio.id(), 0L).intValue();
+        int  totalCanceladas = canceladasPorServicio.getOrDefault(servicio.id(), 0L).intValue();
         long minutosOcupados = (long) totalCitas * servicio.duracionMinutos();
 
         List<Horario> horarios = obtenerHorariosSeguros(proveedorId, servicio.id());
         long minutosDisponibles = CapacidadAgendaCalculator.calcularMinutosDisponibles(horarios, periodo);
 
-        return new DatosOcupacionServicio(
-                servicio.id(),
-                servicio.nombre(),
-                servicio.duracionMinutos(),
-                totalCitas,
-                minutosOcupados,
-                minutosDisponibles
-        );
+        return DatosOcupacionServicio.builder(servicio.id(), servicio.nombre())
+                .duracionMinutosServicio(servicio.duracionMinutos())
+                .totalCitas(totalCitas)
+                .totalCanceladas(totalCanceladas)
+                .minutosOcupados(minutosOcupados)
+                .minutosDisponibles(minutosDisponibles)
+                .build();
     }
 
     private List<Horario> obtenerHorariosSeguros(Integer proveedorId, Integer servicioId) {

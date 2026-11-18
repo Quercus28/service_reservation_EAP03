@@ -8,12 +8,13 @@ import com.service_reservation.EAP03.modulos.reportes.domain.model.ReporteOcupac
 import java.util.List;
 
 /**
- * Domain Service: encapsula el cálculo matemático de ocupación.
+ * Domain Service: encapsula el cálculo matemático de ocupación y cancelaciones.
  *
  * Responsabilidades:
- *  - Calcular el porcentaje de ocupación por servicio:
+ *  - Calcular el porcentaje de ocupación por servicio y global:
  *      (minutosOcupados / minutosDisponibles) * 100
- *  - Agregar las cifras globales del proveedor.
+ *  - Calcular el porcentaje de cancelación por servicio y global:
+ *      (citasCanceladas / (totalCitasEfectivas + citasCanceladas)) * 100
  *  - Garantizar 0.0% cuando no hay citas o la capacidad es cero,
  *    evitando ArithmeticException / NaN por división entre cero.
  *
@@ -45,18 +46,19 @@ public class CalculoOcupacionDomainService {
     // ── Cálculo individual ───────────────────────────────────────────────────
 
     private OcupacionServicio calcularPorServicio(DatosOcupacionServicio datos) {
-        double horasOcupadas     = minutosAHoras(datos.minutosOcupados());
-        double horasDisponibles  = minutosAHoras(datos.minutosDisponibles());
-        double porcentaje        = calcularPorcentaje(datos.minutosOcupados(), datos.minutosDisponibles());
+        double horasOcupadas     = minutosAHoras(datos.getMinutosOcupados());
+        double horasDisponibles  = minutosAHoras(datos.getMinutosDisponibles());
+        double pctOcupacion      = calcularPorcentaje(datos.getMinutosOcupados(), datos.getMinutosDisponibles());
+        double pctCancelacion    = calcularPorcentajeCancelacion(datos.getTotalCanceladas(), datos.getTotalCitas());
 
-        return new OcupacionServicio(
-                datos.idServicio(),
-                datos.nombreServicio(),
-                datos.totalCitas(),
-                redondear(horasOcupadas),
-                redondear(horasDisponibles),
-                redondear(porcentaje)
-        );
+        return OcupacionServicio.builder(datos.getIdServicio(), datos.getNombreServicio())
+                .totalCitas(datos.getTotalCitas())
+                .horasOcupadas(redondear(horasOcupadas))
+                .horasDisponibles(redondear(horasDisponibles))
+                .porcentajeOcupacion(redondear(pctOcupacion))
+                .citasCanceladas(datos.getTotalCanceladas())
+                .porcentajeCancelacion(redondear(pctCancelacion))
+                .build();
     }
 
     // ── Cifras globales ──────────────────────────────────────────────────────
@@ -64,20 +66,24 @@ public class CalculoOcupacionDomainService {
     private ReporteOcupacion construirReporteGlobal(Integer idProveedor, PeriodoReporte periodo,
                                                      List<OcupacionServicio> detalle) {
 
-        int    totalCitas         = detalle.stream().mapToInt(OcupacionServicio::totalCitas).sum();
-        double horasOcupadas      = detalle.stream().mapToDouble(OcupacionServicio::horasOcupadas).sum();
-        double horasDisponibles   = detalle.stream().mapToDouble(OcupacionServicio::horasDisponibles).sum();
+        int    totalCitas         = detalle.stream().mapToInt(OcupacionServicio::getTotalCitas).sum();
+        int    totalCanceladas    = detalle.stream().mapToInt(OcupacionServicio::getCitasCanceladas).sum();
+        double horasOcupadas      = detalle.stream().mapToDouble(OcupacionServicio::getHorasOcupadas).sum();
+        double horasDisponibles   = detalle.stream().mapToDouble(OcupacionServicio::getHorasDisponibles).sum();
 
-        // Recalcular globalmente desde horas (ya redondeadas) para mantener coherencia
-        double porcentajeGlobal = horasDisponibles == 0.0
+        double porcentajeOcupacionGlobal = horasDisponibles == 0.0
                 ? 0.0
                 : redondear((horasOcupadas / horasDisponibles) * 100.0);
+
+        double porcentajeCancelacionGlobal = calcularPorcentajeCancelacion(totalCanceladas, totalCitas);
 
         return ReporteOcupacion.builder(idProveedor, periodo)
                 .totalCitasGlobal(totalCitas)
                 .horasOcupadasGlobal(redondear(horasOcupadas))
                 .horasDisponiblesGlobal(redondear(horasDisponibles))
-                .porcentajeOcupacionGlobal(porcentajeGlobal)
+                .porcentajeOcupacionGlobal(porcentajeOcupacionGlobal)
+                .totalCanceladasGlobal(totalCanceladas)
+                .porcentajeCancelacionGlobal(redondear(porcentajeCancelacionGlobal))
                 .detalleServicios(detalle)
                 .build();
     }
@@ -85,15 +91,25 @@ public class CalculoOcupacionDomainService {
     // ── Utilitarios matemáticos ──────────────────────────────────────────────
 
     /**
-     * Calcula el porcentaje sin lanzar excepción aritmética.
-     * Si la capacidad disponible es cero (caso borde: sin agenda configurada),
-     * retorna 0.0 de forma segura.
+     * Calcula el porcentaje de ocupación sin división por cero.
      */
     private double calcularPorcentaje(long minutosOcupados, long minutosDisponibles) {
         if (minutosDisponibles <= 0) {
             return 0.0;
         }
         return ((double) minutosOcupados / minutosDisponibles) * 100.0;
+    }
+
+    /**
+     * Calcula el porcentaje de cancelación frente al total de reservas solicitadas
+     * (reservas efectivas + reservas canceladas).
+     */
+    private double calcularPorcentajeCancelacion(int canceladas, int efectivas) {
+        int totalSolicitadas = efectivas + canceladas;
+        if (totalSolicitadas <= 0) {
+            return 0.0;
+        }
+        return ((double) canceladas / totalSolicitadas) * 100.0;
     }
 
     private double minutosAHoras(long minutos) {

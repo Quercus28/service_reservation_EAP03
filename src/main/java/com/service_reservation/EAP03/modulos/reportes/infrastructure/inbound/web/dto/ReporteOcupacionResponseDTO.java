@@ -7,7 +7,7 @@ import java.util.List;
 
 /**
  * DTO de salida para la respuesta del endpoint de reporte de ocupación.
- * Contiene tanto cifras generales de ocupación como el detalle individual por servicio.
+ * Contiene cifras consolidadas de ocupación y cancelaciones, así como el detalle por servicio.
  */
 public record ReporteOcupacionResponseDTO(
         Integer proveedorId,
@@ -17,6 +17,8 @@ public record ReporteOcupacionResponseDTO(
         double horasOcupadasGlobal,
         double horasDisponiblesGlobal,
         double porcentajeOcupacionGlobal,
+        int totalCanceladasGlobal,
+        double porcentajeCancelacionGlobal,
         List<OcupacionServicioResponseDTO> servicios
 ) {
     public static ReporteOcupacionResponseDTO from(ReporteOcupacion reporte) {
@@ -32,6 +34,8 @@ public record ReporteOcupacionResponseDTO(
                 reporte.getHorasOcupadasGlobal(),
                 reporte.getHorasDisponiblesGlobal(),
                 reporte.getPorcentajeOcupacionGlobal(),
+                reporte.getTotalCanceladasGlobal(),
+                reporte.getPorcentajeCancelacionGlobal(),
                 detalle
         );
     }
