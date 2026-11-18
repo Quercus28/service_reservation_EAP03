@@ -1,13 +1,18 @@
 package com.service_reservation.EAP03.modulos.reservas.infrastructure.inbound;
 
 import com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound.security.UsuarioAutenticadoPrincipal;
+import com.service_reservation.EAP03.modulos.reservas.domain.model.CambiarEstadoReservaComando;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.CancelarReservaComando;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.CrearReservaComando;
+import com.service_reservation.EAP03.modulos.reservas.domain.model.EstadoReserva;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.Reserva;
+import com.service_reservation.EAP03.modulos.reservas.domain.ports.in.CambiarEstadoReservaUseCase;
 import com.service_reservation.EAP03.modulos.reservas.domain.model.ConsultarHistorialComando;
 import com.service_reservation.EAP03.modulos.reservas.domain.ports.in.CancelarReservaUseCase;
 import com.service_reservation.EAP03.modulos.reservas.domain.ports.in.ConsultarHistorialReservasUseCase;
 import com.service_reservation.EAP03.modulos.reservas.domain.ports.in.CrearReservaUseCase;
+import com.service_reservation.EAP03.modulos.reservas.domain.exception.DatosReservaInvalidosException;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -24,19 +29,80 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/reservas")
-@Tag(name = "Reservas", description = "Creación y cancelación de reservas por el cliente autenticado.")
+@Tag(name = "Reservas", description = "Creación y cancelación de reservas por el cliente autenticado, y cambio de estado por el proveedor dueño.")
 public class ReservaController {
 
     private final CrearReservaUseCase crearReservaUseCase;
     private final CancelarReservaUseCase cancelarReservaUseCase;
+    private final CambiarEstadoReservaUseCase cambiarEstadoReservaUseCase;
     private final ConsultarHistorialReservasUseCase consultarHistorialReservasUseCase;
 
     public ReservaController(CrearReservaUseCase crearReservaUseCase,
                              CancelarReservaUseCase cancelarReservaUseCase,
+                             CambiarEstadoReservaUseCase cambiarEstadoReservaUseCase,
                              ConsultarHistorialReservasUseCase consultarHistorialReservasUseCase) {
         this.crearReservaUseCase = crearReservaUseCase;
         this.cancelarReservaUseCase = cancelarReservaUseCase;
+        this.cambiarEstadoReservaUseCase = cambiarEstadoReservaUseCase;
         this.consultarHistorialReservasUseCase = consultarHistorialReservasUseCase;
+    }
+
+    // PATCH sin el número de la reserva (/api/v1/reservas/estado): en vez de "la ruta no existe",
+    // se responde que falta el identificador, con el mismo error que da cancelar sin id. Pide
+    // sesión igual que el endpoint real. No se muestra en la documentación porque no es una
+    // operación, solo un mensaje de error más claro.
+    @Hidden
+    @PatchMapping("/estado")
+    @PreAuthorize("isAuthenticated()")
+    public ReservaResponseDTO cambiarEstadoSinId() {
+        throw new DatosReservaInvalidosException("El identificador de la reserva es obligatorio");
+    }
+
+    // HU20. Solo pide sesión iniciada: el rol de proveedor, el permiso activo y que la reserva
+    // sea suya se revisan en CambiarEstadoReservaService, para que cada rechazo quede en la
+    // auditoría. Si {id} no es un número, Spring responde 400 antes de llegar aquí.
+    @PatchMapping("/{id}/estado")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(
+            summary = "Cambiar el estado de una reserva",
+            description = "El proveedor dueño de la reserva, con permiso operativo activo, la confirma (RESERVADO → CONFIRMADO) o la finaliza (CONFIRMADO → COMPLETADO). Cualquier otro cambio se rechaza. Los intentos de un cliente o de otro proveedor responden 403 y quedan en la auditoría."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Estado cambiado.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ReservaResponseDTO.class), examples = @ExampleObject(value = """
+                    {
+                      "id": 87,
+                      "idServicio": 12,
+                      "fechaInicio": "2026-11-02T09:00:00",
+                      "fechaFin": "2026-11-02T10:00:00",
+                      "estado": "CONFIRMADO",
+                      "notas": "Acceso por la entrada principal"
+                    }
+                    """))),
+            @ApiResponse(responseCode = "400", description = "El identificador no es un número o el estado está vacío o no existe.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "No es el proveedor dueño de la reserva o su permiso operativo está inactivo.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404", description = "La reserva no existe.", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "409", description = "La acción no es válida para el estado actual de la reserva.", content = @Content(mediaType = "application/json"))
+    })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Nuevo estado: CONFIRMADO o COMPLETADO.",
+            content = @Content(examples = @ExampleObject(value = """
+                    {
+                      "estado": "CONFIRMADO"
+                    }
+                    """))
+    )
+    public ReservaResponseDTO cambiarEstado(@PathVariable Integer id,
+                                            @Valid @RequestBody CambiarEstadoReservaRequestDTO request,
+                                            Authentication authentication,
+                                            HttpServletRequest httpRequest) {
+        Reserva reserva = cambiarEstadoReservaUseCase.ejecutar(new CambiarEstadoReservaComando(
+                idUsuarioDe(authentication),
+                id,
+                EstadoReserva.valueOf(request.estado()),
+                httpRequest.getMethod() + " " + httpRequest.getRequestURI()
+        ));
+        return ReservaResponseDTO.desde(reserva);
     }
 
     // Además del rol, el cliente tiene que tener sus permisos activos: si el administrador
@@ -130,7 +196,7 @@ public class ReservaController {
     @PreAuthorize("hasRole('CLIENTE') and @permisoOperativo.activo(authentication, 'CLIENTE')")
     @Operation(
             summary = "Consultar mi historial de reservas",
-            description = "Lista las reservas del cliente autenticado en cualquier estado (RESERVADO, EN_PROCESO, COMPLETADO, CANCELADO, NO_ASISTIO), la más reciente primero. Parámetros opcionales: estado, page (desde 0), size (1 a 50, por defecto 10) e idCliente (solo se acepta el propio). Si la lista sale vacía devuelve 200 con un mensaje que dice por qué: no tiene citas, no tiene citas en el estado filtrado o la página pedida no tiene citas."
+            description = "Lista las reservas del cliente autenticado en cualquier estado (RESERVADO, CONFIRMADO, EN_PROCESO, COMPLETADO, CANCELADO, NO_ASISTIO), la más reciente primero. Parámetros opcionales: estado, page (desde 0), size (1 a 50, por defecto 10) e idCliente (solo se acepta el propio). Si la lista sale vacía devuelve 200 con un mensaje que dice por qué: no tiene citas, no tiene citas en el estado filtrado o la página pedida no tiene citas."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Historial paginado (puede estar vacío).", content = @Content(mediaType = "application/json", schema = @Schema(implementation = HistorialReservasResponseDTO.class))),

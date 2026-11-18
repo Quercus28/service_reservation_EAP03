@@ -14,6 +14,6 @@ public class ReservaNoCancelableException extends ReservaDominioException {
 
     public static ReservaNoCancelableException noActiva(Integer idReserva, EstadoReserva estado) {
         return new ReservaNoCancelableException("La reserva " + idReserva
-                + " ya no se puede cancelar porque no está pendiente (su estado es " + estado + ").");
+                + " ya no se puede cancelar porque no está pendiente ni confirmada (su estado es " + estado + ").");
     }
 }

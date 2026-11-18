@@ -1,5 +1,6 @@
 package com.service_reservation.EAP03.modulos.reservas.infrastructure.inbound;
 
+import com.service_reservation.EAP03.modulos.reservas.domain.exception.CambioEstadoNoPermitidoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.CancelacionFueraDeTiempoException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.DatosReservaInvalidosException;
 import com.service_reservation.EAP03.modulos.reservas.domain.exception.FechaEnElPasadoException;
@@ -16,6 +17,7 @@ import com.service_reservation.EAP03.modulos.admin.domain.model.AccionAdmin;
 import com.service_reservation.EAP03.modulos.admin.domain.model.EventoAuditoria;
 import com.service_reservation.EAP03.modulos.admin.domain.model.ResultadoAuditoria;
 import com.service_reservation.EAP03.modulos.admin.domain.ports.in.RegistrarAuditoriaUseCase;
+import com.service_reservation.EAP03.modulos.reservas.domain.exception.UsuarioNoEsProveedorException;
 import org.junit.jupiter.api.DisplayName;
 import org.mockito.ArgumentCaptor;
 import org.junit.jupiter.api.Test;
@@ -98,6 +100,24 @@ class ReservaExceptionHandlerTest {
 
         assertError(handler.manejarNoEsCliente(noCliente), 403, "NO_ES_CLIENTE", noCliente.getMessage());
         assertError(handler.manejarReservaAjena(ajena), 403, "RESERVA_AJENA", ajena.getMessage());
+    }
+
+    @Test
+    @DisplayName("Quien no es proveedor con permiso activo responde 403 NO_ES_PROVEEDOR")
+    void notProviderReturns403() {
+        UsuarioNoEsProveedorException noProveedor = new UsuarioNoEsProveedorException();
+
+        assertError(handler.manejarNoEsProveedor(noProveedor), 403, "NO_ES_PROVEEDOR", noProveedor.getMessage());
+    }
+
+    @Test
+    @DisplayName("Un cambio de estado no permitido responde 409 con su propio código CAMBIO_ESTADO_NO_PERMITIDO")
+    void invalidStateChangeReturns409() {
+        CambioEstadoNoPermitidoException ex = new CambioEstadoNoPermitidoException(8,
+                com.service_reservation.EAP03.modulos.reservas.domain.model.EstadoReserva.RESERVADO,
+                com.service_reservation.EAP03.modulos.reservas.domain.model.EstadoReserva.COMPLETADO);
+
+        assertError(handler.manejarCambioEstadoNoPermitido(ex), 409, "CAMBIO_ESTADO_NO_PERMITIDO", ex.getMessage());
     }
 
     @Test
