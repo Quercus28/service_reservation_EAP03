@@ -2,20 +2,22 @@ package com.service_reservation.EAP03.modulos.reportes.infrastructure.inbound.we
 
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.in.ConsultarProveedorUseCase;
 import com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound.security.UsuarioAutenticadoPrincipal;
+import com.service_reservation.EAP03.modulos.reportes.domain.exception.ReporteAjenoException;
 import com.service_reservation.EAP03.modulos.reportes.domain.model.ConsultaOcupacionComando;
 import com.service_reservation.EAP03.modulos.reportes.domain.model.OcupacionServicio;
 import com.service_reservation.EAP03.modulos.reportes.domain.model.PeriodoReporte;
 import com.service_reservation.EAP03.modulos.reportes.domain.model.ReporteOcupacion;
 import com.service_reservation.EAP03.modulos.reportes.domain.ports.in.ObtenerReporteOcupacionUseCase;
 import com.service_reservation.EAP03.modulos.reportes.infrastructure.inbound.web.dto.ReporteOcupacionResponseDTO;
-import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -37,9 +39,6 @@ class ReportesControllerTest {
     @Mock
     private ConsultarProveedorUseCase consultarProveedorUseCase;
 
-    @Mock
-    private HttpServletRequest request;
-
     @InjectMocks
     private ReportesController controller;
 
@@ -50,8 +49,15 @@ class ReportesControllerTest {
             null, List.of()
     );
 
+    private static MockHttpServletRequest peticion(String start, String end) {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/reportes/ocupacion");
+        request.addParameter("startDate", start);
+        request.addParameter("endDate", end);
+        return request;
+    }
+
     @Test
-    @DisplayName("Consulta exitosa de reporte para proveedor autenticado")
+    @DisplayName("Consulta exitosa de reporte para proveedor autenticado, con el proveedor sacado del JWT")
     void consultarOcupacionExitoso() {
         LocalDate start = LocalDate.of(2026, 11, 1);
         LocalDate end = LocalDate.of(2026, 11, 30);
@@ -82,7 +88,11 @@ class ReportesControllerTest {
                 .thenReturn(reporte);
 
         ResponseEntity<ReporteOcupacionResponseDTO> response = controller.consultarOcupacion(
-                start, end, AUTH, request);
+                peticion("2026-11-01", "2026-11-30"), AUTH);
+
+        ArgumentCaptor<ConsultaOcupacionComando> comando = ArgumentCaptor.forClass(ConsultaOcupacionComando.class);
+        verify(obtenerReporteOcupacionUseCase).ejecutar(comando.capture());
+        assertEquals(new ConsultaOcupacionComando(PROVEEDOR_ID, start, end), comando.getValue());
 
         assertNotNull(response.getBody());
         assertEquals(200, response.getStatusCode().value());
@@ -94,34 +104,24 @@ class ReportesControllerTest {
     }
 
     @Test
-    @DisplayName("Bloquea la petición con AccessDeniedException si se intenta enviar parámetro sospechoso providerId")
-    void bloquearParametroProhibido() {
-        LocalDate start = LocalDate.of(2026, 11, 1);
-        LocalDate end = LocalDate.of(2026, 11, 30);
+    @DisplayName("Si la petición nombra a un proveedor se corta antes de buscar el proveedor o generar el reporte")
+    void bloquearParametroProveedor() {
+        MockHttpServletRequest request = peticion("2026-11-01", "2026-11-30");
+        request.addParameter("providerId", "999");
 
-        when(request.getParameter("providerId")).thenReturn("999");
-
-        AccessDeniedException ex = assertThrows(
-                AccessDeniedException.class,
-                () -> controller.consultarOcupacion(start, end, AUTH, request)
-        );
-
-        assertEquals("No está permitido especificar el identificador del proveedor en la petición", ex.getMessage());
-        verifyNoInteractions(obtenerReporteOcupacionUseCase);
+        assertThrows(ReporteAjenoException.class, () -> controller.consultarOcupacion(request, AUTH));
+        verifyNoInteractions(obtenerReporteOcupacionUseCase, consultarProveedorUseCase);
     }
 
     @Test
     @DisplayName("Bloquea la petición si el usuario autenticado no tiene un perfil de proveedor asociado")
     void bloquearUsuarioSinPerfilProveedor() {
-        LocalDate start = LocalDate.of(2026, 11, 1);
-        LocalDate end = LocalDate.of(2026, 11, 30);
-
         when(consultarProveedorUseCase.buscarIdProveedorPorUsuario(USUARIO_ID))
                 .thenReturn(Optional.empty());
 
         AccessDeniedException ex = assertThrows(
                 AccessDeniedException.class,
-                () -> controller.consultarOcupacion(start, end, AUTH, request)
+                () -> controller.consultarOcupacion(peticion("2026-11-01", "2026-11-30"), AUTH)
         );
 
         assertEquals("El usuario autenticado no tiene un perfil de proveedor asociado", ex.getMessage());
@@ -131,12 +131,9 @@ class ReportesControllerTest {
     @Test
     @DisplayName("Bloquea la petición si no hay autenticación válida")
     void bloquearSinAutenticacion() {
-        LocalDate start = LocalDate.of(2026, 11, 1);
-        LocalDate end = LocalDate.of(2026, 11, 30);
-
         assertThrows(
                 AccessDeniedException.class,
-                () -> controller.consultarOcupacion(start, end, null, request)
+                () -> controller.consultarOcupacion(peticion("2026-11-01", "2026-11-30"), null)
         );
     }
 }

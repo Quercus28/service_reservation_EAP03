@@ -2,28 +2,24 @@ package com.service_reservation.EAP03.modulos.reportes.infrastructure.inbound.we
 
 import com.service_reservation.EAP03.modulos.identidad.domain.ports.in.ConsultarProveedorUseCase;
 import com.service_reservation.EAP03.modulos.identidad.infrastructure.inbound.security.UsuarioAutenticadoPrincipal;
-import com.service_reservation.EAP03.modulos.reportes.domain.exception.PeriodoReporteInvalidoException;
 import com.service_reservation.EAP03.modulos.reportes.domain.model.ConsultaOcupacionComando;
 import com.service_reservation.EAP03.modulos.reportes.domain.model.ReporteOcupacion;
 import com.service_reservation.EAP03.modulos.reportes.domain.ports.in.ObtenerReporteOcupacionUseCase;
 import com.service_reservation.EAP03.modulos.reportes.infrastructure.inbound.web.dto.ReporteOcupacionResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.time.LocalDate;
-import java.util.List;
 
 /**
  * Controlador REST para el módulo de reportes.
@@ -36,10 +32,6 @@ public class ReportesController {
 
     private static final Logger log = LoggerFactory.getLogger(ReportesController.class);
 
-    private static final List<String> PARAMETROS_PROHIBIDOS = List.of(
-            "providerId", "provider_id", "idProveedor", "id_proveedor", "proveedorId", "proveedor_id"
-    );
-
     private final ObtenerReporteOcupacionUseCase obtenerReporteOcupacionUseCase;
     private final ConsultarProveedorUseCase consultarProveedorUseCase;
 
@@ -51,43 +43,32 @@ public class ReportesController {
 
     /**
      * Consulta el reporte de ocupación de servicios en un rango de fechas.
+     * Los parámetros se leen y validan con lista blanca en {@link ConsultaOcupacionParametros}
+     * (no con @RequestParam), para que una fecha faltante, un parámetro desconocido o repetido
+     * y un parámetro que nombre a un proveedor respondan con el formato estándar de error.
      */
     @GetMapping("/api/reportes/ocupacion")
     @Operation(summary = "Reporte de Ocupación de Servicios",
-            description = "Calcula la ocupación real vs capacidad disponible para el proveedor autenticado en el período dado.")
+            description = "Calcula la ocupación real vs capacidad disponible para el proveedor autenticado en el período dado. "
+                    + "Solo acepta startDate y endDate (YYYY-MM-DD, obligatorios, una vez cada uno) y un período de hasta 366 días. "
+                    + "Si la petición nombra a un proveedor (proveedorId, idProveedor...) responde 403 y el intento queda en la auditoría.")
+    @Parameter(name = "startDate", in = ParameterIn.QUERY, required = true,
+            description = "Fecha de inicio (YYYY-MM-DD)", schema = @Schema(type = "string", format = "date"))
+    @Parameter(name = "endDate", in = ParameterIn.QUERY, required = true,
+            description = "Fecha de fin (YYYY-MM-DD)", schema = @Schema(type = "string", format = "date"))
     public ResponseEntity<ReporteOcupacionResponseDTO> consultarOcupacion(
-            @Parameter(description = "Fecha de inicio (YYYY-MM-DD)", required = true)
-            @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @Parameter(description = "Fecha de fin (YYYY-MM-DD)", required = true)
-            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            Authentication authentication,
-            HttpServletRequest request) {
+            @Parameter(hidden = true) HttpServletRequest request,
+            Authentication authentication) {
 
-        validarPeticionSegura(request, authentication);
+        ConsultaOcupacionParametros parametros = ConsultaOcupacionParametros.desde(request.getParameterMap());
 
         Integer proveedorId = extraerProveedorId(authentication);
 
-        ConsultaOcupacionComando comando = new ConsultaOcupacionComando(proveedorId, startDate, endDate);
+        ConsultaOcupacionComando comando = new ConsultaOcupacionComando(
+                proveedorId, parametros.startDate(), parametros.endDate());
         ReporteOcupacion reporte = obtenerReporteOcupacionUseCase.ejecutar(comando);
 
         return ResponseEntity.ok(ReporteOcupacionResponseDTO.from(reporte));
-    }
-
-    /**
-     * Valida que no se intenten inyectar identificadores de proveedor en la petición
-     * para evitar manipulación o consultas cruzadas.
-     * Para prevenir vulnerabilidades de Log Injection, no se registra el valor
-     * arbitrario enviado por el usuario, solo el nombre del parámetro prohibido.
-     */
-    private void validarPeticionSegura(HttpServletRequest request, Authentication authentication) {
-        for (String param : PARAMETROS_PROHIBIDOS) {
-            if (request.getParameter(param) != null) {
-                Long idUsuario = obtenerIdUsuario(authentication);
-                log.warn("ALERTA DE SEGURIDAD: Usuario idUsuario={} intentó enviar parámetro prohibido '{}' en consulta de reporte",
-                        idUsuario, param);
-                throw new AccessDeniedException("No está permitido especificar el identificador del proveedor en la petición");
-            }
-        }
     }
 
     /**
@@ -105,12 +86,5 @@ public class ReportesController {
                             principal.getIdUsuario());
                     return new AccessDeniedException("El usuario autenticado no tiene un perfil de proveedor asociado");
                 });
-    }
-
-    private Long obtenerIdUsuario(Authentication authentication) {
-        if (authentication != null && authentication.getPrincipal() instanceof UsuarioAutenticadoPrincipal principal) {
-            return principal.getIdUsuario();
-        }
-        return null;
     }
 }
