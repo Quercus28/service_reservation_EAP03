@@ -13,7 +13,6 @@ import com.service_reservation.EAP03.modulos.reservas.domain.ports.out.ReservaRe
 import com.service_reservation.EAP03.modulos.servicios_catalogo.application.usecase.ObtenerServicioPorIdUseCase;
 import com.service_reservation.EAP03.modulos.servicios_catalogo.domain.exception.ServicioNoEncontradoException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
@@ -34,8 +33,11 @@ public class ConsultarHistorialReservasService implements ConsultarHistorialRese
         this.obtenerServicioPorIdUseCase = obtenerServicioPorIdUseCase;
     }
 
+    // Sin @Transactional a propósito: si el método abriera una transacción, la consulta al
+    // catálogo de un servicio borrado la marcaría para deshacerse (aunque el catch atrape la
+    // excepción) y el historial respondería 500. Cada consulta corre en su propia transacción
+    // de solo lectura, y aquí no se escribe nada.
     @Override
-    @Transactional(readOnly = true)
     public PaginaHistorial ejecutar(ConsultarHistorialComando comando) {
         // El cliente se resuelve siempre desde el usuario autenticado, nunca desde la solicitud.
         Long idCliente = comando.idUsuario() == null ? null
@@ -59,13 +61,13 @@ public class ConsultarHistorialReservasService implements ConsultarHistorialRese
         return new PaginaHistorial(items, pagina.page(), pagina.size(), pagina.total());
     }
 
-    // Si el servicio ya no existe, la cita se conserva en el historial sin nombre.
+    // Si el servicio ya no existe, la cita se conserva en el historial con un nombre fijo.
     private String nombreDe(Reserva reserva, Map<Integer, String> cache) {
         return cache.computeIfAbsent(reserva.getIdServicio(), id -> {
             try {
                 return obtenerServicioPorIdUseCase.ejecutar(id).nombre();
             } catch (ServicioNoEncontradoException e) {
-                return null;
+                return ReservaHistorial.SERVICIO_NO_DISPONIBLE;
             }
         });
     }
