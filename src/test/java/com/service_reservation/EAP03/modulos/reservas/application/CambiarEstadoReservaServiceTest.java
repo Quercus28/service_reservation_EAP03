@@ -162,8 +162,9 @@ class CambiarEstadoReservaServiceTest {
         when(reservaRepositoryPort.buscarPorId(ID_RESERVA)).thenReturn(Optional.of(ajena));
 
         // Act
+        CambiarEstadoReservaComando comando = comando(EstadoReserva.CONFIRMADO);
         ReservaAjenaException ex = assertThrows(ReservaAjenaException.class,
-                () -> service.ejecutar(comando(EstadoReserva.CONFIRMADO)));
+                () -> service.ejecutar(comando));
 
         // Assert
         assertEquals(ReservaAjenaException.deOtroProveedor(ID_RESERVA).getMessage(), ex.getMessage());
