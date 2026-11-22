@@ -131,9 +131,11 @@ class ReportesControllerTest {
     @Test
     @DisplayName("Bloquea la petición si no hay autenticación válida")
     void bloquearSinAutenticacion() {
+        MockHttpServletRequest request = peticion("2026-11-01", "2026-11-30");
+
         assertThrows(
                 AccessDeniedException.class,
-                () -> controller.consultarOcupacion(peticion("2026-11-01", "2026-11-30"), null)
+                () -> controller.consultarOcupacion(request, null)
         );
     }
 }
