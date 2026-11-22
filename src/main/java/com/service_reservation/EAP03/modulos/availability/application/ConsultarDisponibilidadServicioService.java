@@ -41,12 +41,16 @@ public class ConsultarDisponibilidadServicioService implements ConsultarDisponib
     @Override
     @Transactional(readOnly = true)
     public List<TimeSlot> ejecutar(Integer servicioId, LocalDate startDate, LocalDate endDate) {
-        return ejecutar(servicioId, startDate, endDate, 0);
+        return consultar(servicioId, startDate, endDate, 0);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<TimeSlot> ejecutar(Integer servicioId, LocalDate startDate, LocalDate endDate, int page) {
+        return consultar(servicioId, startDate, endDate, page);
+    }
+
+    private List<TimeSlot> consultar(Integer servicioId, LocalDate startDate, LocalDate endDate, int page) {
         if (servicioId == null) {
             throw new DisponibilidadInvalidaException("El id del servicio es obligatorio");
         }
