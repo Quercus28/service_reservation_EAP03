@@ -26,9 +26,9 @@ class ReporteOcupacionTest {
 
         List<OcupacionServicio> detalle = reporte.getDetalleServicios();
 
-        assertThrows(UnsupportedOperationException.class, () ->
-                detalle.add(OcupacionServicio.builder(2, "Servicio 2").build())
-        );
+        OcupacionServicio otroServicio = OcupacionServicio.builder(2, "Servicio 2").build();
+
+        assertThrows(UnsupportedOperationException.class, () -> detalle.add(otroServicio));
     }
 
     @Test
