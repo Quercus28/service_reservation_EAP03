@@ -100,13 +100,11 @@ public class SolicitudProveedorController {
     @PostMapping("/{id}/rechazar")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Rechazar una solicitud de proveedor", description = "Rechaza la solicitud indicada. El motivo es obligatorio y debe tener entre 3 y 500 caracteres.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Solicitud rechazada."),
-            @ApiResponse(responseCode = "400", description = "El motivo no cumple las validaciones.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "Se requiere rol ADMIN.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "404", description = "No se encontró la solicitud.", content = @Content(mediaType = "application/json"))
-    })
+    @ApiResponse(responseCode = "200", description = "Solicitud rechazada.")
+    @ApiResponse(responseCode = "400", description = "El motivo no cumple las validaciones.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "403", description = "Se requiere rol ADMIN.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "404", description = "No se encontró la solicitud.", content = @Content(mediaType = "application/json"))
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Motivo del rechazo (entre 3 y 500 caracteres).",
             content = @Content(examples = @ExampleObject(value = """
