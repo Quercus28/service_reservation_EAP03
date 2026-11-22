@@ -135,10 +135,8 @@ public class ServicioController {
             summary = "Consultar el catálogo de servicios",
             description = "Devuelve una página de servicios y permite filtrar opcionalmente por proveedor o por nombre. Requiere un usuario autenticado."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Página de servicios consultada."),
-            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json"))
-    })
+    @ApiResponse(responseCode = "200", description = "Página de servicios consultada.")
+    @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json"))
     public ResponseEntity<PaginaResponse<ServicioResponse>> consultarServicios(
             @io.swagger.v3.oas.annotations.Parameter(description = "Identificador del proveedor por el que se desea filtrar.")
             @RequestParam(required = false) Integer idProveedor,
