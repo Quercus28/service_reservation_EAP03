@@ -160,14 +160,12 @@ public class ReservaController {
             summary = "Cancelar una reserva",
             description = "Cancela una reserva del cliente autenticado. El motivo es opcional y no puede superar 255 caracteres. Requiere rol CLIENTE y permiso operativo activo."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Reserva cancelada."),
-            @ApiResponse(responseCode = "400", description = "El identificador o el motivo no son válidos.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "El usuario no puede cancelar esta reserva o su permiso operativo está inactivo.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "404", description = "La reserva no existe.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "409", description = "La reserva no se puede cancelar o está fuera del plazo permitido.", content = @Content(mediaType = "application/json"))
-    })
+    @ApiResponse(responseCode = "200", description = "Reserva cancelada.")
+    @ApiResponse(responseCode = "400", description = "El identificador o el motivo no son válidos.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "403", description = "El usuario no puede cancelar esta reserva o su permiso operativo está inactivo.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "404", description = "La reserva no existe.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "409", description = "La reserva no se puede cancelar o está fuera del plazo permitido.", content = @Content(mediaType = "application/json"))
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Cuerpo opcional. Si se envía, puede incluir un motivo de cancelación.",
             required = false,
