@@ -196,8 +196,9 @@ class CambiarEstadoReservaServiceTest {
         when(reservaRepositoryPort.buscarPorId(ID_RESERVA)).thenReturn(Optional.of(reserva(ID_PROVEEDOR, desde)));
 
         // Act
+        CambiarEstadoReservaComando comando = comando(hacia);
         CambioEstadoNoPermitidoException ex = assertThrows(CambioEstadoNoPermitidoException.class,
-                () -> service.ejecutar(comando(hacia)));
+                () -> service.ejecutar(comando));
 
         // Assert
         assertTrue(ex.getMessage().startsWith("La acción no es válida para el estado actual"));
