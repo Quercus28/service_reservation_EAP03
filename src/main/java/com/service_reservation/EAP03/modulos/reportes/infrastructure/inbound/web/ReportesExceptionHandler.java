@@ -62,9 +62,11 @@ public class ReportesExceptionHandler {
     @ExceptionHandler(ConsultaReporteInvalidaException.class)
     public ResponseEntity<Map<String, Object>> manejarConsultaInvalida(ConsultaReporteInvalidaException ex,
                                                                        HttpServletRequest request) {
-        log.warn("AUDITORIA evento=REPORTE_ENTRADA_RECHAZADA motivo={} idUsuario={} metodo={} ruta={} traceId={}",
-                ex.getMotivo().name(), idUsuarioActual(), request.getMethod(), request.getRequestURI(),
-                TraceIdFilter.traceIdActual());
+        if (log.isWarnEnabled()) {
+            log.warn("AUDITORIA evento=REPORTE_ENTRADA_RECHAZADA motivo={} idUsuario={} metodo={} ruta={} traceId={}",
+                    ex.getMotivo().name(), idUsuarioActual(), request.getMethod(), request.getRequestURI(),
+                    TraceIdFilter.traceIdActual());
+        }
         return construir(HttpStatus.BAD_REQUEST, "CONSULTA_INVALIDA", ex.getMessage());
     }
 
@@ -73,8 +75,10 @@ public class ReportesExceptionHandler {
     @ExceptionHandler(ReporteAjenoException.class)
     public ResponseEntity<Map<String, Object>> manejarReporteAjeno(ReporteAjenoException ex, HttpServletRequest request) {
         Long idUsuario = idUsuarioActual();
-        log.warn("AUDITORIA evento=REPORTE_AJENO_DENEGADO motivo=reporte de otro proveedor idUsuario={} metodo={} ruta={} traceId={}",
-                idUsuario, request.getMethod(), request.getRequestURI(), TraceIdFilter.traceIdActual());
+        if (log.isWarnEnabled()) {
+            log.warn("AUDITORIA evento=REPORTE_AJENO_DENEGADO motivo=reporte de otro proveedor idUsuario={} metodo={} ruta={} traceId={}",
+                    idUsuario, request.getMethod(), request.getRequestURI(), TraceIdFilter.traceIdActual());
+        }
         guardarEnAuditoria(idUsuario, request);
         return construir(HttpStatus.FORBIDDEN, RespuestaErrorJson.ACCESO_NO_AUTORIZADO,
                 RespuestaErrorJson.MENSAJE_ACCESO_NO_AUTORIZADO);

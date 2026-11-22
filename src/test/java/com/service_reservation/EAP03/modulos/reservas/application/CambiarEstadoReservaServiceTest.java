@@ -96,7 +96,8 @@ class CambiarEstadoReservaServiceTest {
         when(verificarPermisoOperativoUseCase.tienePermisoOperativo(ID_USUARIO, RolOperativo.PROVEEDOR)).thenReturn(false);
 
         // Act
-        assertThrows(UsuarioNoEsProveedorException.class, () -> service.ejecutar(comando(EstadoReserva.CONFIRMADO)));
+        CambiarEstadoReservaComando comando = comando(EstadoReserva.CONFIRMADO);
+        assertThrows(UsuarioNoEsProveedorException.class, () -> service.ejecutar(comando));
 
         // Assert
         EventoAuditoria evento = auditado();
@@ -116,7 +117,8 @@ class CambiarEstadoReservaServiceTest {
         when(verificarPermisoOperativoUseCase.tienePermisoOperativo(ID_USUARIO, RolOperativo.PROVEEDOR)).thenReturn(false);
 
         // Act
-        assertThrows(UsuarioNoEsProveedorException.class, () -> service.ejecutar(comando(EstadoReserva.COMPLETADO)));
+        CambiarEstadoReservaComando comando = comando(EstadoReserva.COMPLETADO);
+        assertThrows(UsuarioNoEsProveedorException.class, () -> service.ejecutar(comando));
 
         // Assert
         assertEquals(AccionAdmin.CAMBIO_ESTADO_RESERVA_DENEGADO, auditado().accion());
@@ -131,7 +133,8 @@ class CambiarEstadoReservaServiceTest {
         when(consultarProveedorUseCase.buscarIdProveedorPorUsuario(ID_USUARIO)).thenReturn(Optional.empty());
 
         // Act
-        assertThrows(UsuarioNoEsProveedorException.class, () -> service.ejecutar(comando(EstadoReserva.CONFIRMADO)));
+        CambiarEstadoReservaComando comando = comando(EstadoReserva.CONFIRMADO);
+        assertThrows(UsuarioNoEsProveedorException.class, () -> service.ejecutar(comando));
 
         // Assert
         assertEquals(AccionAdmin.CAMBIO_ESTADO_RESERVA_DENEGADO, auditado().accion());
@@ -142,8 +145,9 @@ class CambiarEstadoReservaServiceTest {
     @DisplayName("Sin usuario identificado se rechaza y se audita, sin consultar permisos")
     void withoutUser() {
         // Act
-        assertThrows(UsuarioNoEsProveedorException.class, () -> service.ejecutar(
-                new CambiarEstadoReservaComando(null, ID_RESERVA, EstadoReserva.CONFIRMADO, ENDPOINT)));
+        CambiarEstadoReservaComando comando =
+                new CambiarEstadoReservaComando(null, ID_RESERVA, EstadoReserva.CONFIRMADO, ENDPOINT);
+        assertThrows(UsuarioNoEsProveedorException.class, () -> service.ejecutar(comando));
 
         // Assert
         assertNull(auditado().idActor());
@@ -159,8 +163,9 @@ class CambiarEstadoReservaServiceTest {
         when(reservaRepositoryPort.buscarPorId(ID_RESERVA)).thenReturn(Optional.of(ajena));
 
         // Act
+        CambiarEstadoReservaComando comando = comando(EstadoReserva.CONFIRMADO);
         ReservaAjenaException ex = assertThrows(ReservaAjenaException.class,
-                () -> service.ejecutar(comando(EstadoReserva.CONFIRMADO)));
+                () -> service.ejecutar(comando));
 
         // Assert
         assertEquals(ReservaAjenaException.deOtroProveedor(ID_RESERVA).getMessage(), ex.getMessage());
@@ -179,7 +184,8 @@ class CambiarEstadoReservaServiceTest {
         when(reservaRepositoryPort.buscarPorId(ID_RESERVA)).thenReturn(Optional.empty());
 
         // Act + Assert
-        assertThrows(ReservaNoEncontradaException.class, () -> service.ejecutar(comando(EstadoReserva.CONFIRMADO)));
+        CambiarEstadoReservaComando comando = comando(EstadoReserva.CONFIRMADO);
+        assertThrows(ReservaNoEncontradaException.class, () -> service.ejecutar(comando));
         verifyNoInteractions(registrarAuditoriaUseCase);
     }
 
@@ -193,8 +199,9 @@ class CambiarEstadoReservaServiceTest {
         when(reservaRepositoryPort.buscarPorId(ID_RESERVA)).thenReturn(Optional.of(reserva(ID_PROVEEDOR, desde)));
 
         // Act
+        CambiarEstadoReservaComando comando = comando(hacia);
         CambioEstadoNoPermitidoException ex = assertThrows(CambioEstadoNoPermitidoException.class,
-                () -> service.ejecutar(comando(hacia)));
+                () -> service.ejecutar(comando));
 
         // Assert
         assertTrue(ex.getMessage().startsWith("La acción no es válida para el estado actual"));
@@ -208,8 +215,9 @@ class CambiarEstadoReservaServiceTest {
         CambiarEstadoReservaComando sinReserva =
                 new CambiarEstadoReservaComando(ID_USUARIO, null, EstadoReserva.CONFIRMADO, ENDPOINT);
         assertThrows(DatosReservaInvalidosException.class, () -> service.ejecutar(sinReserva));
-        assertThrows(DatosReservaInvalidosException.class, () -> service.ejecutar(
-                new CambiarEstadoReservaComando(ID_USUARIO, ID_RESERVA, null, ENDPOINT)));
+        CambiarEstadoReservaComando sinEstado =
+                new CambiarEstadoReservaComando(ID_USUARIO, ID_RESERVA, null, ENDPOINT);
+        assertThrows(DatosReservaInvalidosException.class, () -> service.ejecutar(sinEstado));
         verifyNoInteractions(verificarPermisoOperativoUseCase, registrarAuditoriaUseCase);
     }
 }

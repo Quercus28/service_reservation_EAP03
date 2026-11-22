@@ -88,7 +88,7 @@ public class SecurityConfig {
     public SecurityFilterChain swaggerFilterChain(
             HttpSecurity http,
             @Qualifier("swaggerAuthenticationProvider")
-            AuthenticationProvider swaggerAuthenticationProvider) throws Exception {
+            AuthenticationProvider swaggerAuthenticationProvider) {
         http
             .securityMatcher(
                 "/swagger-ui/**",

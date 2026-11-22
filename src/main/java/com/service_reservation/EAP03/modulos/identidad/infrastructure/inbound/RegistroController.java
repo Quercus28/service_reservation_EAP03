@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
@@ -31,11 +30,9 @@ public class RegistroController {
             description = "Crea una cuenta de cliente o proveedor. La contraseña debe tener al menos 8 caracteres e incluir minúscula, mayúscula y número. No requiere token."
     )
     @SecurityRequirements
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Cuenta creada."),
-            @ApiResponse(responseCode = "400", description = "Los datos no cumplen las validaciones o las contraseñas no coinciden.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "409", description = "El correo o documento ya está registrado.", content = @Content(mediaType = "application/json"))
-    })
+    @ApiResponse(responseCode = "201", description = "Cuenta creada.")
+    @ApiResponse(responseCode = "400", description = "Los datos no cumplen las validaciones o las contraseñas no coinciden.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "409", description = "El correo o documento ya está registrado.", content = @Content(mediaType = "application/json"))
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Datos requeridos para crear una cuenta.",
             content = @Content(examples = @ExampleObject(value = """

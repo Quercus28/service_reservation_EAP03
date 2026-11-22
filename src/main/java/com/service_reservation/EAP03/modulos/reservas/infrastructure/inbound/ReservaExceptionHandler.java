@@ -177,9 +177,11 @@ public class ReservaExceptionHandler {
         Long idUsuario = auth != null && auth.getPrincipal() instanceof UsuarioAutenticadoPrincipal principal
                 ? principal.getIdUsuario()
                 : null;
-        log.warn("AUDITORIA evento={} motivo={} idUsuario={} metodo={} ruta={} traceId={}",
-                evento, motivo, idUsuario, request.getMethod(), request.getRequestURI(),
-                TraceIdFilter.traceIdActual());
+        if (log.isWarnEnabled()) {
+            log.warn("AUDITORIA evento={} motivo={} idUsuario={} metodo={} ruta={} traceId={}",
+                    evento, motivo, idUsuario, request.getMethod(), request.getRequestURI(),
+                    TraceIdFilter.traceIdActual());
+        }
         return idUsuario;
     }
 
