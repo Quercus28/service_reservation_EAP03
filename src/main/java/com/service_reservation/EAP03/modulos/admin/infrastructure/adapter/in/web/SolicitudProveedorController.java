@@ -49,11 +49,9 @@ public class SolicitudProveedorController {
     @PostMapping("/proveedor/reenviar")
     @PreAuthorize("hasRole('PROVEEDOR')")
     @Operation(summary = "Reenviar solicitud de aprobación", description = "Solicita nuevamente la aprobación del proveedor autenticado según el estado actual de su solicitud.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Solicitud reenviada."),
-            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "La operación está disponible para proveedores.", content = @Content(mediaType = "application/json"))
-    })
+    @ApiResponse(responseCode = "200", description = "Solicitud reenviada.")
+    @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "403", description = "La operación está disponible para proveedores.", content = @Content(mediaType = "application/json"))
     public ResponseEntity<SolicitudAprobacionProveedor> reenviarSolicitud(
             @AuthenticationPrincipal UsuarioAutenticadoPrincipal principal) {
         SolicitudAprobacionProveedor solicitud = useCase.reenviarSolicitud(principal.getIdUsuario());
