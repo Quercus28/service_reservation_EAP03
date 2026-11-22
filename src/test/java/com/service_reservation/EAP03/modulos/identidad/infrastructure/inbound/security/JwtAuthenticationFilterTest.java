@@ -260,4 +260,21 @@ class JwtAuthenticationFilterTest {
         assertNull(SecurityContextHolder.getContext().getAuthentication());
         verify(filterChain).doFilter(request, response);
     }
+
+    @ParameterizedTest(name = "{0} -> excluida={1}")
+    @CsvSource({
+            "/swagger-ui.html, true",
+            "/swagger-ui/index.html, true",
+            "/v3/api-docs, true",
+            "/v3/api-docs/swagger-config, true",
+            "/v3/api-docs.yaml, true",
+            "/api/v1/reservas, false"
+    })
+    @DisplayName("Las rutas de la documentación de Swagger no pasan por el filtro JWT; el resto sí")
+    void swaggerPathsAreNotFiltered(String ruta, boolean excluida) {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", ruta);
+        request.setServletPath(ruta);
+
+        assertEquals(excluida, filter.shouldNotFilter(request));
+    }
 }

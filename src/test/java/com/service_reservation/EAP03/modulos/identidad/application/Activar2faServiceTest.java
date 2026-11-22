@@ -168,4 +168,20 @@ class Activar2faServiceTest {
         verify(usuarioRepository, never()).activar2fa(any());
         verifyNoInteractions(jwtPort);
     }
+
+    @Test
+    @DisplayName("En la configuración inicial rechaza a un administrador con la cuenta deshabilitada")
+    void initialSetupRejectsDisabledAdmin() {
+        // Arrange
+        when(usuarioRepository.buscarPorId(1L)).thenReturn(Optional.of(
+                new Usuario(1L, "admin@test.com", "hash", false, Set.of("ROLE_ADMIN"), "SECRETO", false)));
+
+        // Act
+        assertThrows(CredencialesInvalidasException.class,
+                () -> service.ejecutarEnConfiguracionInicial(1L, "123456"));
+
+        // Assert
+        verifyNoInteractions(totpPort, jwtPort);
+        verify(usuarioRepository, never()).activar2fa(any());
+    }
 }

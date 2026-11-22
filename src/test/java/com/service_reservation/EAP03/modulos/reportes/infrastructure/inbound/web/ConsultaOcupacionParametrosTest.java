@@ -122,4 +122,15 @@ class ConsultaOcupacionParametrosTest {
 
         assertEquals("El parámetro 'startDate' tiene un formato o valor inválido", ex.getMessage());
     }
+
+    @Test
+    @DisplayName("Un endDate sin valor (null) cuenta como faltante")
+    void endDateNulo() {
+        Map<String, String[]> mapa = params("startDate", "2026-11-01", "endDate", null);
+
+        ParametroReporteFaltanteException ex = assertThrows(ParametroReporteFaltanteException.class,
+                () -> ConsultaOcupacionParametros.desde(mapa));
+
+        assertEquals("El parámetro 'endDate' es obligatorio", ex.getMessage());
+    }
 }

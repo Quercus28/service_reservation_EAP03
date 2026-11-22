@@ -59,4 +59,14 @@ class ConsultaHistorialParametrosTest {
         assertEquals(Motivo.VALOR_INVALIDO, motivoDe(Map.of("idCliente", new String[]{"abc"})));
         assertEquals(Motivo.VALOR_INVALIDO, motivoDe(Map.of("page", new String[]{"1", "2"})));
     }
+
+    @Test
+    @DisplayName("Un parámetro sin valor (null) no se toma como sospechoso y se trata como ausente")
+    void nullValueIsTreatedAsAbsent() {
+        Map<String, String[]> params = Map.of("estado", new String[]{null});
+
+        ConsultaHistorialParametros p = ConsultaHistorialParametros.desde(params);
+
+        assertNull(p.estado());
+    }
 }

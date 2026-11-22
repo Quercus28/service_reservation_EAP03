@@ -11,6 +11,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 import java.util.List;
 import java.util.Map;
+import tools.jackson.databind.exc.InvalidFormatException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -94,5 +95,20 @@ class GlobalExceptionHandlerCuerpoNoLegibleTest {
 
         assertEquals("CUERPO_NO_VALIDO", body.get("errorCode"));
         assertFalse(body.containsKey("details"));
+    }
+
+    @Test
+    @DisplayName("Si Jackson no informa el tipo destino, nombra el campo sin lista de valores")
+    void unknownTargetTypeReportsFieldOnly() {
+        InvalidFormatException causa = InvalidFormatException.from(null, "valor inválido", "x", null);
+        causa.prependPath(new Object(), "cantidad");
+        HttpMessageNotReadableException ex = new HttpMessageNotReadableException(
+                "error", causa, new MockHttpInputMessage(new byte[0]));
+
+        Map<String, Object> body =
+                handler.handleCuerpoNoLegible(ex, new MockHttpServletRequest("POST", "/api/v1/pedidos")).getBody();
+
+        assertEquals("VALIDACION_ENTRADA", body.get("errorCode"));
+        assertEquals(Map.of("cantidad", "El valor enviado no es válido"), body.get("details"));
     }
 }

@@ -21,6 +21,9 @@ import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import java.util.List;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -82,5 +85,21 @@ class SwaggerSecurityConfigTest {
         UsernamePasswordAuthenticationToken credenciales =
                 new UsernamePasswordAuthenticationToken("docs", "incorrect-password");
         assertThrows(BadCredentialsException.class, () -> swaggerAuthenticationProvider.authenticate(credenciales));
+    }
+
+    @ParameterizedTest(name = "usuario=''{0}'' contraseña=''{1}''")
+    @CsvSource({
+            "'   ', DocumentationTestPassword123!",
+            "docs, corta123"
+    })
+    @DisplayName("Sin usuario o con una contraseña de menos de 16 caracteres, la configuración de Swagger no arranca")
+    void swaggerCredentialsMustBeStrong(String username, String password) {
+        SecurityConfig config = new SecurityConfig(null, null);
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> config.swaggerUserDetailsService(encoder, username, password));
+
+        assertEquals("Configure SWAGGER_USERNAME y una SWAGGER_PASSWORD de al menos 16 caracteres.", ex.getMessage());
     }
 }
