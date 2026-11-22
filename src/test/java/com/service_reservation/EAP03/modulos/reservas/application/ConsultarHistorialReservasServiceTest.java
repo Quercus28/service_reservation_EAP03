@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -81,14 +80,15 @@ class ConsultarHistorialReservasServiceTest {
     }
 
     @Test
-    @DisplayName("Si el servicio ya no existe, la cita se conserva sin nombre")
+    @DisplayName("Si el servicio ya no existe, la cita se conserva con el nombre \"Servicio no disponible\"")
     void keepsReservationWhenServiceIsGone() {
         when(consultarClienteUseCase.buscarIdClientePorUsuario(20L)).thenReturn(Optional.of(3L));
         when(reservaRepositoryPort.buscarHistorialDeCliente(3L, null, 0, 10))
                 .thenReturn(new PaginaReservas(List.of(reserva(1, 99, EstadoReserva.NO_ASISTIO)), 0, 10, 1));
         when(obtenerServicioPorIdUseCase.ejecutar(99)).thenThrow(new ServicioNoEncontradoException(99));
 
-        assertNull(service.ejecutar(new ConsultarHistorialComando(20L, null, null, 0, 10)).contenido().get(0).nombreServicio());
+        assertEquals("Servicio no disponible",
+                service.ejecutar(new ConsultarHistorialComando(20L, null, null, 0, 10)).contenido().get(0).nombreServicio());
     }
 
     @Test
