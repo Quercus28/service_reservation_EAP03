@@ -121,11 +121,9 @@ public class ServicioController {
             summary = "Consultar un servicio",
             description = "Obtiene el detalle de un servicio por su identificador. Requiere un usuario autenticado."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Servicio encontrado."),
-            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "404", description = "No existe un servicio con ese identificador.", content = @Content(mediaType = "application/json"))
-    })
+    @ApiResponse(responseCode = "200", description = "Servicio encontrado.")
+    @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "404", description = "No existe un servicio con ese identificador.", content = @Content(mediaType = "application/json"))
     public ResponseEntity<ServicioResponse> obtenerServicioPorId(@PathVariable Integer id) {
         ServicioResponse response = obtenerServicioPorIdUseCase.ejecutar(id);
         return ResponseEntity.ok(response);
