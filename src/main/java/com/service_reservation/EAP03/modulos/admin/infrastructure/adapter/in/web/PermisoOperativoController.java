@@ -96,11 +96,9 @@ public class PermisoOperativoController {
 
     @GetMapping("/usuario/{idUsuario}")
     @Operation(summary = "Consultar permisos de un usuario", description = "Devuelve los permisos operativos registrados para el usuario indicado. Requiere rol ADMIN.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Permisos consultados."),
-            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "Se requiere rol ADMIN.", content = @Content(mediaType = "application/json"))
-    })
+    @ApiResponse(responseCode = "200", description = "Permisos consultados.")
+    @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "403", description = "Se requiere rol ADMIN.", content = @Content(mediaType = "application/json"))
     public ResponseEntity<List<PermisoOperativo>> consultarPermisos(@PathVariable Long idUsuario) {
         return ResponseEntity.ok(useCase.consultarPermisos(idUsuario));
     }
