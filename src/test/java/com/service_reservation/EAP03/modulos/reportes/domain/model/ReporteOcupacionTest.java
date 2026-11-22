@@ -26,9 +26,9 @@ class ReporteOcupacionTest {
 
         List<OcupacionServicio> detalle = reporte.getDetalleServicios();
 
-        assertThrows(UnsupportedOperationException.class, () ->
-                detalle.add(OcupacionServicio.builder(2, "Servicio 2").build())
-        );
+        OcupacionServicio otroServicio = OcupacionServicio.builder(2, "Servicio 2").build();
+
+        assertThrows(UnsupportedOperationException.class, () -> detalle.add(otroServicio));
     }
 
     @Test
@@ -36,8 +36,9 @@ class ReporteOcupacionTest {
     void requiereCamposObligatorios() {
         PeriodoReporte periodo = new PeriodoReporte(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31));
 
-        assertThrows(NullPointerException.class, () -> ReporteOcupacion.builder(null, periodo).build());
         ReporteOcupacion.Builder sinPeriodo = ReporteOcupacion.builder(1, null);
         assertThrows(NullPointerException.class, sinPeriodo::build);
+        ReporteOcupacion.Builder sinProveedor = ReporteOcupacion.builder(null, periodo);
+        assertThrows(NullPointerException.class, sinProveedor::build);
     }
 }

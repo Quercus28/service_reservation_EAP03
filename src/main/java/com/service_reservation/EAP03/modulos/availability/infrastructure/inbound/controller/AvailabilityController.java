@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -50,30 +49,28 @@ public class AvailabilityController {
             summary = "Consultar disponibilidad de un servicio",
             description = "Devuelve las franjas horarias disponibles agrupadas por fecha dentro del intervalo indicado. Ambas fechas son obligatorias, usan formato ISO YYYY-MM-DD y endDate no puede ser anterior a startDate. Ante rangos mayores a 30 días, procesa bloques de hasta 30 días por página. Requiere JWT."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Disponibilidad consultada; la lista puede estar vacía si no hay franjas libres.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = DisponibilidadServicioResponseDTO.class), examples = @ExampleObject(value = """
+    @ApiResponse(responseCode = "200", description = "Disponibilidad consultada; la lista puede estar vacía si no hay franjas libres.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = DisponibilidadServicioResponseDTO.class), examples = @ExampleObject(value = """
+            {
+              "servicioId": 12,
+              "totalEspaciosDisponibles": 1,
+              "disponibilidad": [
+                {
+                  "fecha": "2026-11-02",
+                  "franjas": [
                     {
-                      "servicioId": 12,
-                      "totalEspaciosDisponibles": 1,
-                      "disponibilidad": [
-                        {
-                          "fecha": "2026-11-02",
-                          "franjas": [
-                            {
-                              "inicio": "09:00:00",
-                              "fin": "10:00:00"
-                            }
-                          ]
-                        }
-                      ],
-                      "mensaje": null
+                      "inicio": "09:00:00",
+                      "fin": "10:00:00"
                     }
-                    """))),
-            @ApiResponse(responseCode = "400", description = "Fechas ausentes, con formato inválido o intervalo incoherente.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "El usuario no tiene permisos para consultar la disponibilidad.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "404", description = "No existe el servicio indicado.", content = @Content(mediaType = "application/json"))
-    })
+                  ]
+                }
+              ],
+              "mensaje": null
+            }
+            """)))
+    @ApiResponse(responseCode = "400", description = "Fechas ausentes, con formato inválido o intervalo incoherente.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "403", description = "El usuario no tiene permisos para consultar la disponibilidad.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "404", description = "No existe el servicio indicado.", content = @Content(mediaType = "application/json"))
     public ResponseEntity<DisponibilidadServicioResponseDTO> consultarDisponibilidad(
             @io.swagger.v3.oas.annotations.Parameter(description = "Identificador numérico del servicio.", example = "12")
             @PathVariable("id") Integer id,
