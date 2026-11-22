@@ -55,4 +55,27 @@ class PeriodoReporteTest {
         assertThrows(NullPointerException.class, () -> new PeriodoReporte(null, date));
         assertThrows(NullPointerException.class, () -> new PeriodoReporte(date, null));
     }
+
+    @Test
+    @DisplayName("Acepta un período de exactamente 366 días contando ambos extremos")
+    void aceptaPeriodoDe366Dias() {
+        LocalDate start = LocalDate.of(2028, 1, 1);
+        LocalDate end = LocalDate.of(2028, 12, 31); // 2028 es bisiesto: 366 días
+
+        assertDoesNotThrow(() -> new PeriodoReporte(start, end));
+    }
+
+    @Test
+    @DisplayName("Rechaza un período de más de 366 días con un mensaje que lo dice")
+    void rechazaPeriodoMayorA366Dias() {
+        LocalDate start = LocalDate.of(2026, 1, 1);
+        LocalDate end = LocalDate.of(2027, 1, 2); // 367 días
+
+        PeriodoReporteInvalidoException ex = assertThrows(
+                PeriodoReporteInvalidoException.class,
+                () -> new PeriodoReporte(start, end)
+        );
+
+        assertEquals("El período no puede ser mayor a 366 días", ex.getMessage());
+    }
 }

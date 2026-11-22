@@ -14,5 +14,7 @@ public enum AccionAdmin {
     // Las usan otros módulos con RegistrarAuditoriaUseCase. HISTORIAL_AJENO_DENEGADO tiene el
     // mismo nombre que el evento que reservas ya escribe en el log, para no tener dos nombres.
     HISTORIAL_AJENO_DENEGADO,
-    CAMBIO_ESTADO_RESERVA_DENEGADO
+    CAMBIO_ESTADO_RESERVA_DENEGADO,
+    // Un proveedor intentó pedir el reporte de ocupación nombrando a un proveedor en la petición.
+    REPORTE_AJENO_DENEGADO
 }
