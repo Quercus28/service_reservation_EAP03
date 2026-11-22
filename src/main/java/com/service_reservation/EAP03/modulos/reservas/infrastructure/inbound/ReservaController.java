@@ -114,23 +114,21 @@ public class ReservaController {
             summary = "Crear una reserva",
             description = "Reserva un servicio para el cliente autenticado. La fecha de fin se determina según la duración del servicio; el usuario se obtiene del JWT y no del cuerpo. Requiere rol CLIENTE y permiso operativo activo."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Reserva creada.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ReservaResponseDTO.class), examples = @ExampleObject(value = """
-                    {
-                      "id": 87,
-                      "idServicio": 12,
-                      "fechaInicio": "2026-11-02T09:00:00",
-                      "fechaFin": "2026-11-02T10:00:00",
-                      "estado": "RESERVADO",
-                      "notas": "Acceso por la entrada principal"
-                    }
-                    """))),
-            @ApiResponse(responseCode = "400", description = "Los datos son inválidos, faltan campos obligatorios o se repiten recursos opcionales.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "El usuario no tiene rol CLIENTE o su permiso operativo está inactivo.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "404", description = "No existe el servicio solicitado.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "409", description = "El horario o alguno de los recursos solicitados ya no está disponible.", content = @Content(mediaType = "application/json"))
-    })
+    @ApiResponse(responseCode = "201", description = "Reserva creada.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ReservaResponseDTO.class), examples = @ExampleObject(value = """
+            {
+              "id": 87,
+              "idServicio": 12,
+              "fechaInicio": "2026-11-02T09:00:00",
+              "fechaFin": "2026-11-02T10:00:00",
+              "estado": "RESERVADO",
+              "notas": "Acceso por la entrada principal"
+            }
+            """)))
+    @ApiResponse(responseCode = "400", description = "Los datos son inválidos, faltan campos obligatorios o se repiten recursos opcionales.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "403", description = "El usuario no tiene rol CLIENTE o su permiso operativo está inactivo.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "404", description = "No existe el servicio solicitado.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "409", description = "El horario o alguno de los recursos solicitados ya no está disponible.", content = @Content(mediaType = "application/json"))
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Servicio, fecha y hora de inicio, notas opcionales y recursos adicionales opcionales.",
             content = @Content(examples = @ExampleObject(value = """
