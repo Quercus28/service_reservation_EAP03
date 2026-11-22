@@ -150,13 +150,11 @@ public class SolicitudProveedorController {
     @PutMapping("/proveedor/{idUsuario}/perfil")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Actualizar el perfil de un proveedor", description = "Actualiza la razón social y los datos de contacto del proveedor indicado. Requiere rol ADMIN.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Perfil actualizado."),
-            @ApiResponse(responseCode = "400", description = "Uno o más campos no cumplen las validaciones.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "Se requiere rol ADMIN.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "404", description = "No se encontró el proveedor.", content = @Content(mediaType = "application/json"))
-    })
+    @ApiResponse(responseCode = "200", description = "Perfil actualizado.")
+    @ApiResponse(responseCode = "400", description = "Uno o más campos no cumplen las validaciones.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "403", description = "Se requiere rol ADMIN.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "404", description = "No se encontró el proveedor.", content = @Content(mediaType = "application/json"))
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Datos del perfil que se actualizarán.",
             content = @Content(examples = @ExampleObject(value = """
