@@ -24,25 +24,9 @@ public record ConsultaHistorialParametros(Long idCliente, EstadoReserva estado, 
 
     public static ConsultaHistorialParametros desde(Map<String, String[]> parametros) {
         // 1) Texto sospechoso en nombres o valores.
-        for (Map.Entry<String, String[]> e : parametros.entrySet()) {
-            if (SOSPECHOSO.matcher(e.getKey()).find()) {
-                throw new ConsultaHistorialInvalidaException(Motivo.PATRON_SOSPECHOSO);
-            }
-            for (String v : e.getValue()) {
-                if (v != null && SOSPECHOSO.matcher(v).find()) {
-                    throw new ConsultaHistorialInvalidaException(Motivo.PATRON_SOSPECHOSO);
-                }
-            }
-        }
+        rechazarSospechosos(parametros);
         // 2) Solo los parámetros conocidos, una vez cada uno.
-        for (Map.Entry<String, String[]> e : parametros.entrySet()) {
-            if (!PERMITIDOS.contains(e.getKey())) {
-                throw new ConsultaHistorialInvalidaException(Motivo.PARAMETRO_DESCONOCIDO);
-            }
-            if (e.getValue().length != 1) {
-                throw new ConsultaHistorialInvalidaException(Motivo.VALOR_INVALIDO);
-            }
-        }
+        rechazarDesconocidosORepetidos(parametros);
         // 3) Formato y rango de cada valor.
         String idCliente = unico(parametros, "idCliente");
         String estado = unico(parametros, "estado");
@@ -54,14 +38,45 @@ public record ConsultaHistorialParametros(Long idCliente, EstadoReserva estado, 
         if (sizeNum < 1 || sizeNum > SIZE_MAXIMO) {
             throw new ConsultaHistorialInvalidaException(Motivo.VALOR_INVALIDO);
         }
-        Long idClienteNum = null;
-        if (idCliente != null) {
-            if (!ENTERO.matcher(idCliente).matches()) {
+        return new ConsultaHistorialParametros(idClienteDe(idCliente), estadoDe(estado), pageNum, sizeNum);
+    }
+
+    private static void rechazarSospechosos(Map<String, String[]> parametros) {
+        for (Map.Entry<String, String[]> e : parametros.entrySet()) {
+            if (SOSPECHOSO.matcher(e.getKey()).find()) {
+                throw new ConsultaHistorialInvalidaException(Motivo.PATRON_SOSPECHOSO);
+            }
+            rechazarValoresSospechosos(e.getValue());
+        }
+    }
+
+    private static void rechazarValoresSospechosos(String[] valores) {
+        for (String v : valores) {
+            if (v != null && SOSPECHOSO.matcher(v).find()) {
+                throw new ConsultaHistorialInvalidaException(Motivo.PATRON_SOSPECHOSO);
+            }
+        }
+    }
+
+    private static void rechazarDesconocidosORepetidos(Map<String, String[]> parametros) {
+        for (Map.Entry<String, String[]> e : parametros.entrySet()) {
+            if (!PERMITIDOS.contains(e.getKey())) {
+                throw new ConsultaHistorialInvalidaException(Motivo.PARAMETRO_DESCONOCIDO);
+            }
+            if (e.getValue().length != 1) {
                 throw new ConsultaHistorialInvalidaException(Motivo.VALOR_INVALIDO);
             }
-            idClienteNum = Long.parseLong(idCliente);
         }
-        return new ConsultaHistorialParametros(idClienteNum, estadoDe(estado), pageNum, sizeNum);
+    }
+
+    private static Long idClienteDe(String texto) {
+        if (texto == null) {
+            return null;
+        }
+        if (!ENTERO.matcher(texto).matches()) {
+            throw new ConsultaHistorialInvalidaException(Motivo.VALOR_INVALIDO);
+        }
+        return Long.parseLong(texto);
     }
 
     private static String unico(Map<String, String[]> parametros, String nombre) {
