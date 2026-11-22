@@ -93,12 +93,10 @@ public class SolicitudProveedorController {
     @PostMapping("/{id}/aprobar")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Aprobar una solicitud de proveedor", description = "Aprueba la solicitud indicada y registra al administrador autenticado como responsable de la decisión.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Solicitud aprobada."),
-            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "Se requiere rol ADMIN.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "404", description = "No se encontró la solicitud.", content = @Content(mediaType = "application/json"))
-    })
+    @ApiResponse(responseCode = "200", description = "Solicitud aprobada.")
+    @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "403", description = "Se requiere rol ADMIN.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "404", description = "No se encontró la solicitud.", content = @Content(mediaType = "application/json"))
     public ResponseEntity<SolicitudAprobacionProveedor> aprobar(
             @io.swagger.v3.oas.annotations.Parameter(description = "Identificador de la solicitud.", example = "42")
             @PathVariable Long id,
