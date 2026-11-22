@@ -140,19 +140,17 @@ public class TwoFactorAuthController {
             description = "Intercambia el token temporal obtenido en /api/v1/auth/login y el código TOTP por el JWT de acceso. No requiere un JWT previo."
     )
     @SecurityRequirements
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Verificación correcta; devuelve el JWT definitivo.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoginResponseDTO.class), examples = @ExampleObject(value = """
-                    {
-                      "token": "<jwt-de-acceso>",
-                      "tipo": "Bearer",
-                      "expiracionSegundos": 3600,
-                      "requiere2fa": false,
-                      "tokenTemporal": null
-                    }
-                    """))),
-            @ApiResponse(responseCode = "400", description = "El token temporal o el código no cumplen el formato requerido.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "401", description = "Token temporal o código 2FA inválido o expirado.", content = @Content(mediaType = "application/json"))
-    })
+    @ApiResponse(responseCode = "200", description = "Verificación correcta; devuelve el JWT definitivo.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoginResponseDTO.class), examples = @ExampleObject(value = """
+            {
+              "token": "<jwt-de-acceso>",
+              "tipo": "Bearer",
+              "expiracionSegundos": 3600,
+              "requiere2fa": false,
+              "tokenTemporal": null
+            }
+            """)))
+    @ApiResponse(responseCode = "400", description = "El token temporal o el código no cumplen el formato requerido.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "401", description = "Token temporal o código 2FA inválido o expirado.", content = @Content(mediaType = "application/json"))
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Token temporal y código TOTP.",
             content = @Content(examples = @ExampleObject(value = """
