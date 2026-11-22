@@ -198,12 +198,10 @@ public class ReservaController {
             summary = "Consultar mi historial de reservas",
             description = "Lista las reservas del cliente autenticado en cualquier estado (RESERVADO, CONFIRMADO, EN_PROCESO, COMPLETADO, CANCELADO, NO_ASISTIO), la más reciente primero. Parámetros opcionales: estado, page (desde 0), size (1 a 50, por defecto 10) e idCliente (solo se acepta el propio). Si la lista sale vacía devuelve 200 con un mensaje que dice por qué: no tiene citas, no tiene citas en el estado filtrado o la página pedida no tiene citas."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Historial paginado (puede estar vacío).", content = @Content(mediaType = "application/json", schema = @Schema(implementation = HistorialReservasResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Parámetros no permitidos, con formato inválido o con texto sospechoso.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "No es CLIENTE, su permiso está inactivo o intentó ver el historial de otro cliente.", content = @Content(mediaType = "application/json"))
-    })
+    @ApiResponse(responseCode = "200", description = "Historial paginado (puede estar vacío).", content = @Content(mediaType = "application/json", schema = @Schema(implementation = HistorialReservasResponseDTO.class)))
+    @ApiResponse(responseCode = "400", description = "Parámetros no permitidos, con formato inválido o con texto sospechoso.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "403", description = "No es CLIENTE, su permiso está inactivo o intentó ver el historial de otro cliente.", content = @Content(mediaType = "application/json"))
     public HistorialReservasResponseDTO historial(HttpServletRequest request, Authentication authentication) {
         ConsultaHistorialParametros p = ConsultaHistorialParametros.desde(request.getParameterMap());
         return HistorialReservasResponseDTO.desde(consultarHistorialReservasUseCase.ejecutar(
