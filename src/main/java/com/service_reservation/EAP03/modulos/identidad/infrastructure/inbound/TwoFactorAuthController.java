@@ -85,22 +85,20 @@ public class TwoFactorAuthController {
             summary = "Activar autenticación de dos factores",
             description = "Valida el código TOTP generado por la aplicación autenticadora y activa 2FA para la cuenta. Requiere JWT de un administrador o el token temporal de configuración del login (etapa2fa = CONFIGURAR); en este último caso responde con el JWT de acceso y rechaza la petición si el 2FA ya estaba activo."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Autenticación de dos factores activada. Con el token de configuración, devuelve el JWT de acceso.", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = """
-                    {
-                      "token": "<jwt-de-acceso>",
-                      "tipo": "Bearer",
-                      "expiracionSegundos": 3600,
-                      "requiere2fa": false,
-                      "tokenTemporal": null,
-                      "etapa2fa": null
-                    }
-                    """))),
-            @ApiResponse(responseCode = "400", description = "El código debe contener seis dígitos o no es válido.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "401", description = "Se requiere autenticación o el código 2FA es incorrecto.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "El usuario autenticado no tiene rol de administrador.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "409", description = "La autenticación de dos factores ya está activa (con el token de configuración).", content = @Content(mediaType = "application/json"))
-    })
+    @ApiResponse(responseCode = "200", description = "Autenticación de dos factores activada. Con el token de configuración, devuelve el JWT de acceso.", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = """
+            {
+              "token": "<jwt-de-acceso>",
+              "tipo": "Bearer",
+              "expiracionSegundos": 3600,
+              "requiere2fa": false,
+              "tokenTemporal": null,
+              "etapa2fa": null
+            }
+            """)))
+    @ApiResponse(responseCode = "400", description = "El código debe contener seis dígitos o no es válido.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "401", description = "Se requiere autenticación o el código 2FA es incorrecto.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "403", description = "El usuario autenticado no tiene rol de administrador.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "409", description = "La autenticación de dos factores ya está activa (con el token de configuración).", content = @Content(mediaType = "application/json"))
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Código TOTP de seis dígitos.",
             content = @Content(examples = @ExampleObject(value = """
