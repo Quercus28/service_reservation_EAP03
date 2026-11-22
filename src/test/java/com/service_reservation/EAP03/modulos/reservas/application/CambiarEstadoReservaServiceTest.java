@@ -116,7 +116,8 @@ class CambiarEstadoReservaServiceTest {
         when(verificarPermisoOperativoUseCase.tienePermisoOperativo(ID_USUARIO, RolOperativo.PROVEEDOR)).thenReturn(false);
 
         // Act
-        assertThrows(UsuarioNoEsProveedorException.class, () -> service.ejecutar(comando(EstadoReserva.COMPLETADO)));
+        CambiarEstadoReservaComando comando = comando(EstadoReserva.COMPLETADO);
+        assertThrows(UsuarioNoEsProveedorException.class, () -> service.ejecutar(comando));
 
         // Assert
         assertEquals(AccionAdmin.CAMBIO_ESTADO_RESERVA_DENEGADO, auditado().accion());
