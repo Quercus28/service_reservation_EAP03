@@ -142,8 +142,9 @@ class CambiarEstadoReservaServiceTest {
     @DisplayName("Sin usuario identificado se rechaza y se audita, sin consultar permisos")
     void withoutUser() {
         // Act
-        assertThrows(UsuarioNoEsProveedorException.class, () -> service.ejecutar(
-                new CambiarEstadoReservaComando(null, ID_RESERVA, EstadoReserva.CONFIRMADO, ENDPOINT)));
+        CambiarEstadoReservaComando comando =
+                new CambiarEstadoReservaComando(null, ID_RESERVA, EstadoReserva.CONFIRMADO, ENDPOINT);
+        assertThrows(UsuarioNoEsProveedorException.class, () -> service.ejecutar(comando));
 
         // Assert
         assertNull(auditado().idActor());
