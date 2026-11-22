@@ -131,7 +131,8 @@ class CambiarEstadoReservaServiceTest {
         when(consultarProveedorUseCase.buscarIdProveedorPorUsuario(ID_USUARIO)).thenReturn(Optional.empty());
 
         // Act
-        assertThrows(UsuarioNoEsProveedorException.class, () -> service.ejecutar(comando(EstadoReserva.CONFIRMADO)));
+        CambiarEstadoReservaComando comando = comando(EstadoReserva.CONFIRMADO);
+        assertThrows(UsuarioNoEsProveedorException.class, () -> service.ejecutar(comando));
 
         // Assert
         assertEquals(AccionAdmin.CAMBIO_ESTADO_RESERVA_DENEGADO, auditado().accion());
