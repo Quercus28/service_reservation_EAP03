@@ -65,11 +65,9 @@ public class SolicitudProveedorController {
     @GetMapping("/proveedor/me")
     @PreAuthorize("hasRole('PROVEEDOR')")
     @Operation(summary = "Consultar mi solicitud de proveedor", description = "Obtiene la solicitud más reciente asociada al proveedor autenticado.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Solicitud consultada."),
-            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "La operación está disponible para proveedores.", content = @Content(mediaType = "application/json"))
-    })
+    @ApiResponse(responseCode = "200", description = "Solicitud consultada.")
+    @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "403", description = "La operación está disponible para proveedores.", content = @Content(mediaType = "application/json"))
     public ResponseEntity<SolicitudAprobacionProveedor> consultarMiSolicitud(
             @AuthenticationPrincipal UsuarioAutenticadoPrincipal principal) {
         SolicitudAprobacionProveedor solicitud = useCase.consultarUltimaSolicitud(principal.getIdUsuario());
