@@ -119,9 +119,11 @@ class ReportesControllerTest {
         when(consultarProveedorUseCase.buscarIdProveedorPorUsuario(USUARIO_ID))
                 .thenReturn(Optional.empty());
 
+        MockHttpServletRequest request = peticion("2026-11-01", "2026-11-30");
+
         AccessDeniedException ex = assertThrows(
                 AccessDeniedException.class,
-                () -> controller.consultarOcupacion(peticion("2026-11-01", "2026-11-30"), AUTH)
+                () -> controller.consultarOcupacion(request, AUTH)
         );
 
         assertEquals("El usuario autenticado no tiene un perfil de proveedor asociado", ex.getMessage());
