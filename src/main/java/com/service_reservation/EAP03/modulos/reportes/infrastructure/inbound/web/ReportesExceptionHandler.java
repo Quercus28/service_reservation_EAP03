@@ -62,9 +62,11 @@ public class ReportesExceptionHandler {
     @ExceptionHandler(ConsultaReporteInvalidaException.class)
     public ResponseEntity<Map<String, Object>> manejarConsultaInvalida(ConsultaReporteInvalidaException ex,
                                                                        HttpServletRequest request) {
-        log.warn("AUDITORIA evento=REPORTE_ENTRADA_RECHAZADA motivo={} idUsuario={} metodo={} ruta={} traceId={}",
-                ex.getMotivo().name(), idUsuarioActual(), request.getMethod(), request.getRequestURI(),
-                TraceIdFilter.traceIdActual());
+        if (log.isWarnEnabled()) {
+            log.warn("AUDITORIA evento=REPORTE_ENTRADA_RECHAZADA motivo={} idUsuario={} metodo={} ruta={} traceId={}",
+                    ex.getMotivo().name(), idUsuarioActual(), request.getMethod(), request.getRequestURI(),
+                    TraceIdFilter.traceIdActual());
+        }
         return construir(HttpStatus.BAD_REQUEST, "CONSULTA_INVALIDA", ex.getMessage());
     }
 
