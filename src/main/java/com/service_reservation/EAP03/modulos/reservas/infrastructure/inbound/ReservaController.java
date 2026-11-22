@@ -67,23 +67,21 @@ public class ReservaController {
             summary = "Cambiar el estado de una reserva",
             description = "El proveedor dueño de la reserva, con permiso operativo activo, la confirma (RESERVADO → CONFIRMADO) o la finaliza (CONFIRMADO → COMPLETADO). Cualquier otro cambio se rechaza. Los intentos de un cliente o de otro proveedor responden 403 y quedan en la auditoría."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Estado cambiado.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ReservaResponseDTO.class), examples = @ExampleObject(value = """
-                    {
-                      "id": 87,
-                      "idServicio": 12,
-                      "fechaInicio": "2026-11-02T09:00:00",
-                      "fechaFin": "2026-11-02T10:00:00",
-                      "estado": "CONFIRMADO",
-                      "notas": "Acceso por la entrada principal"
-                    }
-                    """))),
-            @ApiResponse(responseCode = "400", description = "El identificador no es un número o el estado está vacío o no existe.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "No es el proveedor dueño de la reserva o su permiso operativo está inactivo.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "404", description = "La reserva no existe.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "409", description = "La acción no es válida para el estado actual de la reserva.", content = @Content(mediaType = "application/json"))
-    })
+    @ApiResponse(responseCode = "200", description = "Estado cambiado.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ReservaResponseDTO.class), examples = @ExampleObject(value = """
+            {
+              "id": 87,
+              "idServicio": 12,
+              "fechaInicio": "2026-11-02T09:00:00",
+              "fechaFin": "2026-11-02T10:00:00",
+              "estado": "CONFIRMADO",
+              "notas": "Acceso por la entrada principal"
+            }
+            """)))
+    @ApiResponse(responseCode = "400", description = "El identificador no es un número o el estado está vacío o no existe.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "403", description = "No es el proveedor dueño de la reserva o su permiso operativo está inactivo.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "404", description = "La reserva no existe.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "409", description = "La acción no es válida para el estado actual de la reserva.", content = @Content(mediaType = "application/json"))
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Nuevo estado: CONFIRMADO o COMPLETADO.",
             content = @Content(examples = @ExampleObject(value = """
