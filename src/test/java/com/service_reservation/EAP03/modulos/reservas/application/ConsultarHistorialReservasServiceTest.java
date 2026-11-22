@@ -106,8 +106,8 @@ class ConsultarHistorialReservasServiceTest {
     void rejectsNonClient() {
         when(consultarClienteUseCase.buscarIdClientePorUsuario(20L)).thenReturn(Optional.empty());
 
-        assertThrows(UsuarioNoEsClienteException.class,
-                () -> service.ejecutar(new ConsultarHistorialComando(20L, null, null, 0, 10)));
+        ConsultarHistorialComando sinPerfilCliente = new ConsultarHistorialComando(20L, null, null, 0, 10);
+        assertThrows(UsuarioNoEsClienteException.class, () -> service.ejecutar(sinPerfilCliente));
         assertThrows(UsuarioNoEsClienteException.class,
                 () -> service.ejecutar(new ConsultarHistorialComando(null, null, null, 0, 10)));
         verify(reservaRepositoryPort, never()).buscarHistorialDeCliente(any(), any(), org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.anyInt());
