@@ -140,4 +140,17 @@ class ReportesControllerTest {
                 () -> controller.consultarOcupacion(request, null)
         );
     }
+
+    @Test
+    @DisplayName("Bloquea la petición si el principal autenticado no es un usuario de la aplicación")
+    void bloquearPrincipalDesconocido() {
+        MockHttpServletRequest request = peticion("2026-11-01", "2026-11-30");
+        Authentication otroPrincipal = new UsernamePasswordAuthenticationToken("anonimo", null, List.of());
+
+        assertThrows(
+                AccessDeniedException.class,
+                () -> controller.consultarOcupacion(request, otroPrincipal)
+        );
+        verifyNoInteractions(obtenerReporteOcupacionUseCase, consultarProveedorUseCase);
+    }
 }

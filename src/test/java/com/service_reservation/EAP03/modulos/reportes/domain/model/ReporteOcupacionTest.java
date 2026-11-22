@@ -41,4 +41,16 @@ class ReporteOcupacionTest {
         ReporteOcupacion.Builder sinProveedor = ReporteOcupacion.builder(null, periodo);
         assertThrows(NullPointerException.class, sinProveedor::build);
     }
+
+    @Test
+    @DisplayName("Un detalle de servicios nulo se toma como lista vacía")
+    void detalleNuloEsListaVacia() {
+        PeriodoReporte periodo = new PeriodoReporte(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31));
+
+        ReporteOcupacion reporte = ReporteOcupacion.builder(1, periodo)
+                .detalleServicios(null)
+                .build();
+
+        assertEquals(List.of(), reporte.getDetalleServicios());
+    }
 }

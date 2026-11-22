@@ -232,4 +232,41 @@ class ReservaExceptionHandlerTest {
 
         verifyNoInteractions(registrarAuditoriaUseCase);
     }
+
+    @Test
+    @DisplayName("Si el principal no es un usuario de la aplicación, el historial ajeno se audita sin usuario")
+    void otherClientsHistoryAuditedWithUnknownPrincipal() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("anonimo", null, List.of()));
+        try {
+            handler.manejarHistorialAjeno(new com.service_reservation.EAP03.modulos.reservas.domain.exception.HistorialAjenoException(),
+                    new org.springframework.mock.web.MockHttpServletRequest("GET", "/api/v1/reservas/mias"));
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        }
+
+        ArgumentCaptor<EventoAuditoria> captor = ArgumentCaptor.forClass(EventoAuditoria.class);
+        verify(registrarAuditoriaUseCase).ejecutar(captor.capture());
+        assertNull(captor.getValue().idActor());
+    }
+
+    @Test
+    @DisplayName("Con el nivel WARN apagado, el historial ajeno igual responde 403 y queda en la auditoría")
+    void otherClientsHistoryWithWarnDisabled() {
+        ch.qos.logback.classic.Logger logger =
+                (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(ReservaExceptionHandler.class);
+        ch.qos.logback.classic.Level nivelOriginal = logger.getLevel();
+        logger.setLevel(ch.qos.logback.classic.Level.ERROR);
+        try {
+            com.service_reservation.EAP03.modulos.reservas.domain.exception.HistorialAjenoException ex =
+                    new com.service_reservation.EAP03.modulos.reservas.domain.exception.HistorialAjenoException();
+            assertError(handler.manejarHistorialAjeno(ex,
+                    new org.springframework.mock.web.MockHttpServletRequest("GET", "/api/v1/reservas/mias")),
+                    403, "HISTORIAL_AJENO", ex.getMessage());
+        } finally {
+            logger.setLevel(nivelOriginal);
+        }
+
+        verify(registrarAuditoriaUseCase).ejecutar(any());
+    }
 }

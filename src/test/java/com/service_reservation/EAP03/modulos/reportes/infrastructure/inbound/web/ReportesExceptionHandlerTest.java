@@ -22,6 +22,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.Map;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -106,5 +109,38 @@ class ReportesExceptionHandlerTest {
         ResponseEntity<Map<String, Object>> response = handler.manejarReporteAjeno(new ReporteAjenoException(), request);
 
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("Si el principal no es un usuario de la aplicación, el reporte ajeno se audita sin usuario")
+    void reporteAjenoConPrincipalDesconocido() {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken("anonimo", null, List.of()));
+
+        handler.manejarReporteAjeno(new ReporteAjenoException(), request);
+
+        ArgumentCaptor<EventoAuditoria> evento = ArgumentCaptor.forClass(EventoAuditoria.class);
+        verify(auditoria).ejecutar(evento.capture());
+        assertNull(evento.getValue().idActor());
+    }
+
+    @Test
+    @DisplayName("Con el nivel WARN apagado, las respuestas y la auditoría no cambian")
+    void respuestasConWarnApagado() {
+        Logger logger = (Logger) LoggerFactory.getLogger(ReportesExceptionHandler.class);
+        Level nivelOriginal = logger.getLevel();
+        logger.setLevel(Level.ERROR);
+        try {
+            ConsultaReporteInvalidaException ex =
+                    new ConsultaReporteInvalidaException(ConsultaReporteInvalidaException.Motivo.PARAMETRO_REPETIDO);
+            assertFormatoEstandar(handler.manejarConsultaInvalida(ex, request),
+                    HttpStatus.BAD_REQUEST, "CONSULTA_INVALIDA", "La solicitud de consulta no es válida.");
+            assertFormatoEstandar(handler.manejarReporteAjeno(new ReporteAjenoException(), request),
+                    HttpStatus.FORBIDDEN, "ACCESO_NO_AUTORIZADO", "No tiene privilegios para realizar esta operación");
+        } finally {
+            logger.setLevel(nivelOriginal);
+        }
+
+        verify(auditoria).ejecutar(any());
     }
 }
