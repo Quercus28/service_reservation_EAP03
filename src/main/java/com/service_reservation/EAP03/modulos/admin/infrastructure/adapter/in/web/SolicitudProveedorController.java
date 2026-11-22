@@ -79,11 +79,9 @@ public class SolicitudProveedorController {
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Listar solicitudes de proveedor", description = "Lista las solicitudes de aprobación y permite filtrar opcionalmente por estado. Requiere rol ADMIN.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Solicitudes consultadas."),
-            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "Se requiere rol ADMIN.", content = @Content(mediaType = "application/json"))
-    })
+    @ApiResponse(responseCode = "200", description = "Solicitudes consultadas.")
+    @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "403", description = "Se requiere rol ADMIN.", content = @Content(mediaType = "application/json"))
     public ResponseEntity<List<SolicitudAprobacionProveedor>> listar(
             @io.swagger.v3.oas.annotations.Parameter(description = "Estado opcional por el que se filtran las solicitudes.")
             @RequestParam(required = false) EstadoSolicitud estado) {
