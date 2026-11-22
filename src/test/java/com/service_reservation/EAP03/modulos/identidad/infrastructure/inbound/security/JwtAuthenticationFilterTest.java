@@ -272,9 +272,9 @@ class JwtAuthenticationFilterTest {
     })
     @DisplayName("Las rutas de la documentación de Swagger no pasan por el filtro JWT; el resto sí")
     void swaggerPathsAreNotFiltered(String ruta, boolean excluida) {
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", ruta);
-        request.setServletPath(ruta);
+        MockHttpServletRequest peticion = new MockHttpServletRequest("GET", ruta);
+        peticion.setServletPath(ruta);
 
-        assertEquals(excluida, filter.shouldNotFilter(request));
+        assertEquals(excluida, filter.shouldNotFilter(peticion));
     }
 }
