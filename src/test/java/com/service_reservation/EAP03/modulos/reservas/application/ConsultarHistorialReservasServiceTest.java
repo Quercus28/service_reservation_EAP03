@@ -96,8 +96,8 @@ class ConsultarHistorialReservasServiceTest {
     void blocksOtherClientsHistory() {
         when(consultarClienteUseCase.buscarIdClientePorUsuario(20L)).thenReturn(Optional.of(3L));
 
-        assertThrows(HistorialAjenoException.class,
-                () -> service.ejecutar(new ConsultarHistorialComando(20L, 4L, null, 0, 10)));
+        ConsultarHistorialComando historialAjeno = new ConsultarHistorialComando(20L, 4L, null, 0, 10);
+        assertThrows(HistorialAjenoException.class, () -> service.ejecutar(historialAjeno));
         verifyNoInteractions(reservaRepositoryPort);
     }
 
