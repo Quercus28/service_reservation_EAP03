@@ -37,11 +37,9 @@ public class SolicitudProveedorController {
     @PostMapping("/proveedor")
     @PreAuthorize("hasRole('PROVEEDOR')")
     @Operation(summary = "Solicitar aprobación como proveedor", description = "Registra una solicitud de aprobación para el proveedor autenticado. El identificador se obtiene del JWT.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Solicitud registrada."),
-            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "La operación está disponible para proveedores.", content = @Content(mediaType = "application/json"))
-    })
+    @ApiResponse(responseCode = "200", description = "Solicitud registrada.")
+    @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "403", description = "La operación está disponible para proveedores.", content = @Content(mediaType = "application/json"))
     public ResponseEntity<SolicitudAprobacionProveedor> solicitarAprobacion(
             @AuthenticationPrincipal UsuarioAutenticadoPrincipal principal) {
         SolicitudAprobacionProveedor solicitud = useCase.registrarSolicitud(principal.getIdUsuario());
