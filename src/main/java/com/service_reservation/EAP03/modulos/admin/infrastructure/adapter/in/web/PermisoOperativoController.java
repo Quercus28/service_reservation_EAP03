@@ -35,12 +35,10 @@ public class PermisoOperativoController {
 
     @PostMapping("/revocar")
     @Operation(summary = "Revocar un permiso operativo", description = "Revoca el permiso indicado y registra al administrador autenticado como responsable de la operación. Requiere rol ADMIN.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Permiso revocado."),
-            @ApiResponse(responseCode = "400", description = "El usuario, rol o motivo no cumplen las validaciones.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "Se requiere rol ADMIN.", content = @Content(mediaType = "application/json"))
-    })
+    @ApiResponse(responseCode = "200", description = "Permiso revocado.")
+    @ApiResponse(responseCode = "400", description = "El usuario, rol o motivo no cumplen las validaciones.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "403", description = "Se requiere rol ADMIN.", content = @Content(mediaType = "application/json"))
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Usuario objetivo, rol operativo y motivo de revocación.",
             content = @Content(examples = @ExampleObject(value = """
