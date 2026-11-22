@@ -79,7 +79,8 @@ class SwaggerSecurityConfigTest {
     @Test
     @DisplayName("El proveedor de Swagger rechaza una contraseña incorrecta")
     void swaggerProviderRejectsIncorrectPassword() {
-        assertThrows(BadCredentialsException.class, () -> swaggerAuthenticationProvider.authenticate(
-                new UsernamePasswordAuthenticationToken("docs", "incorrect-password")));
+        UsernamePasswordAuthenticationToken credenciales =
+                new UsernamePasswordAuthenticationToken("docs", "incorrect-password");
+        assertThrows(BadCredentialsException.class, () -> swaggerAuthenticationProvider.authenticate(credenciales));
     }
 }
