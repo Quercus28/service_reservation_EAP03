@@ -164,13 +164,11 @@ public class ServicioController {
             summary = "Actualizar un servicio",
             description = "Actualiza el nombre y la duración. Puede hacerlo un administrador o el proveedor propietario con permiso operativo activo."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Servicio actualizado."),
-            @ApiResponse(responseCode = "400", description = "El identificador o los datos no cumplen las validaciones.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "El usuario no tiene permisos para modificar este servicio.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "404", description = "No existe un servicio con ese identificador.", content = @Content(mediaType = "application/json"))
-    })
+    @ApiResponse(responseCode = "200", description = "Servicio actualizado.")
+    @ApiResponse(responseCode = "400", description = "El identificador o los datos no cumplen las validaciones.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "403", description = "El usuario no tiene permisos para modificar este servicio.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "404", description = "No existe un servicio con ese identificador.", content = @Content(mediaType = "application/json"))
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Nuevos valores para el nombre y la duración del servicio.",
             content = @Content(examples = @ExampleObject(value = """
