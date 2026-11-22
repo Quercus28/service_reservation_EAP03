@@ -82,12 +82,10 @@ public class ServicioController {
             summary = "Crear un servicio",
             description = "Registra un servicio para el proveedor autenticado. El idProveedor del cuerpo se reemplaza por el proveedor asociado al JWT; el cliente debe tener rol PROVEEDOR y permiso operativo activo."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Servicio creado; la respuesta incluye la URI del recurso en Location."),
-            @ApiResponse(responseCode = "400", description = "El nombre o la duración no cumplen las validaciones.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "El usuario no tiene un perfil de proveedor o su permiso operativo está inactivo.", content = @Content(mediaType = "application/json"))
-    })
+    @ApiResponse(responseCode = "201", description = "Servicio creado; la respuesta incluye la URI del recurso en Location.")
+    @ApiResponse(responseCode = "400", description = "El nombre o la duración no cumplen las validaciones.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "403", description = "El usuario no tiene un perfil de proveedor o su permiso operativo está inactivo.", content = @Content(mediaType = "application/json"))
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Datos del servicio. idProveedor es obligatorio por el contrato de entrada, pero se toma del usuario autenticado.",
             content = @Content(examples = @ExampleObject(value = """
