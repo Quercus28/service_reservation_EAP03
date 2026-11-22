@@ -210,8 +210,9 @@ class CambiarEstadoReservaServiceTest {
     void missingData() {
         assertThrows(DatosReservaInvalidosException.class, () -> service.ejecutar(
                 new CambiarEstadoReservaComando(ID_USUARIO, null, EstadoReserva.CONFIRMADO, ENDPOINT)));
-        assertThrows(DatosReservaInvalidosException.class, () -> service.ejecutar(
-                new CambiarEstadoReservaComando(ID_USUARIO, ID_RESERVA, null, ENDPOINT)));
+        CambiarEstadoReservaComando sinEstado =
+                new CambiarEstadoReservaComando(ID_USUARIO, ID_RESERVA, null, ENDPOINT);
+        assertThrows(DatosReservaInvalidosException.class, () -> service.ejecutar(sinEstado));
         verifyNoInteractions(verificarPermisoOperativoUseCase, registrarAuditoriaUseCase);
     }
 }
