@@ -137,12 +137,10 @@ public class SolicitudProveedorController {
     @GetMapping("/proveedor/{idUsuario}/perfil")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Consultar el perfil de un proveedor", description = "Obtiene los datos del perfil del proveedor correspondiente al usuario indicado. Requiere rol ADMIN.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Perfil consultado."),
-            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "Se requiere rol ADMIN.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "404", description = "No se encontró el proveedor.", content = @Content(mediaType = "application/json"))
-    })
+    @ApiResponse(responseCode = "200", description = "Perfil consultado.")
+    @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "403", description = "Se requiere rol ADMIN.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "404", description = "No se encontró el proveedor.", content = @Content(mediaType = "application/json"))
     public ResponseEntity<ProveedorPerfilDTO> consultarPerfilProveedor(@PathVariable Long idUsuario) {
         return ResponseEntity.ok(useCase.consultarPerfilProveedor(idUsuario));
     }
