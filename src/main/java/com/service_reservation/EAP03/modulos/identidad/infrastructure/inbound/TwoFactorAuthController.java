@@ -53,11 +53,9 @@ public class TwoFactorAuthController {
             summary = "Obtener el QR para configurar 2FA",
             description = "Genera el código QR de configuración para el usuario autenticado. Acepta el JWT de acceso o el token temporal de configuración que el login entrega a un administrador sin 2FA (etapa2fa = CONFIGURAR). La respuesta incluye el secreto en la cabecera X-2FA-Secret; debe tratarse como información confidencial. Si el 2FA ya está activo responde 409 y no cambia el secreto."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Imagen PNG del código QR.", content = @Content(mediaType = MediaType.IMAGE_PNG_VALUE, schema = @Schema(type = "string", format = "binary"))),
-            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "409", description = "La autenticación de dos factores ya está activa.", content = @Content(mediaType = "application/json"))
-    })
+    @ApiResponse(responseCode = "200", description = "Imagen PNG del código QR.", content = @Content(mediaType = MediaType.IMAGE_PNG_VALUE, schema = @Schema(type = "string", format = "binary")))
+    @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "409", description = "La autenticación de dos factores ya está activa.", content = @Content(mediaType = "application/json"))
     public ResponseEntity<byte[]> obtenerQr(
             @AuthenticationPrincipal UsuarioAutenticadoPrincipal principal
     ) {
