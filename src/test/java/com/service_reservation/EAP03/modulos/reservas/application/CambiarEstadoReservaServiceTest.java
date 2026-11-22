@@ -205,8 +205,9 @@ class CambiarEstadoReservaServiceTest {
     @Test
     @DisplayName("Sin id de reserva o sin estado responde datos inválidos")
     void missingData() {
-        assertThrows(DatosReservaInvalidosException.class, () -> service.ejecutar(
-                new CambiarEstadoReservaComando(ID_USUARIO, null, EstadoReserva.CONFIRMADO, ENDPOINT)));
+        CambiarEstadoReservaComando sinReserva =
+                new CambiarEstadoReservaComando(ID_USUARIO, null, EstadoReserva.CONFIRMADO, ENDPOINT);
+        assertThrows(DatosReservaInvalidosException.class, () -> service.ejecutar(sinReserva));
         assertThrows(DatosReservaInvalidosException.class, () -> service.ejecutar(
                 new CambiarEstadoReservaComando(ID_USUARIO, ID_RESERVA, null, ENDPOINT)));
         verifyNoInteractions(verificarPermisoOperativoUseCase, registrarAuditoriaUseCase);
