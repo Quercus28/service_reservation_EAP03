@@ -107,11 +107,9 @@ public class PermisoOperativoController {
 
     @GetMapping("/revocaciones")
     @Operation(summary = "Listar revocaciones", description = "Lista las revocaciones de permisos y permite filtrar opcionalmente por estado. Requiere rol ADMIN.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Revocaciones consultadas."),
-            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "Se requiere rol ADMIN.", content = @Content(mediaType = "application/json"))
-    })
+    @ApiResponse(responseCode = "200", description = "Revocaciones consultadas.")
+    @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "403", description = "Se requiere rol ADMIN.", content = @Content(mediaType = "application/json"))
     public ResponseEntity<List<RevocacionPermiso>> listarRevocaciones(
             @io.swagger.v3.oas.annotations.Parameter(description = "Estado opcional por el que se filtran las revocaciones.")
             @RequestParam(required = false) EstadoRevocacion estado) {
