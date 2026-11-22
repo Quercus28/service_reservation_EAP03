@@ -182,7 +182,8 @@ class CambiarEstadoReservaServiceTest {
         when(reservaRepositoryPort.buscarPorId(ID_RESERVA)).thenReturn(Optional.empty());
 
         // Act + Assert
-        assertThrows(ReservaNoEncontradaException.class, () -> service.ejecutar(comando(EstadoReserva.CONFIRMADO)));
+        CambiarEstadoReservaComando comando = comando(EstadoReserva.CONFIRMADO);
+        assertThrows(ReservaNoEncontradaException.class, () -> service.ejecutar(comando));
         verifyNoInteractions(registrarAuditoriaUseCase);
     }
 
