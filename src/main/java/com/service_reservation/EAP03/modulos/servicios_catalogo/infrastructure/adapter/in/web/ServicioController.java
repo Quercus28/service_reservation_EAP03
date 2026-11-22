@@ -187,12 +187,10 @@ public class ServicioController {
             summary = "Eliminar un servicio",
             description = "Elimina el servicio indicado. Puede hacerlo un administrador o el proveedor propietario con permiso operativo activo."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Servicio eliminado; la respuesta no contiene cuerpo."),
-            @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "El usuario no tiene permisos para eliminar este servicio.", content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "404", description = "No existe un servicio con ese identificador.", content = @Content(mediaType = "application/json"))
-    })
+    @ApiResponse(responseCode = "204", description = "Servicio eliminado; la respuesta no contiene cuerpo.")
+    @ApiResponse(responseCode = "401", description = "Se requiere un JWT válido.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "403", description = "El usuario no tiene permisos para eliminar este servicio.", content = @Content(mediaType = "application/json"))
+    @ApiResponse(responseCode = "404", description = "No existe un servicio con ese identificador.", content = @Content(mediaType = "application/json"))
     public ResponseEntity<Void> eliminarServicio(@PathVariable Integer id) {
         eliminarServicioUseCase.eliminar(id);
         return ResponseEntity.noContent().build();
