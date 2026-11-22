@@ -37,6 +37,7 @@ class ReporteOcupacionTest {
         PeriodoReporte periodo = new PeriodoReporte(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31));
 
         assertThrows(NullPointerException.class, () -> ReporteOcupacion.builder(null, periodo).build());
-        assertThrows(NullPointerException.class, () -> ReporteOcupacion.builder(1, null).build());
+        ReporteOcupacion.Builder sinPeriodo = ReporteOcupacion.builder(1, null);
+        assertThrows(NullPointerException.class, sinPeriodo::build);
     }
 }
