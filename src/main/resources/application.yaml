@@ -43,3 +43,25 @@ reservas:
   cancelacion:
     # Cuántas horas antes del inicio se puede cancelar como máximo.
     anticipacion-minima-horas: 2
+
+# Observabilidad con Spring Boot Actuator y Prometheus
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+
