@@ -1,0 +1,41 @@
+# monitoring/prometheus/prometheus.yml
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+
+scrape_configs:
+  # Scraping del backend desplegado en Render (Producción / Cloud)
+  - job_name: 'eap03-render'
+    metrics_path: '/actuator/prometheus'
+    scheme: https
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['service-reservation-eap03-latest.onrender.com:443']
+        labels:
+          application: 'service-reservation-eap03'
+          environment: 'render'
+
+  # Scraping de la aplicación Spring Boot dentro de la red Docker local
+  - job_name: 'eap03-service-reservation'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['app:8080']
+        labels:
+          application: 'service-reservation-eap03'
+          environment: 'docker'
+
+  # Opcional: Scraping de la aplicación si se ejecuta en el host local (bootRun)
+  - job_name: 'eap03-local-host'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+        labels:
+          application: 'service-reservation-eap03'
+          environment: 'local'
+
+  # Métricas del propio servidor Prometheus
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
