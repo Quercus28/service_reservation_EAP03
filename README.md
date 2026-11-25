@@ -97,7 +97,9 @@ Servicios y puertos disponibles:
 ### 3. Aprovisionamiento Automático en Grafana
 Grafana arranca con todo preconfigurado de forma automática:
 - **DataSource Prometheus**: Conectado automáticamente a `http://prometheus:9090`.
-- **Dashboard Listo**: `EAP03 - Panel de Observabilidad` cargado automáticamente en el menú *Dashboards* (carpeta *Service Reservation*), con métricas de tráfico HTTP, latencia, memoria Heap JVM, uso de CPU, pool HikariCP y métricas de negocio, con filtro por entorno (`render`, `docker`, `local`).
+- **Dashboard único**: `Spring Boot 3.x Statistics`, cargado automáticamente desde `monitoring/grafana/provisioning/dashboards/spring-boot-3-statistics.json` en la carpeta *Service Reservation*.
+- El dashboard muestra tráfico HTTP, latencia, memoria JVM, uso de CPU, registros y el pool HikariCP.
+- No se incluye un dashboard personalizado ni métricas de negocio adicionales.
 
 ### 4. Targets configurados en Prometheus
 En `monitoring/prometheus/prometheus.yml` se encuentran configurados tres entornos de recolección:
@@ -132,10 +134,5 @@ Se puede verificar el estado de los targets en: [http://localhost:9090/targets](
   ```promql
   hikaricp_connections_active
   ```
-
-#### Métricas de Negocio Personalizadas
-- `negocio_reservas_creadas_total`: Total de reservas creadas satisfactoriamente.
-- `negocio_reservas_canceladas_total`: Total de reservas canceladas.
-- `negocio_auth_login_fallidos_total`: Total de intentos fallidos de inicio de sesión.
 
 
