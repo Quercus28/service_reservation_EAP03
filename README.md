@@ -59,14 +59,14 @@ Las pruebas usan una base de datos H2 en memoria (ver `src/test/resources/applic
 src/main/java     Código fuente de la aplicación
 src/main/resources  Configuración y migraciones
 src/test          Pruebas
-monitoring/       Configuración de Prometheus
+monitoring/       Configuraciones de Prometheus y Grafana
 ```
 
-## Observabilidad con Prometheus
+## Observabilidad con Prometheus y Grafana
 
-El proyecto cuenta con integración de métricas para **Prometheus** mediante Spring Boot Actuator y Micrometer.
+El proyecto cuenta con integración de observabilidad con **Prometheus** (recolección y métricas) y **Grafana** (visualización y cuadros de mando) mediante Spring Boot Actuator y Micrometer.
 
-### 1. Endpoints de Métricas y Salud
+### 1. Endpoints de Métricas y Salud del Backend
 
 #### Entorno Desplegado (Render)
 - **Métricas Prometheus**: `https://service-reservation-eap03-latest.onrender.com/actuator/prometheus`
@@ -78,29 +78,36 @@ El proyecto cuenta con integración de métricas para **Prometheus** mediante Sp
 - **Métricas en JSON**: `http://localhost:8080/actuator/metrics`
 - **Salud del servicio**: `http://localhost:8080/actuator/health`
 
-### 2. Levantar el Servidor Prometheus con Docker Compose
+### 2. Levantar el Stack Completo con Docker Compose
+Para iniciar el Backend, PostgreSQL, Prometheus y Grafana:
 ```bash
-docker compose up -d prometheus
+docker compose up --build -d
 ```
-O el stack completo local:
+O si solo deseas levantar los servicios de monitoreo (Prometheus y Grafana):
 ```bash
-docker compose up --build
+docker compose up -d prometheus grafana
 ```
 
-Servicios disponibles:
+Servicios y puertos disponibles:
 - **App Backend**: `http://localhost:8080`
 - **PostgreSQL**: `localhost:5433` (interno 5432)
 - **Servidor Prometheus**: `http://localhost:9090`
+- **Servidor Grafana**: `http://localhost:3000` (Usuario: `admin` / Contraseña: `admin`)
 
-### 3. Targets configurados en Prometheus
+### 3. Aprovisionamiento Automático en Grafana
+Grafana arranca con todo preconfigurado de forma automática:
+- **DataSource Prometheus**: Conectado automáticamente a `http://prometheus:9090`.
+- **Dashboard Listo**: `EAP03 - Panel de Observabilidad` cargado automáticamente en el menú *Dashboards* (carpeta *Service Reservation*), con métricas de tráfico HTTP, latencia, memoria Heap JVM, uso de CPU, pool HikariCP y métricas de negocio, con filtro por entorno (`render`, `docker`, `local`).
+
+### 4. Targets configurados en Prometheus
 En `monitoring/prometheus/prometheus.yml` se encuentran configurados tres entornos de recolección:
-1. `eap03-render`: Scraping al backend desplegado en Render vía HTTPS.
+1. `eap03-render`: Scraping al backend desplegado en Render vía HTTPS (`https://service-reservation-eap03-latest.onrender.com`).
 2. `eap03-service-reservation`: Scraping al contenedor local en la red Docker (`app:8080`).
 3. `eap03-local-host`: Scraping a la aplicación corriendo localmente fuera de Docker (`host.docker.internal:8080`).
 
 Se puede verificar el estado de los targets en: [http://localhost:9090/targets](http://localhost:9090/targets).
 
-### 4. Consultas PromQL Útiles en Prometheus
+### 5. Consultas PromQL Útiles en Prometheus
 - **Tasa de peticiones HTTP por segundo (RPS)**:
   ```promql
   rate(http_server_requests_seconds_count[1m])
